@@ -295,6 +295,24 @@ namespace vg
         A1B5G5R5UNORMPACK16 = 1000470000,
         A8UNORM = 1000470001,
     };
+    enum class ColorSpace
+    {
+        SRGBNL = 0,
+        DispP3NL = 1000104002,
+        ExtSRGBL = 1000104003,
+        DispP3L = 1000104004,
+        DciP3NL = 1000104005,
+        Bt709L = 1000104006,
+        Bt709NL = 1000104007,
+        Bt2020L = 1000104008,
+        HDR10St2084 = 1000104009,
+        Dolbyvision = 1000104010,
+        HDR10HLG = 1000104011,
+        AdobeRGBL = 1000104012,
+        AdobeRGBNL = 1000104013,
+        PassThrough = 1000104014,
+        ExtSRGBNL = 1000213000
+    };
     enum class ShaderStage
     {
         Vertex = 0x00000001,
@@ -571,5 +589,33 @@ namespace vg
         VideoEncodeSrc = 1000299001,
         VideoEncodeDpb = 1000299002,
         AttachmentFeedbackLoopOptimal = 1000339000,
+    };
+    enum class PipelineStage
+    {
+        TopOfPipe = 1,
+        DrawIndirect = 2,
+        VertexInput = 4,
+        VertexShader = 8,
+        TessellationControlShader = 16,
+        TessellationEvaluationShader = 32,
+        GeometryShader = 64,
+        FragmentShader = 128,
+        EarlyFragmentTests = 256,
+        LateFragmentTests = 512,
+        ColorAttachmentOutput = 1024,
+        ComputeShader = 2048,
+        Transfer = 4096,
+        BottomOfPipe = 8192,
+        Host = 16384,
+        AllGraphics = 32768,
+        AllCommands = 65536,
+        None = 0,
+        TransformFeedback = 0x01000000,
+        ConditionalRendering = 0x00040000,
+        AccelerationStructureBuild = 0x02000000,
+        RayTracingShader = 0x00200000,
+        ShadingRateImage = 0x00800000,
+        TaskShader = 0x00080000,
+        MeshShader = 0x00100000,
     };
 }

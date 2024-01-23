@@ -76,7 +76,7 @@ namespace vg
 #endif
 #ifdef VULKAN_H_
 
-    ColorBlend::operator VkPipelineColorBlendAttachmentState() const
+    ColorBlend::operator VkPipelineColorBlendAttachmentState () const
     {
         return *(VkPipelineColorBlendAttachmentState*) this;
     }

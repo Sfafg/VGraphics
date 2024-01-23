@@ -4,7 +4,6 @@
 
 namespace vg
 {
-    bool IsNone(const Queue& queue) { return queue.GetType() == Queue::Type::None; }
     int DefaultScoreFunction(
         const std::set<Queue::Type>& queues,
         const std::set<std::string>& extensions,
@@ -22,8 +21,6 @@ namespace vg
         return 0;
     }
 
-    Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr) {}
-
     Device::Device(
         const std::set<Queue::Type>& queues,
         const std::set<std::string>& extensions,
@@ -32,18 +29,18 @@ namespace vg
     )
     {
         assert(queues.size() > 0);
-        assert(queues.contains(Queue::Type::Present) ^ surface == nullptr);
+        assert(queues.contains(Queue::Type::Present) ^ (surface == nullptr));
 
         // Pick physical device.
         int highestScore = -1;
-        for (const auto& physicalDevice : vk::Instance((InstanceHandle) vg::instance).enumeratePhysicalDevices())
+        for (const auto& physicalDevice : ((InstanceHandle) vg::instance).enumeratePhysicalDevices())
         {
             std::set<std::string> supportedExtensions;
             for (const auto& extension : physicalDevice.enumerateDeviceExtensionProperties())
             {
                 supportedExtensions.insert(extension.extensionName);
             }
-            if (surface != nullptr && extensions.contains("VK_KHR_swapchain") && supportedExtensions.contains("VK_KHR_swapchain"))
+            if (surface != nullptr && extensions.contains("VK_KHR_swapchain") && supportedExtensions.contains("VK_KHR_win32_surface"))
             {
                 unsigned int formatCount, presentModeCount;
                 vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
@@ -60,7 +57,7 @@ namespace vg
                 if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)supportedQueues.insert(Queue::Type::Transfer);
                 if (surface != nullptr && physicalDevice.getSurfaceSupportKHR(i, surface)) supportedQueues.insert(Queue::Type::Present);
 
-                if (supportedQueues.size() == 3 + (surface != nullptr)) break;
+                if ((int) supportedQueues.size() == 3 + (surface != nullptr)) break;
             }
 
             Type type = (Type) physicalDevice.getProperties().deviceType;
@@ -86,23 +83,39 @@ namespace vg
         }
 
 
-        std::vector<vk::QueueFamilyProperties> queueFamilies = vk::PhysicalDevice(m_physicalDevice).getQueueFamilyProperties();
+        std::vector<vk::QueueFamilyProperties> queueFamilies = m_physicalDevice.getQueueFamilyProperties();
 
         for (unsigned int i = 0; i < queueFamilies.size(); i++)
         {
-            if (IsNone(graphicsQueue) && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)  graphicsQueue = Queue(vk::Queue(nullptr), Queue::Type::Graphics, i);
-            if (IsNone(computeQueue) && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)  computeQueue = Queue(vk::Queue(nullptr), Queue::Type::Compute, i);
-            if (IsNone(transferQueue) && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)  transferQueue = Queue(vk::Queue(nullptr), Queue::Type::Transfer, i);
-            if (surface != nullptr && IsNone(presentQueue) && vk::PhysicalDevice(m_physicalDevice).getSurfaceSupportKHR(i, surface))  presentQueue = Queue(vk::Queue(nullptr), Queue::Type::Present, i);
+            if (graphicsQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            {
+                graphicsQueue.m_type = Queue::Type::Graphics;
+                graphicsQueue.m_index = i;
+            }
+            if (computeQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
+            {
+                computeQueue.m_type = Queue::Type::Compute;
+                computeQueue.m_index = i;
+            }
+            if (transferQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
+            {
+                transferQueue.m_type = Queue::Type::Transfer;
+                transferQueue.m_index = i;
+            }
+            if (surface != nullptr && presentQueue.m_type == Queue::Type::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
+            {
+                presentQueue.m_type = Queue::Type::Transfer;
+                presentQueue.m_index = i;
+            }
 
-            if (!IsNone(graphicsQueue) && !IsNone(computeQueue) && !IsNone(presentQueue) && !IsNone(transferQueue)) break;
+            if ((int) graphicsQueue.m_type + (int) computeQueue.m_type + (int) presentQueue.m_type + (int) transferQueue.m_type == 0) break;
         }
 
         std::set<unsigned int> uniqueQueueFamilies;
-        if (!IsNone(graphicsQueue)) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
-        if (!IsNone(computeQueue)) uniqueQueueFamilies.insert(computeQueue.GetIndex());
-        if (!IsNone(presentQueue)) uniqueQueueFamilies.insert(presentQueue.GetIndex());
-        if (!IsNone(transferQueue)) uniqueQueueFamilies.insert(transferQueue.GetIndex());
+        if (graphicsQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
+        if (computeQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(computeQueue.GetIndex());
+        if (presentQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(presentQueue.GetIndex());
+        if (transferQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(transferQueue.GetIndex());
 
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         float priority = 0;
@@ -111,25 +124,46 @@ namespace vg
             queueCreateInfos.push_back(vk::DeviceQueueCreateInfo({}, queueFamily, 1, &priority));
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        vk::DeviceQueueCreateInfo();
 
         std::vector<const char*> extensionsConstChar;
         for (const auto& extension : extensions)extensionsConstChar.push_back(extension.data());
 
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar);
-        m_handle = vk::PhysicalDevice((PhysicalDeviceHandle) m_physicalDevice).createDevice(createInfo);
+        m_handle = m_physicalDevice.createDevice(createInfo);
 
-        graphicsQueue = Queue((IsNone(graphicsQueue)) ? vk::Queue(nullptr) : vk::Device(m_handle).getQueue(graphicsQueue.GetIndex(), 0), graphicsQueue.GetType(), graphicsQueue.GetIndex());
-        computeQueue = Queue((IsNone(computeQueue)) ? vk::Queue(nullptr) : vk::Device(m_handle).getQueue(computeQueue.GetIndex(), 0), computeQueue.GetType(), computeQueue.GetIndex());
-        transferQueue = Queue((IsNone(transferQueue)) ? vk::Queue(nullptr) : vk::Device(m_handle).getQueue(transferQueue.GetIndex(), 0), transferQueue.GetType(), transferQueue.GetIndex());
-        presentQueue = Queue((IsNone(presentQueue)) ? vk::Queue(nullptr) : vk::Device(m_handle).getQueue(presentQueue.GetIndex(), 0), presentQueue.GetType(), presentQueue.GetIndex());
+        graphicsQueue.m_handle = graphicsQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
+        computeQueue.m_handle = computeQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
+        transferQueue.m_handle = transferQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
+        presentQueue.m_handle = presentQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
+        graphicsQueue.m_device = m_handle;
+        computeQueue.m_device = m_handle;
+        transferQueue.m_device = m_handle;
+        presentQueue.m_device = m_handle;
+        graphicsQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
+        computeQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
+        transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
+        presentQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
     }
 
+    Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr) {}
+
     Device::Device(Device&& other) noexcept
+        :m_handle(other.m_handle), m_physicalDevice(other.m_physicalDevice)
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_physicalDevice, other.m_physicalDevice);
         other.m_handle = nullptr;
+        m_physicalDevice = nullptr;
+    }
+
+    Device::~Device()
+    {
+        if (m_handle == nullptr) return;
+        graphicsQueue.~Queue();
+        computeQueue.~Queue();
+        presentQueue.~Queue();
+        transferQueue.~Queue();
+
+        vkDestroyDevice(m_handle, nullptr);
     }
 
     Device& Device::operator=(Device&& other) noexcept
@@ -137,24 +171,31 @@ namespace vg
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
-        other.m_handle = nullptr;
 
         return *this;
     }
 
-    Device::~Device()
-    {
-        if (m_handle == nullptr) return;
-        vkDestroyDevice(m_handle, nullptr);
-    }
-
-    Device::operator DeviceHandle() const
+    Device::operator const DeviceHandle& () const
     {
         return m_handle;
     }
 
-    Device::operator PhysicalDeviceHandle() const
+    Device::operator const PhysicalDeviceHandle& () const
     {
         return m_physicalDevice;
+    }
+    Device::operator DeviceHandle& ()
+    {
+        return m_handle;
+    }
+
+    Device::operator PhysicalDeviceHandle& ()
+    {
+        return m_physicalDevice;
+    }
+
+    void Device::WaitUntilIdle()
+    {
+        vkDeviceWaitIdle(m_handle);
     }
 }

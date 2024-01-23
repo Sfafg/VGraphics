@@ -22,12 +22,16 @@ set(SRC
     ${SRC_ROOT}/RenderPass.cpp
     ${SRC_ROOT}/Attachment.cpp
     ${SRC_ROOT}/Framebuffer.cpp
+    ${SRC_ROOT}/CommandBuffer.cpp
+    ${SRC_ROOT}/Semaphore.cpp
+    ${SRC_ROOT}/Fence.cpp
+    ${SRC_ROOT}/Surface.cpp
 )
-
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options("-O3")
-    add_compile_options("-mwindows")    
+    add_compile_options("-mwindows")
 endif()
+add_compile_options("-pthread")
 
 add_executable (VGraphics ${SRC})
 # target_link_options(VGraphics PRIVATE "-mwindows")

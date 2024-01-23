@@ -3,43 +3,11 @@
 #include "Attachment.h"
 namespace vg
 {
-    vk::Pipeline CreatePipeline(const GraphicsPipeline& graphicsPipeline, const std::vector<Attachment>& attachments, DeviceHandle device, RenderPassHandle renderPass)
-    {
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(graphicsPipeline.shaders.size());
-
-        for (int i = 0; i < graphicsPipeline.shaders.size(); i++)
-            shaderStages[i] = *graphicsPipeline.shaders[i];
-
-        vk::PipelineDynamicStateCreateInfo dynamicState({}, *(std::vector<vk::DynamicState>*) & graphicsPipeline.dynamicState);
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-        vk::PipelineInputAssemblyStateCreateInfo inputAssembly = graphicsPipeline.inputAssembly;
-        vk::PipelineViewportStateCreateInfo viewportState = graphicsPipeline.viewportState;
-
-        vk::PipelineRasterizationStateCreateInfo rasterizer = graphicsPipeline.rasterizer;
-        vk::PipelineMultisampleStateCreateInfo multisampling({}, vk::SampleCountFlagBits::e1, false);
-
-        std::vector<vk::PipelineColorBlendAttachmentState> colorBlendattachments(attachments.size());
-        for (int i = 0; i < attachments.size(); i++)
-            colorBlendattachments[i] = (vk::PipelineColorBlendAttachmentState) attachments[i].colorBlending;
-
-        vk::PipelineColorBlendStateCreateInfo colorBlending = graphicsPipeline.colorBlending;
-        colorBlending.attachmentCount = colorBlendattachments.size();
-        colorBlending.pAttachments = colorBlendattachments.data();
-
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, 0, nullptr, 0, nullptr);
-        vk::PipelineLayout m_layout = vk::Device(device).createPipelineLayout(pipelineLayoutInfo);
-        vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &vertexInputInfo, &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling, nullptr, &colorBlending, &dynamicState, m_layout, renderPass, 0);
-        return vk::Device((vg::DeviceHandle) device).createGraphicsPipelines(nullptr, pipelineInfo).value[0];
-    }
-
-    RenderPass::RenderPass() :m_handle(nullptr), m_device(nullptr)
-    {}
-
-    RenderPass::RenderPass(DeviceHandle device, const std::vector<Attachment>& attachments, const std::vector<Subpass>& subpasses, const std::vector<SubpassDependency>& dependencies) :
-        m_device(device), m_attachments(attachments), m_subpasses(subpasses), m_dependencies(dependencies)
+    RenderPass::RenderPass(const Device& device, const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies) :
+        m_device(device), m_attachments(attachments), m_dependencies(dependencies)
     {
         std::vector<vk::AttachmentDescription> colorAttachments(attachments.size());
-        for (int i = 0; i < attachments.size(); i++)
+        for (unsigned int i = 0; i < attachments.size(); i++)
         {
             colorAttachments[i] = vk::AttachmentDescription({},
                 (vk::Format) attachments[i].format,
@@ -53,72 +21,108 @@ namespace vg
             );
         }
 
-        std::vector <vk::SubpassDescription> subpasses_(subpasses.size());
-        for (int i = 0; i < subpasses.size(); i++)
+        std::vector <vk::SubpassDescription> subpassDescriptions(subpasses.size());
+        for (unsigned int i = 0; i < subpasses.size(); i++)
         {
-            subpasses_[i] = vk::SubpassDescription({},
+            const Subpass& pass = subpasses.begin()[i];
+            subpassDescriptions[i] = vk::SubpassDescription({},
                 vk::PipelineBindPoint::eGraphics,
-                *(std::vector<vk::AttachmentReference>*) & subpasses[i].inputAttachments,
-                *(std::vector<vk::AttachmentReference>*) & subpasses[i].colorAttachments,
-                *(std::vector<vk::AttachmentReference>*) & subpasses[i].resolveAttachments,
+                *(std::vector<vk::AttachmentReference>*) & pass.inputAttachments,
+                *(std::vector<vk::AttachmentReference>*) & pass.colorAttachments,
+                *(std::vector<vk::AttachmentReference>*) & pass.resolveAttachments,
                 nullptr,
-                *(std::vector<uint32_t>*) & subpasses[i].preserveAttachments
+                *(std::vector<uint32_t>*) & pass.preserveAttachments
             );
         }
 
-        VkSubpassDependency dependency_{};
-        dependency_.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency_.dstSubpass = 0;
-        dependency_.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency_.srcAccessMask = 0;
-        dependency_.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency_.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VkSubpassDependency subpassDependency{};
+        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        subpassDependency.dstSubpass = 0;
+        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.srcAccessMask = 0;
+        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        vk::SubpassDependency dependency(subpassDependency);
 
-        vk::SubpassDependency dependency(dependency_);
+        vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, dependency);
+        m_handle = m_device.createRenderPass(renderPassInfo);
 
-        vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpasses_, dependency);
-        m_handle = vk::Device((vg::DeviceHandle) device).createRenderPass(renderPassInfo);
 
-        for (int i = 0; i < subpasses.size(); i++)
+        std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos(subpasses.size());
+        std::vector<std::vector<vk::PipelineShaderStageCreateInfo>> stages(subpasses.size());
+        std::vector<std::vector<vk::PipelineColorBlendAttachmentState>> colorBlendAttachmentStates(subpasses.size());
+        m_pipelineLayouts = std::vector<PipelineLayoutHandle>(subpasses.size());
+        for (unsigned int i = 0; i < subpasses.size(); i++)
         {
-            m_graphicsPipelines.push_back(CreatePipeline(subpasses[i].pipeline, attachments, device, m_handle));
+            const GraphicsPipeline pipeline = subpasses.begin()[i].graphicsPipeline;
+            stages[i].resize(pipeline.shaders.size());
+            for (int j = 0; j < pipeline.shaders.size(); j++)  stages[i][j] = *pipeline.shaders[j];
+
+            colorBlendAttachmentStates[i].resize(attachments.size());
+            for (int j = 0; j < attachments.size(); j++)  colorBlendAttachmentStates[i][j] = (vk::PipelineColorBlendAttachmentState) attachments[j].colorBlending;
+
+            vk::PipelineVertexInputStateCreateInfo* vertexInput = new vk::PipelineVertexInputStateCreateInfo(pipeline.vertexInput);
+            vk::PipelineInputAssemblyStateCreateInfo* inputAssembly = new vk::PipelineInputAssemblyStateCreateInfo(pipeline.inputAssembly);
+            vk::PipelineTessellationStateCreateInfo* tesselation = new vk::PipelineTessellationStateCreateInfo(pipeline.tesselation);
+            vk::PipelineViewportStateCreateInfo* viewportState = new vk::PipelineViewportStateCreateInfo(pipeline.viewportState);
+            vk::PipelineRasterizationStateCreateInfo* rasterizer = new vk::PipelineRasterizationStateCreateInfo(pipeline.rasterizer);
+            vk::PipelineMultisampleStateCreateInfo* multisampling = new vk::PipelineMultisampleStateCreateInfo(pipeline.multisampling);
+            vk::PipelineDepthStencilStateCreateInfo* depthStencil = new vk::PipelineDepthStencilStateCreateInfo(pipeline.depthStencil);
+            vk::PipelineColorBlendStateCreateInfo* colorBlending = new vk::PipelineColorBlendStateCreateInfo(pipeline.colorBlending);
+            colorBlending->attachmentCount = colorBlendAttachmentStates[i].size();
+            colorBlending->pAttachments = colorBlendAttachmentStates[i].data();
+            auto states = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+            vk::PipelineDynamicStateCreateInfo* dynamicState = new vk::PipelineDynamicStateCreateInfo({}, states);
+
+            m_pipelineLayouts[i] = m_device.createPipelineLayout(pipeline.layout);
+
+            graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
+                vk::PipelineCreateFlags(0), stages[i], vertexInput,
+                inputAssembly, tesselation, viewportState, rasterizer,
+                multisampling, depthStencil, colorBlending, dynamicState,
+                m_pipelineLayouts[i], (vk::RenderPass) m_handle, i
+            );
         }
 
+        m_graphicsPipelines.resize(graphicPipelineCreateInfos.size());
+        VkPipeline* ptr = (VkPipeline*) m_graphicsPipelines.data();
+        vkCreateGraphicsPipelines(m_device, nullptr, graphicPipelineCreateInfos.size(), (VkGraphicsPipelineCreateInfo*) graphicPipelineCreateInfos.data(), nullptr, ptr);
+        // std::vector<vk::Pipeline> graphicPipelines = m_device.createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
+        // m_graphicsPipelines.assign(graphicPipelines.begin(), graphicPipelines.end());
     }
+
+    RenderPass::RenderPass() :m_handle(nullptr), m_device(nullptr) {}
 
     RenderPass::RenderPass(RenderPass&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_subpasses, other.m_subpasses);
         std::swap(m_dependencies, other.m_dependencies);
         other.m_handle = nullptr;
+        other.m_device = nullptr;
+    }
+
+    RenderPass::~RenderPass()
+    {
+        if (m_handle == nullptr) return;
+
+        for (const auto& pipeline : m_graphicsPipelines) m_device.destroyPipeline(pipeline);
+        for (const auto& layout : m_pipelineLayouts) m_device.destroyPipelineLayout(layout);
+
+        m_device.destroyRenderPass(m_handle);
     }
 
     RenderPass& RenderPass::operator=(RenderPass&& other) noexcept
     {
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
-        std::swap(m_subpasses, other.m_subpasses);
         std::swap(m_dependencies, other.m_dependencies);
         other.m_handle = nullptr;
 
         return *this;
     }
 
-    RenderPass::~RenderPass()
-    {
-        if (m_handle == nullptr) return;
-        vk::Device(m_device).destroyRenderPass(m_handle);
-        for (const auto& pipeline : m_graphicsPipelines)
-        {
-            vk::Device(m_device).destroyPipeline(pipeline);
-        }
-    }
-
-    RenderPass::operator RenderPassHandle() const
+    RenderPass::operator const RenderPassHandle& () const
     {
         return m_handle;
     }
-
-
 }

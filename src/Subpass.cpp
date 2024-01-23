@@ -1,22 +1,15 @@
 #include "Subpass.h"
+#include <cstdint>
 
 namespace vg
 {
     Subpass::Subpass(
-        GraphicsPipeline pipeline,
+        GraphicsPipeline&& graphicsPipeline,
         std::vector<AttachmentReference> inputAttachments,
         std::vector<AttachmentReference> colorAttachments,
         std::vector<AttachmentReference> resolveAttachments,
         AttachmentReference* depthStancilAttachment,
         std::vector<uint32_t> preserveAttachments)
-        : inputAttachments(inputAttachments), colorAttachments(colorAttachments), resolveAttachments(resolveAttachments), depthStancilAttachment(depthStancilAttachment), preserveAttachments(preserveAttachments), pipeline(pipeline)
+        : graphicsPipeline(graphicsPipeline), inputAttachments(inputAttachments), colorAttachments(colorAttachments), resolveAttachments(resolveAttachments), depthStancilAttachment(depthStancilAttachment), preserveAttachments(preserveAttachments)
     {}
-
-    // #ifdef VULKAN_HPP
-    //     Subpass::operator vk::Subpass() const
-    //     {}
-    // #elif VULKAN_H_
-    //     Subpass::operator VkSubpass() const
-    //     {}
-    // #endif
 }

@@ -1,23 +1,31 @@
 #pragma once
 #include <iostream>
 
-// TO DO: CHANGE TO TYPEDEF
-
 #ifdef VULKAN_HPP
-#define A(handleName, nativeName) handleName(const vk::nativeName& other) : m_handle(other) {} handleName& operator =(const vk::nativeName& rhs) { m_handle = rhs; return *this; } operator vk::nativeName() const { return vk::nativeName((Vk##nativeName) m_handle); }
-#elif VULKAN_H_
-#define A(handleName, nativeName) handleName(const Vk##nativeName& other) : m_handle(other) {}
-#else 
-#define A(handleName, nativeName)
-#endif
-
-#ifdef VULKAN_H_
-#define B(handleName, nativeName) handleName& operator =(const Vk##nativeName& rhs) { m_handle = rhs; return *this; } operator Vk##nativeName() const { return (Vk##nativeName) m_handle; }
+#define HANDLE(name, nativeName)\
+class name : public vk::nativeName\
+{\
+public:\
+    name() :vk::nativeName(nullptr) {}\
+    name(const vk::nativeName& o) : vk::nativeName(o) {}\
+    name(vk::nativeName&& o) : vk::nativeName(o) {}\
+    name& operator=(void*& rhs) { ((vk::nativeName*)this)->operator=((Vk##nativeName)rhs); return *this; }\
+    name& operator=(const vk::nativeName& rhs) { ((vk::nativeName*)this)->operator=(rhs); return *this; }\
+    bool operator==(const vk::nativeName& rhs) const { return ((vk::nativeName*)this)->operator==(rhs); }\
+    bool operator==(const void* rhs) const { return ((vk::nativeName*)this)->operator==((Vk##nativeName)rhs); }\
+};
 #else
-#define B(handleName, nativeName)
+#define HANDLE(name, nativeName)\
+class name\
+{\
+    void* m_handle;\
+public:\
+    name() :m_handle(nullptr) {}\
+    name& operator=(void*& rhs) { m_handle = rhs; return *this; }\
+    bool operator==(const void* rhs) const { return  m_handle == rhs; }\
+};
 #endif
 
-#define HANDLE(InstanceHandle, Instance) class InstanceHandle { void* m_handle; public:InstanceHandle() :m_handle(nullptr) {}A(InstanceHandle, Instance)B(InstanceHandle, Instance) }
 
 namespace vg
 {
@@ -37,8 +45,7 @@ namespace vg
     HANDLE(FramebufferHandle, Framebuffer);
     HANDLE(SemaphoreHandle, Semaphore);
     HANDLE(FenceHandle, Fence);
+    HANDLE(CommandPoolHandle, CommandPool);
+    HANDLE(CommandBufferHandle, CommandBuffer);
 }
-
-#undef A
-#undef B
 #undef HANDLE

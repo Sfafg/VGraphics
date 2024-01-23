@@ -57,11 +57,8 @@ namespace vg
         return VK_FALSE;
     }
 
-    Instance::Instance() :m_handle(nullptr), m_debugMessenger(nullptr), m_debugCallback(nullptr) {}
 
-    Instance::Instance(InstanceHandle handle) :m_handle(handle) {}
-
-    Instance::Instance(const std::vector<const char*>& requiredExtensions, Debug::Callback debugCallback) : Instance()
+    Instance::Instance(const std::vector<const char*>& requiredExtensions, Debug::Callback debugCallback)
     {
         if (enableValidationLayers && !checkValidationLayerSupport(validationLayers))
             throw std::runtime_error("validation layers requested, but not available!");
@@ -96,10 +93,12 @@ namespace vg
         if (enableValidationLayers)
         {
             m_debugCallback = debugCallback;
-            m_debugMessenger = vk::Instance(m_handle).createDebugUtilsMessengerEXT(debugCreateInfo);
+            m_debugMessenger = m_handle.createDebugUtilsMessengerEXT(debugCreateInfo);
         }
 
     }
+
+    Instance::Instance() :m_handle(nullptr), m_debugMessenger(nullptr), m_debugCallback(nullptr) {}
 
     Instance::Instance(Instance&& other) noexcept
     {
@@ -109,6 +108,13 @@ namespace vg
         other.m_handle = nullptr;
         other.m_debugMessenger = nullptr;
         other.m_debugCallback = nullptr;
+    }
+
+    Instance::~Instance()
+    {
+        if (m_handle == nullptr) return;
+        if (enableValidationLayers)m_handle.destroyDebugUtilsMessengerEXT(m_debugMessenger);
+        m_handle.destroy();
     }
 
     Instance& Instance::operator=(Instance&& other) noexcept
@@ -121,13 +127,7 @@ namespace vg
         return *this;
     }
 
-    Instance::~Instance()
-    {
-        if (enableValidationLayers)vk::Instance(m_handle).destroyDebugUtilsMessengerEXT(m_debugMessenger);
-        vk::Instance(m_handle).destroy();
-    }
-
-    Instance::operator InstanceHandle() const
+    Instance::operator const InstanceHandle& () const
     {
         return m_handle;
     }

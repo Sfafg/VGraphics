@@ -10,24 +10,23 @@ namespace vg
     class RenderPass
     {
     public:
-        RenderPass();
-        RenderPass(DeviceHandle device, const std::vector<Attachment>& attachments, const std::vector<Subpass>& subpasses, const std::vector<SubpassDependency>& dependencies);
+        RenderPass(const Device& device, const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies);
 
+        RenderPass();
         RenderPass(RenderPass&& other) noexcept;
-        RenderPass& operator=(RenderPass&& other) noexcept;
         RenderPass(const RenderPass& other) = delete;
-        RenderPass& operator=(const RenderPass& other) = delete;
         ~RenderPass();
 
-        operator RenderPassHandle() const;
-        GraphicsPipelineHandle GetGraphicsPipeline(int index = 0);
+        RenderPass& operator=(RenderPass&& other) noexcept;
+        RenderPass& operator=(const RenderPass& other) = delete;
+        operator const RenderPassHandle& () const;
 
     public:
         RenderPassHandle m_handle;
         DeviceHandle m_device;
         std::vector<GraphicsPipelineHandle> m_graphicsPipelines;
+        std::vector<PipelineLayoutHandle> m_pipelineLayouts;
         std::vector<Attachment> m_attachments;
-        std::vector<Subpass> m_subpasses;
         std::vector<SubpassDependency> m_dependencies;
     };
 }

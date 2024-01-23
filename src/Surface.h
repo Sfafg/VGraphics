@@ -1,5 +1,7 @@
 #pragma once
 #include "Handle.h"
+#include "Enums.h"
+#include "Device.h"
 
 namespace vg
 {
@@ -7,17 +9,22 @@ namespace vg
     {
     public:
         Surface();
-
+        Surface(const Device& device, SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace);
         Surface(Surface&& other) noexcept;
-        Surface& operator=(Surface&& other) noexcept;
         Surface(const Surface& other) = delete;
-        Surface& operator=(const Surface& other) = delete;
-
         ~Surface();
 
-        operator SurfaceHandle() const;
+        Surface& operator=(Surface&& other) noexcept;
+        Surface& operator=(const Surface& other) = delete;
+        operator const SurfaceHandle& () const;
+        operator SurfaceHandle& ();
 
-    public:
+        Format GetFormat() const;
+        ColorSpace GetColorSpace() const;
+
+    private:
         SurfaceHandle m_handle;
+        Format m_format;
+        ColorSpace m_colorSpace;
     };
 }

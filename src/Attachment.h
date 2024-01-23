@@ -1,6 +1,7 @@
 #pragma once
 #include "Handle.h"
-#include "VulkanEnums.h"
+#include "Enums.h"
+#include <cstdint>
 
 namespace vg
 {

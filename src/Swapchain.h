@@ -1,29 +1,32 @@
 #pragma once
 #include <vector>
 #include "Device.h"
-#include "VulkanEnums.h"
+#include "Surface.h"
+#include "Enums.h"
+#include "Semaphore.h"
+#include "Fence.h"
 
 namespace vg
 {
     class Swapchain
     {
     public:
-        Swapchain();
-        Swapchain(SurfaceHandle surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Usage usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque);
+        Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Usage usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle());
 
+        Swapchain();
         Swapchain(Swapchain&& other) noexcept;
-        Swapchain& operator=(Swapchain&& other) noexcept;
         Swapchain(const Swapchain& other) = delete;
+        ~Swapchain();
+
+        Swapchain& operator=(Swapchain&& other) noexcept;
         Swapchain& operator=(const Swapchain& other) = delete;
 
-        ~Swapchain();
+        operator const SwapchainHandle& () const;
 
         unsigned int GetWidth() const;
         unsigned int GetHeight() const;
-        Format GetFormat() const;
         const std::vector<ImageViewHandle>& GetImageViews() const;
-        operator SwapchainHandle() const;
-
+        uint32_t GetNextImageIndex(uint64_t timeout, const Semaphore& semaphore, const  Fence& fence);
 
     private:
         SwapchainHandle m_handle;
@@ -32,6 +35,5 @@ namespace vg
         std::vector<ImageViewHandle> m_imageViews;
 
         unsigned int m_width, m_height;
-        Format m_format;
     };
 }

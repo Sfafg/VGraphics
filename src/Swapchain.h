@@ -3,7 +3,7 @@
 #include "Device.h"
 #include "Surface.h"
 #include "Enums.h"
-#include "Semaphore.h"
+#include "MySemaphore.h"
 #include "Fence.h"
 
 namespace vg

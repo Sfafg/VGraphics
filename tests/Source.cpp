@@ -1,5 +1,3 @@
-#include <limits.h>
-#include <thread>
 #define GLFW_INCLUDE_VULKAN
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
@@ -11,10 +9,14 @@
 #include "Framebuffer.h"
 #include "RenderPass.h"
 #include "CommandBuffer.h"
-#include "Semaphore.h"
+#include "MySemaphore.h"
 #include "Fence.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 using namespace vg;
+
 
 bool framebufferResize = true;
 SurfaceHandle CreateWindowSurface(InstanceHandle, GLFWwindow*);
@@ -81,21 +83,22 @@ int main()
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
 
-        if (framebufferResize)
-        {
-            device.WaitUntilIdle();
+        WaitForFences(device, { inFlightFence });
+        ResetFences(device, { inFlightFence });
 
-            glfwGetFramebufferSize(window, &w, &h);
-            swapchain = Swapchain(surface, device, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, swapchain);
+        Swapchain oldSwapchain;
+        glfwGetFramebufferSize(window, &w, &h);
+        if (swapchain.GetHeight() != h || swapchain.GetWidth() != w)
+        {
+            std::swap(swapchain, oldSwapchain);
+            swapchain = Swapchain(surface, device, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
             for (size_t i = 0; i < swapchain.GetImageViews().size(); i++)
                 swapChainFramebuffers[i] = Framebuffer(device, renderPass, { swapchain.GetImageViews()[i] }, swapchain.GetWidth(), swapchain.GetHeight(), 1);
             framebufferResize = false;
         }
 
-        WaitForFences(device, { inFlightFence });
-        ResetFences(device, { inFlightFence });
-
         uint32_t imageIndex = swapchain.GetNextImageIndex(UINT64_MAX, imageAvailableSemaphore, Fence());
+
         commandBuffer.Clear();
         commandBuffer.Begin();
         commandBuffer.Append(cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight()));

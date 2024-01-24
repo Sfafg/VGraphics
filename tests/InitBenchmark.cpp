@@ -9,7 +9,7 @@
 #include "Framebuffer.h"
 #include "RenderPass.h"
 #include "CommandBuffer.h"
-#include "Semaphore.h"
+#include "MySemaphore.h"
 #include "Fence.h"
 #include "MiniBenchmark.h"
 #include <iostream>

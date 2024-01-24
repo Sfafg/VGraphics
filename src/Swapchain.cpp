@@ -90,7 +90,6 @@ namespace vg
             m_device.destroyImageView(imageView);
         }
         m_device.destroySwapchainKHR(m_handle);
-        // *this = Swapchain();
     }
 
     Swapchain& Swapchain::operator=(Swapchain&& other) noexcept

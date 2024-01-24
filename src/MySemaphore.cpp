@@ -1,5 +1,5 @@
 #include <vulkan/vulkan.hpp>
-#include "Semaphore.h"
+#include "MySemaphore.h"
 
 namespace vg
 {

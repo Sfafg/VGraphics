@@ -23,7 +23,7 @@ set(SRC
     ${SRC_ROOT}/Attachment.cpp
     ${SRC_ROOT}/Framebuffer.cpp
     ${SRC_ROOT}/CommandBuffer.cpp
-    ${SRC_ROOT}/Semaphore.cpp
+    ${SRC_ROOT}/MySemaphore.cpp
     ${SRC_ROOT}/Fence.cpp
     ${SRC_ROOT}/Surface.cpp
 )

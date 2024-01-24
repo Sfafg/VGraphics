@@ -1,6 +1,6 @@
 #include <vulkan/vulkan.hpp>
 #include "Queue.h"
-#include "Fence.h"
+#include "Synchronization.h"
 
 namespace vg
 {

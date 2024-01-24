@@ -9,14 +9,12 @@
 #include "Framebuffer.h"
 #include "RenderPass.h"
 #include "CommandBuffer.h"
-#include "MySemaphore.h"
-#include "Fence.h"
+#include "Synchronization.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
 using namespace std::chrono_literals;
 using namespace vg;
-
 
 bool framebufferResize = true;
 SurfaceHandle CreateWindowSurface(InstanceHandle, GLFWwindow*);

@@ -74,31 +74,4 @@ namespace vg
         return *(vk::AttachmentReference*) this;
     }
 #endif
-#ifdef VULKAN_H_
-
-    ColorBlend::operator VkPipelineColorBlendAttachmentState () const
-    {
-        return *(VkPipelineColorBlendAttachmentState*) this;
-    }
-
-    Attachment::operator VkAttachmentDescription() const
-    {
-        return VkAttachmentDescription(
-            {},
-            (VkFormat) format,
-            (VkSampleCountFlagBits) samples,
-            (VkAttachmentLoadOp) loadOp,
-            (VkAttachmentStoreOp) storeOp,
-            (VkAttachmentLoadOp) stencilLoadOp,
-            (VkAttachmentStoreOp) stencilStoreOp,
-            (VkImageLayout) initialLayout,
-            (VkImageLayout) finalLayout
-        );
-    }
-
-    AttachmentReference::operator VkAttachmentReference() const
-    {
-        return *(VkAttachmentReference*) this;
-    }
-#endif
 }

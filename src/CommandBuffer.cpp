@@ -40,8 +40,9 @@ namespace vg
     {
         m_handle.reset();
     }
-    void CommandBuffer::Begin()
+    void CommandBuffer::Begin(bool clear)
     {
+        if (clear) Clear();
         m_handle.begin(vk::CommandBufferBeginInfo());
     }
     void CommandBuffer::End()

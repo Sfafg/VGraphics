@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 3.26.4)
 project (VGraphics)
 set(CMAKE_CXX_STANDARD 20)
-add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON) 
-
+add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+ 
 add_subdirectory("External/glfw-3.3.8/")
 set(TESTS_ROOT ${PROJECT_SOURCE_DIR}/tests)
 set(SRC_ROOT ${PROJECT_SOURCE_DIR}/src)
@@ -30,8 +30,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options("-O3")
     add_compile_options("-mwindows")
 endif()
-add_compile_options("-pthread")
-
 add_executable (VGraphics ${SRC})
 # target_link_options(VGraphics PRIVATE "-mwindows")
 target_include_directories(VGraphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")

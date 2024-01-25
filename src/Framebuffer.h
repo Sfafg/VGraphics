@@ -4,9 +4,23 @@
 
 namespace vg
 {
+    /**
+     *@brief Framebuffer
+     * Indirection of Image data can be used by multiple Renderpasses if their outputs are compatible with first one
+     */
     class Framebuffer
     {
     public:
+        /**
+         *@brief Construct a new Framebuffer object
+         *
+         * @param device Device
+         * @param renderPass Renderpass for determining format
+         * @param attachments Array of ImageViews
+         * @param width Width
+         * @param height Height
+         * @param layers Amount of layers, used for anaglif rendering
+         */
         Framebuffer(DeviceHandle device, RenderPassHandle renderPass, const std::vector<ImageViewHandle>& attachments, unsigned int width, unsigned int height, unsigned int layers = 1);
 
         Framebuffer();

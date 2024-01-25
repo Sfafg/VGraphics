@@ -4,9 +4,20 @@
 #include "Enums.h"
 namespace vg
 {
+    /**
+     *@brief Custom code run on GPU
+     *
+     */
     class Shader
     {
     public:
+        /**
+         *@brief Construct a new Shader object
+         *
+         * @param device Device
+         * @param shaderStage Shader stage
+         * @param path path to source file in GLSL
+         */
         Shader(const Device& device, ShaderStage shaderStage, const char* path);
 
         Shader();
@@ -17,9 +28,13 @@ namespace vg
         Shader& operator=(Shader&& other) noexcept;
         Shader& operator=(const Shader& other) = delete;
 
-
-        ShaderStage GetStage() const;
         operator const ShaderHandle& () const;
+        /**
+         *@brief Get the Stage object
+         *
+         * @return ShaderStage
+         */
+        ShaderStage GetStage() const;
 
 #ifdef VULKAN_HPP
         operator vk::PipelineShaderStageCreateInfo() const;

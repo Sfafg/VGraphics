@@ -64,7 +64,6 @@ int main()
         },
         {}
     );
-
     Swapchain swapchain(surface, device, 2, w, h);
     std::vector<Framebuffer> swapChainFramebuffers;
     swapChainFramebuffers.resize(swapchain.GetImageViews().size());

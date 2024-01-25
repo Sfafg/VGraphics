@@ -8,6 +8,10 @@
 
 namespace vg
 {
+    /**
+     *@brief Holds GraphicsPipeline creation info
+     * Used in creating Renderpasses
+     */
     struct GraphicsPipeline
     {
     public:
@@ -24,6 +28,21 @@ namespace vg
         PipelineLayout layout;
 
     public:
+        /**
+         *@brief Construct a new Graphics Pipeline object
+         *
+         * @param shaders Array of pointers to shaders
+         * @param vertexInput Vertex layout information
+         * @param inputAssembly Input assembly information
+         * @param tesselation Tesselation information
+         * @param viewportState Viewportstate information
+         * @param rasterizer Rasterizer information
+         * @param multisampling Multisampling information
+         * @param depthStencil Depthstencil information
+         * @param colorBlending Colorblending information
+         * @param dynamicState Array of states that can be changed frame by frame
+         * @param layout Information about layout e.g. uniforms
+         */
         GraphicsPipeline(
             const std::vector<Shader*>& shaders,
             const VertexLayout& vertexInput,

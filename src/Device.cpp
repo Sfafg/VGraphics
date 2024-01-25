@@ -184,15 +184,6 @@ namespace vg
     {
         return m_physicalDevice;
     }
-    Device::operator DeviceHandle& ()
-    {
-        return m_handle;
-    }
-
-    Device::operator PhysicalDeviceHandle& ()
-    {
-        return m_physicalDevice;
-    }
 
     void Device::WaitUntilIdle()
     {

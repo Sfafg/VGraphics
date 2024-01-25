@@ -5,11 +5,24 @@
 
 namespace vg
 {
+    /**
+     *@brief Window surface
+     *
+     */
     class Surface
     {
     public:
-        Surface();
+        /**
+         *@brief Construct a new Surface object
+         *
+         * @param device Device
+         * @param windowSurfaceHandle Surface handle from windowing library
+         * @param hintedFormat Format used if available
+         * @param hintedColorSpace Color used if available
+         */
         Surface(const Device& device, SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace);
+
+        Surface();
         Surface(Surface&& other) noexcept;
         Surface(const Surface& other) = delete;
         ~Surface();
@@ -19,7 +32,17 @@ namespace vg
         operator const SurfaceHandle& () const;
         operator SurfaceHandle& ();
 
+        /**
+         *@brief Get the Format object
+         *
+         * @return Format
+         */
         Format GetFormat() const;
+        /**
+         *@brief Get the Color Space object
+         *
+         * @return ColorSpace
+         */
         ColorSpace GetColorSpace() const;
 
     private:

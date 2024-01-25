@@ -61,9 +61,19 @@ namespace vg
 
     template<class T, class U>
     concept Derived = std::is_base_of<U, T>::value;
+
+    /**
+     *@brief Array of commands
+     * Used to send commands to the GPU in one big batch improving performance
+     */
     class CommandBuffer
     {
     public:
+        /**
+         *@brief Construct a new Command Buffer object
+         *
+         * @param queue Queue object
+         */
         CommandBuffer(const Queue& queue);
 
         CommandBuffer();
@@ -75,10 +85,29 @@ namespace vg
         CommandBuffer& operator=(const CommandBuffer& other) = delete;
         operator const CommandBufferHandle& () const;
 
+        /**
+         *@brief Clear commands
+         *
+         */
         void Clear();
-        void Begin();
+        /**
+         *@brief Begin appending to the command buffer
+         *  Needs to be called before all Appends
+         * @param clear if true buffer gets cleared before beginning
+         */
+        void Begin(bool clear = true);
+        /**
+         *@brief Append command
+         * Appends a new command to the buffer, has to be between Begin() and End()
+         * @tparam T class derived from cmd::Command
+         * @param command
+         */
         template<Derived<cmd::Command> T>
         void Append(T command);
+        /**
+         *@brief End appending to command buffer
+         * Has to be called before submiting
+         */
         void End();
 
     private:

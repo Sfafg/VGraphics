@@ -146,11 +146,16 @@ namespace vg
         const uint32_t reserved_1 = 19;
         const void* reserved_2 = nullptr;
         const uint32_t reserved_3 = 0;
-        uint32_t reserved_4 = 0;
-        const void* reserved_5 = nullptr;
-        uint32_t reserved_6 = 0;
-        const void* reserved_7 = nullptr;
+
     public:
+        uint32_t vertexDescriptionCount = 0;
+        const void* vertexDescritpions = nullptr;
+        uint32_t vertexAttributesCount = 0;
+        const void* vertexAttributes = nullptr;
+
+        VertexLayout(uint32_t vertexDescriptionCount, void* vertexDescriptions, uint32_t vertexAttributesCount, void* vertexAttributes)
+            : vertexDescriptionCount(vertexDescriptionCount), vertexDescritpions(vertexDescriptions), vertexAttributesCount(vertexAttributesCount), vertexAttributes(vertexAttributes)
+        {}
 
 #ifdef VULKAN_HPP
         operator const vk::PipelineVertexInputStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineVertexInputStateCreateInfo*>(this); }
@@ -235,7 +240,7 @@ namespace vg
         DepthBias depthBias;
         float lineWidth = 0;
         Rasterizer(bool enable, bool depthClamp, PolygonMode polygonMode, CullMode cullMode, FrontFace frontFace, DepthBias depthBias, float lineWidth)
-            :discard(enable), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
+            :discard(!enable), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
         {}
 
 #ifdef VULKAN_HPP
@@ -309,19 +314,21 @@ namespace vg
     };
     struct PipelineLayout
     {
-    private:
-        const uint32_t reserved_1 = 30;
-        const void* reserved_2 = nullptr;
-        const uint32_t reserved_3 = 0;
-        uint32_t setLayoutCount = 0;
-        void* pSetLayouts = nullptr;
-        uint32_t pushConstantRangeCount = 0;
-        void* pPushConstantRanges = nullptr;
+        PipelineLayout(PipelineLayoutHandle layout) :layout(layout) {}
+        PipelineLayoutHandle layout;
+    };
 
-    public:
+    struct CopyRegion
+    {
+        uint64_t srcOffset;
+        uint64_t dstOffset;
+        uint64_t size;
+
+        CopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
+
 #ifdef VULKAN_HPP
-        operator const vk::PipelineLayoutCreateInfo& () const { return *reinterpret_cast<const vk::PipelineLayoutCreateInfo*>(this); }
-        operator const vk::PipelineLayoutCreateInfo& () { return *reinterpret_cast<vk::PipelineLayoutCreateInfo*>(this); }
+        operator const vk::BufferCopy& () const { return *reinterpret_cast<const vk::BufferCopy*>(this); }
+        operator const vk::BufferCopy& () { return *reinterpret_cast<vk::BufferCopy*>(this); }
 #endif
     };
 }

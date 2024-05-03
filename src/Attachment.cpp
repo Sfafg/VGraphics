@@ -11,7 +11,7 @@ namespace vg
         BlendFactor srcAlphaBlendFactor,
         BlendFactor dstAlphaBlendFactor,
         BlendOp alphaBlendOp,
-        ColorComponent colorWriteMask)
+        Flags<ColorComponent> colorWriteMask)
         :
         blendEnable(blendEnable),
         srcColorBlendFactor(srcColorBlendFactor),

@@ -1,6 +1,6 @@
-cmake_minimum_required (VERSION 3.26.4)
+cmake_minimum_required (VERSION 3.23.3)
 project (VGraphics)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
  
 add_subdirectory("External/glfw-3.3.8/")
@@ -24,12 +24,16 @@ set(SRC
     ${SRC_ROOT}/Framebuffer.cpp
     ${SRC_ROOT}/CommandBuffer.cpp
     ${SRC_ROOT}/Synchronization.cpp
-    ${SRC_ROOT}/Surface.cpp
+    ${SRC_ROOT}/Buffer.cpp
+    ${SRC_ROOT}/MemoryManager.cpp
+    ${SRC_ROOT}/Window.cpp
 )
+
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options("-O3")
     add_compile_options("-mwindows")
 endif()
+
 add_executable (VGraphics ${SRC})
 # target_link_options(VGraphics PRIVATE "-mwindows")
 target_include_directories(VGraphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/")

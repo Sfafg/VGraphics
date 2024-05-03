@@ -25,6 +25,8 @@ namespace vg
     Surface::Surface(Surface&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
+        std::swap(m_format, other.m_format);
+        std::swap(m_colorSpace, other.m_colorSpace);
     }
 
     Surface::~Surface()
@@ -37,6 +39,8 @@ namespace vg
     {
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
+        std::swap(m_format, other.m_format);
+        std::swap(m_colorSpace, other.m_colorSpace);
 
         return *this;
     }

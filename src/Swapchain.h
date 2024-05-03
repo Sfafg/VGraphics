@@ -1,9 +1,12 @@
 #pragma once
 #include <vector>
+#include "Handle.h"
 #include "Device.h"
 #include "Surface.h"
 #include "Enums.h"
 #include "Synchronization.h"
+#include "Framebuffer.h"
+#include "Flags.h"
 
 namespace vg
 {
@@ -22,12 +25,12 @@ namespace vg
          * @param imageCount Count of images used if available
          * @param width Width used if available
          * @param height Heihgt used if available
-         * @param usage Usage
+         * @param usage Usage Flags
          * @param presentMode Present mode used if available
          * @param alpha Alpha usage
          * @param oldSwapchain Optional old swapchain handle used when recreating swapchain when resizing window. Do not destroy old handle until it's presenting is done
          */
-        Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Usage usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle());
+        Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle());
 
         Swapchain();
         Swapchain(Swapchain&& other) noexcept;
@@ -60,13 +63,20 @@ namespace vg
         /**
          *@brief Get the Next Image Index object
          *
-         * @param timeout
-         * @param semaphore
-         * @param fence
+         * @param timeout in nanoseconds
+         * @param semaphore to be signalled
+         * @param fence to be signalled
          * @return uint32_t
          */
-        uint32_t GetNextImageIndex(uint64_t timeout, const Semaphore& semaphore, const  Fence& fence);
-
+        uint32_t GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(), uint64_t timeout = UINT64_MAX);
+        /**
+         *@brief Create a Framebuffers for each ImageView
+         *
+         * @param renderPass RenderPass to which Framebuffers should be bound
+         * @param layers Amount of layers, used for anaglif rendering
+         * @return Array of Framebuffers for each ImageView
+         */
+        std::vector<Framebuffer> CreateFramebuffers(RenderPassHandle renderPass, int layers = 1) const;
     private:
         SwapchainHandle m_handle;
         DeviceHandle m_device;

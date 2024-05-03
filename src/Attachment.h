@@ -1,6 +1,7 @@
 #pragma once
 #include "Handle.h"
 #include "Enums.h"
+#include "Flags.h"
 #include <cstdint>
 
 namespace vg
@@ -40,7 +41,7 @@ namespace vg
                         BlendFactor srcAlphaBlendFactor = BlendFactor::One,
                         BlendFactor dstAlphaBlendFactor = BlendFactor::Zero,
                         BlendOp alphaBlendOp = BlendOp::Add,
-                        ColorComponent colorWriteMask = ColorComponent::RGBA
+                        Flags<ColorComponent> colorWriteMask = ColorComponent::RGBA
                 );
 
 #ifdef VULKAN_HPP

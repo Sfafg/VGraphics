@@ -74,7 +74,7 @@ namespace vg
             auto states = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
             vk::PipelineDynamicStateCreateInfo* dynamicState = new vk::PipelineDynamicStateCreateInfo({}, states);
 
-            m_pipelineLayouts[i] = m_device.createPipelineLayout(pipeline.layout);
+            m_pipelineLayouts[i] = pipeline.layout.layout;
 
             graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
                 vk::PipelineCreateFlags(0), stages[i], vertexInput,
@@ -96,9 +96,11 @@ namespace vg
     RenderPass::RenderPass(RenderPass&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
+        std::swap(m_device, other.m_device);
+        std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
+        std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
+        std::swap(m_attachments, other.m_attachments);
         std::swap(m_dependencies, other.m_dependencies);
-        other.m_handle = nullptr;
-        other.m_device = nullptr;
     }
 
     RenderPass::~RenderPass()
@@ -114,9 +116,13 @@ namespace vg
     RenderPass& RenderPass::operator=(RenderPass&& other) noexcept
     {
         if (&other == this) return *this;
+
         std::swap(m_handle, other.m_handle);
+        std::swap(m_device, other.m_device);
+        std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
+        std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
+        std::swap(m_attachments, other.m_attachments);
         std::swap(m_dependencies, other.m_dependencies);
-        other.m_handle = nullptr;
 
         return *this;
     }

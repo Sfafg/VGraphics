@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <iostream>
 #include "Device.h"
 
 namespace vg
@@ -129,7 +130,8 @@ namespace vg
         std::vector<const char*> extensionsConstChar;
         for (const auto& extension : extensions)extensionsConstChar.push_back(extension.data());
 
-        vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar);
+        vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
+        vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
         graphicsQueue.m_handle = graphicsQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
@@ -142,17 +144,20 @@ namespace vg
         presentQueue.m_device = m_handle;
         graphicsQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
         computeQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
-        transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
+        transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
         presentQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
     }
 
     Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr) {}
 
     Device::Device(Device&& other) noexcept
-        :m_handle(other.m_handle), m_physicalDevice(other.m_physicalDevice)
     {
-        other.m_handle = nullptr;
-        m_physicalDevice = nullptr;
+        std::swap(m_handle, other.m_handle);
+        std::swap(m_physicalDevice, other.m_physicalDevice);
+        std::swap(graphicsQueue, other.graphicsQueue);
+        std::swap(computeQueue, other.computeQueue);
+        std::swap(presentQueue, other.presentQueue);
+        std::swap(transferQueue, other.transferQueue);
     }
 
     Device::~Device()
@@ -169,8 +174,13 @@ namespace vg
     Device& Device::operator=(Device&& other) noexcept
     {
         if (&other == this) return *this;
+
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
+        std::swap(graphicsQueue, other.graphicsQueue);
+        std::swap(computeQueue, other.computeQueue);
+        std::swap(presentQueue, other.presentQueue);
+        std::swap(transferQueue, other.transferQueue);
 
         return *this;
     }

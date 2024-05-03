@@ -3,7 +3,7 @@
 
 namespace vg
 {
-    Fence::Fence(const Device& device, bool createSignalled) : m_device(device)
+    Fence::Fence(DeviceHandle device, bool createSignalled) : m_device(device)
     {
         m_handle = m_device.createFence({ createSignalled ? vk::FenceCreateFlagBits::eSignaled : (vk::FenceCreateFlagBits) 0U });
     }
@@ -36,17 +36,55 @@ namespace vg
         return m_handle;
     }
 
-    void WaitForFences(const Device& device, const std::vector<FenceHandle>& fences, bool awaitAll, uint64_t timeout)
+    DeviceHandle Fence::GetDevice() const
     {
-        auto result = device.m_handle.waitForFences(*(std::vector<vk::Fence>*) & fences, awaitAll, timeout);
+        return m_device;
     }
 
-    void ResetFences(const Device& device, const std::vector<FenceHandle>& fences)
+    bool Fence::IsSignaled() const
     {
-        device.m_handle.resetFences(*(std::vector<vk::Fence>*) & fences);
+        return m_device.getFenceStatus(m_handle) == vk::Result::eSuccess;
     }
 
-    Semaphore::Semaphore(const Device& device) : m_device(device)
+    void Fence::Await(bool reset, uint64_t timeout)
+    {
+        Fence::AwaitAll({ *this }, reset, timeout);
+    }
+
+    void Fence::Reset()
+    {
+        Fence::ResetAll({ *this });
+    }
+
+    void Fence::AwaitAll(const std::vector<std::reference_wrapper<Fence>>& fences, bool reset, uint64_t timeout)
+    {
+        std::vector<FenceHandle> fenceHandles;
+        fenceHandles.reserve(fences.size());
+        for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
+        auto result = fences[0].get().GetDevice().waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, true, timeout);
+        if (reset)
+        {
+            Fence::ResetAll(fences);
+        }
+    }
+
+    void Fence::AwaitAny(const std::vector<std::reference_wrapper<Fence>>& fences, uint64_t timeout)
+    {
+        std::vector<FenceHandle> fenceHandles;
+        fenceHandles.reserve(fences.size());
+        for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
+        auto result = fences[0].get().GetDevice().waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, false, timeout);
+    }
+
+    void Fence::ResetAll(const std::vector<std::reference_wrapper<Fence>>& fences)
+    {
+        std::vector<FenceHandle> fenceHandles;
+        fenceHandles.reserve(fences.size());
+        for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
+        fences[0].get().GetDevice().resetFences(*(std::vector<vk::Fence>*) & fenceHandles);
+    }
+
+    Semaphore::Semaphore(DeviceHandle device) : m_device(device)
     {
         m_handle = m_device.createSemaphore({});
     }

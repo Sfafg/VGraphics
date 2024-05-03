@@ -1,6 +1,5 @@
 #include <vulkan/vulkan.hpp>
 #include "Swapchain.h"
-
 namespace vg
 {
     struct SwapChainSupportDetails
@@ -15,7 +14,7 @@ namespace vg
         }
     };
 
-    Swapchain::Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Usage usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain) : m_device(device)
+    Swapchain::Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain) : m_device(device)
     {
         // Get the sharing mode, needed if queues are in different families.
         vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
@@ -50,7 +49,7 @@ namespace vg
 
         // Create Swapchain and get its Images and ImageViews.
         vk::SwapchainCreateInfoKHR createInfo(
-            {}, surface, imageCount, (vk::Format) surface.GetFormat(), (vk::ColorSpaceKHR) surface.GetColorSpace(), { m_width, m_height }, 1, (vk::ImageUsageFlagBits) usage,
+            {}, surface, imageCount, (vk::Format) surface.GetFormat(), (vk::ColorSpaceKHR) surface.GetColorSpace(), { m_width, m_height }, 1, (vk::ImageUsageFlagBits) (Flags<Usage>::TMask) usage,
             sharingMode, indices, supportDetails.capabilities.currentTransform, (vk::CompositeAlphaFlagBitsKHR) alpha, (vk::PresentModeKHR) presentMode, 1,
             oldSwapchain
         );
@@ -90,6 +89,7 @@ namespace vg
             m_device.destroyImageView(imageView);
         }
         m_device.destroySwapchainKHR(m_handle);
+        m_handle = nullptr;
     }
 
     Swapchain& Swapchain::operator=(Swapchain&& other) noexcept
@@ -125,11 +125,21 @@ namespace vg
         return m_imageViews;
     }
 
-    uint32_t Swapchain::GetNextImageIndex(uint64_t timeout, const Semaphore& semaphore, const  Fence& fence)
+    uint32_t Swapchain::GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence, uint64_t timeout)
     {
         uint32_t index;
         auto result = m_device.acquireNextImageKHR(vk::SwapchainKHR((SwapchainHandle) m_handle), timeout, (SemaphoreHandle) semaphore, (FenceHandle) fence, &index);
 
         return index;
     }
+
+    std::vector<Framebuffer> Swapchain::CreateFramebuffers(RenderPassHandle renderPass, int layers) const
+    {
+        std::vector<Framebuffer> frameBuffers(GetImageViews().size());
+        for (size_t i = 0; i < GetImageViews().size(); i++)
+            frameBuffers[i] = Framebuffer(m_device, renderPass, { GetImageViews()[i] }, GetWidth(), GetHeight(), 1);
+
+        return frameBuffers;
+    }
+
 }

@@ -58,29 +58,6 @@ namespace vg
         return m_device;
     }
 
-    void Queue::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
-    {
-        vk::SubmitInfo* submits_ = new vk::SubmitInfo[submits.size()];
-        vk::Semaphore** waitSemaphores = new vk::Semaphore * [submits.size()];
-        vk::PipelineStageFlags** stages = new vk::PipelineStageFlags * [submits.size()];
-        for (unsigned int i = 0; i < (unsigned int) submits.size(); i++)
-        {
-            waitSemaphores[i] = new vk::Semaphore[submits[i].waitStages.size()];
-            stages[i] = new vk::PipelineStageFlags[submits[i].waitStages.size()];
-            for (unsigned int j = 0; j < (unsigned int) submits[i].waitStages.size(); j++)
-            {
-                waitSemaphores[i][j] = (vk::Semaphore) submits[i].waitStages[j].semaphore;
-                stages[i][j] = (vk::PipelineStageFlagBits) submits[i].waitStages[j].stage;
-            }
-            vk::SubmitInfo sub(submits[i].waitStages.size(), waitSemaphores[i], stages[i], submits[i].commanBuffers.size(), (vk::CommandBuffer*) submits[i].commanBuffers.data(), submits[i].signalSemaphores.size(), (vk::Semaphore*) submits[i].signalSemaphores.data());
-            submits_[i] = sub;
-        }
-
-        auto result = m_handle.submit(submits.size(), submits_, (FenceHandle) fence);
-        delete[] submits_;
-        delete[] waitSemaphores;
-        delete[] stages;
-    }
     void Queue::Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices)
     {
         auto result = m_handle.presentKHR({ *(std::vector<vk::Semaphore>*) & waitSemaphores,*(std::vector<vk::SwapchainKHR>*) & swapchains,imageIndices });

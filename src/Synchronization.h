@@ -18,7 +18,7 @@ namespace vg
          * @param device Device
          * @param createSignalled If true then fence will start in signalled state
          */
-        Fence(const Device& device, bool createSignalled = false);
+        Fence(DeviceHandle device, bool createSignalled = false);
 
         Fence();
         Fence(Fence&& other) noexcept;
@@ -29,26 +29,52 @@ namespace vg
         Fence& operator=(const Fence& other) = delete;
         operator const FenceHandle& () const;
 
+        DeviceHandle GetDevice() const;
+
+        /**
+         *@brief Check if fence is signalled or not
+         *
+         * @return true fence is signalled
+         * @return false fence is not signalled
+         */
+        bool IsSignaled() const;
+        /**
+         *@brief Wait for fence to be signalled
+         *
+         * @param reset If true fence will be reset
+         * @param timeout Timeout in nanoseconds
+         */
+        void Await(bool reset = false, uint64_t timeout = UINT64_MAX);
+        /**
+         *@brief Reset fence unsignalling it
+         */
+        void Reset();
+        /**
+         *@brief Returns only when all fences are signalled
+         *
+         * @param fences Array of fences
+         * @param reset If true all fences will be reset
+         * @param timeout Timeout in nanoseconds
+         */
+        static void AwaitAll(const std::vector<std::reference_wrapper<Fence>>& fences, bool reset = false, uint64_t timeout = UINT64_MAX);
+        /**
+         *@brief Returns when at least one fence is signalled
+         *
+         * @param fences Array of fences
+         * @param timeout Timeout in nanoseconds
+         */
+        static void AwaitAny(const std::vector<std::reference_wrapper<Fence>>& fences, uint64_t timeout = UINT64_MAX);
+        /**
+         *@brief Reset all fences unsignalling them
+         *
+         * @param fences Array of Fences
+         */
+        static void ResetAll(const std::vector<std::reference_wrapper<Fence>>& fences);
+
     private:
         FenceHandle m_handle;
         DeviceHandle m_device;
     };
-    /**
-     *@brief Await an array of fences
-     *
-     * @param device Device
-     * @param fences Array of fences
-     * @param awaitAll If true then it will return only when all fences are signalled
-     * @param timeout Timeout in nanoseconds
-     */
-    void WaitForFences(const Device& device, const std::vector<FenceHandle>& fences, bool awaitAll = true, uint64_t timeout = UINT64_MAX);
-    /**
-     *@brief Reset all fences unsignalling them
-     *
-     * @param device Device
-     * @param fences Array of Fences
-     */
-    void ResetFences(const Device& device, const std::vector<FenceHandle>& fences);
 
     /**
      *@brief Used to synchronize GPU with GPU processes
@@ -62,7 +88,7 @@ namespace vg
          *
          * @param device Device
          */
-        Semaphore(const Device& device);
+        Semaphore(DeviceHandle device);
 
         Semaphore();
         Semaphore(Semaphore&& other) noexcept;

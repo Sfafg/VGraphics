@@ -2,48 +2,9 @@
 #include <vector>
 #include "Handle.h"
 #include "Enums.h"
-
+#include "Flags.h"
 namespace vg
 {
-    class Device;
-    class Fence;
-    /**
-     *@brief Holds information about awaiting stage
-     *
-     */
-    struct WaitStage
-    {
-        PipelineStage stage;
-        SemaphoreHandle semaphore;
-        /**
-         *@brief Construct a new Wait Stage object
-         *
-         * @param stage Stage at which to wait
-         * @param semaphore Semaphore for which to wait
-         */
-        WaitStage(PipelineStage stage, SemaphoreHandle semaphore) :stage(stage), semaphore(semaphore) {}
-    };
-    /**
-     *@brief Holds information about submiting command buffer
-     *
-     */
-    struct SubmitInfo
-    {
-        std::vector<WaitStage> waitStages;
-        std::vector<CommandBufferHandle> commandBuffers;
-        std::vector<SemaphoreHandle> signalSemaphores;
-        /**
-         * @brief Construct a new Submit Info object
-         *
-         * @param waitStages Array of wait stages
-         * @param commandBuffers Array of command buffers to submit
-         * @param signalSemaphores Semaphores signalled upon all command buffers complete execution
-         */
-        SubmitInfo(const std::vector<WaitStage>& waitStages, const std::vector<CommandBufferHandle>& commandBuffers, const std::vector<SemaphoreHandle>& signalSemaphores)
-            :waitStages(waitStages), commandBuffers(commandBuffers), signalSemaphores(signalSemaphores)
-        {}
-    };
-
     /**
      *@brief Device Queue
      * Devices have different Queues with differing capabilities, this class is meant to handle creation of Queues.
@@ -99,13 +60,6 @@ namespace vg
          */
         DeviceHandle GetDevice() const;
         /**
-         *@brief Submit command buffers and all relevant data
-         *
-         * @param submits Command buffers and relevant data
-         * @param fence Fence to be signaled upon all submits finish
-         */
-        void Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
-        /**
          *@brief Present image to the window. Queue Type must be Queue::Present
          *
          * @param waitSemaphores Semaphores to await before presenting
@@ -122,6 +76,6 @@ namespace vg
         unsigned int m_index;
         DeviceHandle m_device;
 
-        friend Device;
+        friend class Device;
     };
 }

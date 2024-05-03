@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 
 #ifdef VULKAN_HPP
 #define HANDLE(name, nativeName)\
@@ -47,5 +46,7 @@ namespace vg
     HANDLE(FenceHandle, Fence);
     HANDLE(CommandPoolHandle, CommandPool);
     HANDLE(CommandBufferHandle, CommandBuffer);
+    HANDLE(BufferHandle, Buffer);
+    HANDLE(DeviceMemoryHandle, DeviceMemory);
 }
 #undef HANDLE

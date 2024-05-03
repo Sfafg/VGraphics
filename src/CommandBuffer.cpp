@@ -3,9 +3,71 @@
 
 namespace vg
 {
+    namespace cmd
+    {
+        void BindPipeline::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+        }
+
+        void BindVertexBuffer::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).bindVertexBuffers(0, 1, &buffers, &offset);
+        }
+
+        void BindIndexBuffer::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).bindIndexBuffer(buffer, offset, (vk::IndexType) type);
+        }
+
+        void BindDescriptorSets::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout.layout, firstSet, descriptorSets.size(), (vk::DescriptorSet*) &descriptorSets[0], 0, nullptr);
+        }
+
+        void BeginRenderpass::operator()(CommandBuffer& commandBuffer) const
+        {
+            auto clear = vk::ClearColorValue(clearColorR, clearColorG, clearColorB, clearColorA);
+            auto clearValues = vk::ClearValue(clear);
+
+            auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D({ offsetX,offsetY }, { extendX,extendY }), 1, &clearValues);
+            CommandBufferHandle(commandBuffer).beginRenderPass(info, vk::SubpassContents::eInline);
+        }
+
+        void SetViewport::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).setViewport(0, 1, (vk::Viewport*) &viewport);
+        }
+
+        void SetScissor::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).setScissor(0, 1, (vk::Rect2D*) &scissor);
+        }
+
+        void Draw::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).draw(vertexCount, instanceCount, firstVertex, firstInstance);
+        }
+
+        void EndRenderpass::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).endRenderPass();
+        }
+
+        void DrawIndexed::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        }
+        void CopyBuffer::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).copyBuffer(src, dst, *(std::vector<vk::BufferCopy>*) & regions);
+        }
+    }
+
     CommandBuffer::CommandBuffer(const Queue& queue) : m_queue(&queue)
     {
         m_handle = m_queue->GetDevice().allocateCommandBuffers({ queue.GetCommandPool(), vk::CommandBufferLevel::ePrimary, 1 })[0];
+
     }
 
     CommandBuffer::CommandBuffer() :m_handle(nullptr), m_queue(nullptr) {}
@@ -40,41 +102,39 @@ namespace vg
     {
         m_handle.reset();
     }
+
     void CommandBuffer::Begin(bool clear)
     {
         if (clear) Clear();
         m_handle.begin(vk::CommandBufferBeginInfo());
     }
+
     void CommandBuffer::End()
     {
         m_handle.end();
     }
 
-    template<> void CommandBuffer::Append(cmd::BindPipeline command)
+    void CommandBuffer::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
     {
-        m_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, command.pipeline);
-    }
-    template<> void CommandBuffer::Append(cmd::BeginRenderpass command)
-    {
-        auto clear = vk::ClearColorValue(command.clearColorR, command.clearColorG, command.clearColorB, command.clearColorA);
-        auto clearValues = vk::ClearValue(clear);
-        auto info = vk::RenderPassBeginInfo(command.renderpass, command.framebuffer, vk::Rect2D({ command.offsetX, command.offsetY }, { command.extendX,command.extendY }), 1, &clearValues);
-        m_handle.beginRenderPass(info, vk::SubpassContents::eInline);
-    }
-    template<> void CommandBuffer::Append(cmd::SetViewport command)
-    {
-        m_handle.setViewport(0, 1, (vk::Viewport*) &command.viewport);
-    }
-    template<> void CommandBuffer::Append(cmd::SetScissor command)
-    {
-        m_handle.setScissor(0, 1, (vk::Rect2D*) &command.scissor);
-    }
-    template<> void CommandBuffer::Append(cmd::Draw command)
-    {
-        m_handle.draw(command.vertexCount, command.instanceCount, command.firstVertex, command.firstInstance);
-    }
-    template<> void CommandBuffer::Append(cmd::EndRenderpass command)
-    {
-        m_handle.endRenderPass();
+        vk::SubmitInfo* submits_ = new vk::SubmitInfo[submits.size()];
+        vk::Semaphore** waitSemaphores = new vk::Semaphore * [submits.size()];
+        vk::PipelineStageFlags** stages = new vk::PipelineStageFlags * [submits.size()];
+        for (unsigned int i = 0; i < (unsigned int) submits.size(); i++)
+        {
+            waitSemaphores[i] = new vk::Semaphore[submits[i].waitStages.size()];
+            stages[i] = new vk::PipelineStageFlags[submits[i].waitStages.size()];
+            for (unsigned int j = 0; j < (unsigned int) submits[i].waitStages.size(); j++)
+            {
+                waitSemaphores[i][j] = (vk::Semaphore) std::get<1>(submits[i].waitStages[j]);
+                stages[i][j] = (vk::PipelineStageFlagBits) (Flags<PipelineStage>::TMask) std::get<0>(submits[i].waitStages[j]);
+            }
+            vk::SubmitInfo sub(submits[i].waitStages.size(), waitSemaphores[i], stages[i], submits[i].commandBuffers.size(), (vk::CommandBuffer*) submits[i].commandBuffers.data(), submits[i].signalSemaphores.size(), (vk::Semaphore*) submits[i].signalSemaphores.data());
+            submits_[i] = sub;
+        }
+
+        auto result = ((QueueHandle) *m_queue).submit(submits.size(), submits_, (FenceHandle) fence);
+        delete[] submits_;
+        delete[] waitSemaphores;
+        delete[] stages;
     }
 }

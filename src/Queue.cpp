@@ -4,7 +4,7 @@
 
 namespace vg
 {
-    Queue::Queue() :m_handle(nullptr), m_commandPool(nullptr), m_type(Type::None), m_index(0), m_device(nullptr) {}
+    Queue::Queue() :m_handle(nullptr), m_commandPool(nullptr), m_type(Type::None), m_index(0) {}
 
     Queue::Queue(Queue&& other) noexcept
     {
@@ -12,13 +12,13 @@ namespace vg
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_type, other.m_type);
         std::swap(m_index, other.m_index);
-        std::swap(m_device, other.m_device);
+
         other.m_handle = nullptr;
     }
     Queue::~Queue()
     {
-        if (m_commandPool == nullptr || m_device == nullptr)return;
-        m_device.destroyCommandPool(m_commandPool);
+        if (m_commandPool == nullptr)return;
+        ((DeviceHandle) currentDevice).destroyCommandPool(m_commandPool);
         m_commandPool = nullptr;
     }
     Queue& Queue::operator=(Queue&& other) noexcept
@@ -28,7 +28,6 @@ namespace vg
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_type, other.m_type);
         std::swap(m_index, other.m_index);
-        std::swap(m_device, other.m_device);
 
         return *this;
     }
@@ -51,11 +50,6 @@ namespace vg
     CommandPoolHandle Queue::GetCommandPool() const
     {
         return m_commandPool;
-    }
-
-    DeviceHandle Queue::GetDevice() const
-    {
-        return m_device;
     }
 
     void Queue::Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices)

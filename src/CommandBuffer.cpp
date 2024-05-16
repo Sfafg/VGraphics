@@ -66,7 +66,7 @@ namespace vg
 
     CommandBuffer::CommandBuffer(const Queue& queue) : m_queue(&queue)
     {
-        m_handle = m_queue->GetDevice().allocateCommandBuffers({ queue.GetCommandPool(), vk::CommandBufferLevel::ePrimary, 1 })[0];
+        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ queue.GetCommandPool(), vk::CommandBufferLevel::ePrimary, 1 })[0];
 
     }
 
@@ -81,7 +81,7 @@ namespace vg
     CommandBuffer::~CommandBuffer()
     {
         if (m_handle == nullptr) return;
-        m_queue->GetDevice().freeCommandBuffers(m_queue->GetCommandPool(), 1, (vk::CommandBuffer*) &m_handle);
+        ((DeviceHandle) currentDevice).freeCommandBuffers(m_queue->GetCommandPool(), 1, (vk::CommandBuffer*) &m_handle);
     }
 
     CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept

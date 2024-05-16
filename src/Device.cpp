@@ -5,6 +5,7 @@
 
 namespace vg
 {
+    Device currentDevice;
     int DefaultScoreFunction(
         const std::set<Queue::Type>& queues,
         const std::set<std::string>& extensions,
@@ -138,10 +139,6 @@ namespace vg
         computeQueue.m_handle = computeQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
         transferQueue.m_handle = transferQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
         presentQueue.m_handle = presentQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
-        graphicsQueue.m_device = m_handle;
-        computeQueue.m_device = m_handle;
-        transferQueue.m_device = m_handle;
-        presentQueue.m_device = m_handle;
         graphicsQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
         computeQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
         transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
@@ -169,6 +166,7 @@ namespace vg
         transferQueue.~Queue();
 
         vkDestroyDevice(m_handle, nullptr);
+        m_handle = nullptr;
     }
 
     Device& Device::operator=(Device&& other) noexcept

@@ -15,12 +15,12 @@ namespace vg
         /**
          *@brief Construct a new Surface object
          *
-         * @param device Device
+         * @param ((DeviceHandle)currentDevice).Device
          * @param windowSurfaceHandle Surface handle from windowing library
          * @param hintedFormat Format used if available
          * @param hintedColorSpace Color used if available
          */
-        Surface(const Device& device, SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace);
+        Surface(SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace);
 
         Surface();
         Surface(Surface&& other) noexcept;

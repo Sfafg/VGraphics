@@ -14,11 +14,11 @@ namespace vg
         /**
          *@brief Construct a new Shader object
          *
-         * @param device Device
+         * @param ((DeviceHandle)currentDevice).Device
          * @param shaderStage Shader stage
          * @param path path to source file in GLSL
          */
-        Shader(const Device& device, ShaderStage shaderStage, const char* path);
+        Shader(ShaderStage shaderStage, const char* path);
 
         Shader();
         Shader(Shader&& other) noexcept;
@@ -42,7 +42,7 @@ namespace vg
 
     private:
         ShaderHandle m_handle;
-        DeviceHandle m_device;
+
         ShaderStage m_stage;
     };
 }

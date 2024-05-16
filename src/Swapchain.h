@@ -21,7 +21,7 @@ namespace vg
          *@brief Construct a new Swapchain object
          *
          * @param surface Surface
-         * @param device Device
+         * @param ((DeviceHandle)currentDevice).Device
          * @param imageCount Count of images used if available
          * @param width Width used if available
          * @param height Heihgt used if available
@@ -30,7 +30,7 @@ namespace vg
          * @param alpha Alpha usage
          * @param oldSwapchain Optional old swapchain handle used when recreating swapchain when resizing window. Do not destroy old handle until it's presenting is done
          */
-        Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle());
+        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle());
 
         Swapchain();
         Swapchain(Swapchain&& other) noexcept;
@@ -68,7 +68,7 @@ namespace vg
          * @param fence to be signalled
          * @return uint32_t
          */
-        uint32_t GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(), uint64_t timeout = UINT64_MAX);
+        uint32_t GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(nullptr), uint64_t timeout = UINT64_MAX);
         /**
          *@brief Create a Framebuffers for each ImageView
          *
@@ -79,7 +79,7 @@ namespace vg
         std::vector<Framebuffer> CreateFramebuffers(RenderPassHandle renderPass, int layers = 1) const;
     private:
         SwapchainHandle m_handle;
-        DeviceHandle m_device;
+
         std::vector<ImageHandle> m_images;
         std::vector<ImageViewHandle> m_imageViews;
 

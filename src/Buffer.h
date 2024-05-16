@@ -9,7 +9,7 @@ namespace vg
     {
     public:
         Buffer();
-        Buffer(DeviceHandle device, uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing = BufferSharing::Exclusive);
+        Buffer(uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing = BufferSharing::Exclusive);
         Buffer(Buffer&& other) noexcept;
         Buffer(const Buffer& other) = delete;
         ~Buffer();
@@ -27,7 +27,7 @@ namespace vg
 
     private:
         BufferHandle m_handle;
-        DeviceHandle m_device;
+
         uint64_t m_offset;
         uint64_t m_size;
         class MemoryBlock* m_memory;

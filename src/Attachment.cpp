@@ -11,8 +11,7 @@ namespace vg
         BlendFactor srcAlphaBlendFactor,
         BlendFactor dstAlphaBlendFactor,
         BlendOp alphaBlendOp,
-        Flags<ColorComponent> colorWriteMask)
-        :
+        Flags<ColorComponent> colorWriteMask) :
         blendEnable(blendEnable),
         srcColorBlendFactor(srcColorBlendFactor),
         dstColorBlendFactor(dstColorBlendFactor),
@@ -32,8 +31,7 @@ namespace vg
         StoreOp storeOp,
         LoadOp stencilLoadOp,
         StoreOp stencilStoreOp,
-        unsigned int samples)
-        :
+        unsigned int samples) :
         format(format),
         samples(samples),
         loadOp(loadOp),

@@ -6,8 +6,8 @@
 namespace vg
 {
     /**
-     *@brief Device Queue
-     * Devices have different Queues with differing capabilities, this class is meant to handle creation of Queues.
+     *@brief ((DeviceHandle)currentDevice).Queue
+     * ((DeviceHandle)currentDevice). have different Queues with differing capabilities, this class is meant to handle creation of Queues.
      */
     class Queue
     {
@@ -54,12 +54,6 @@ namespace vg
          */
         CommandPoolHandle GetCommandPool() const;
         /**
-         *@brief Get the Device object
-         *
-         * @return DeviceHandle
-         */
-        DeviceHandle GetDevice() const;
-        /**
          *@brief Present image to the window. Queue Type must be Queue::Present
          *
          * @param waitSemaphores Semaphores to await before presenting
@@ -74,7 +68,7 @@ namespace vg
         CommandPoolHandle m_commandPool;
         Type m_type;
         unsigned int m_index;
-        DeviceHandle m_device;
+
 
         friend class Device;
     };

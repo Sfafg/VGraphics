@@ -14,19 +14,19 @@ namespace vg
         }
     };
 
-    Swapchain::Swapchain(const Surface& surface, const Device& device, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain) : m_device(device)
+    Swapchain::Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain)
     {
         // Get the sharing mode, needed if queues are in different families.
         vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
         std::vector<unsigned int> indices;
-        if (device.graphicsQueue.GetIndex() != device.presentQueue.GetIndex())
+        if (currentDevice.graphicsQueue.GetIndex() != currentDevice.presentQueue.GetIndex())
         {
-            indices.assign({ device.graphicsQueue.GetIndex(), device.presentQueue.GetIndex() });
+            indices.assign({ currentDevice.graphicsQueue.GetIndex(), currentDevice.presentQueue.GetIndex() });
             sharingMode = vk::SharingMode::eConcurrent;
         }
 
         // Check if parameters for Swapchain creation are valid and change them if not.
-        SwapChainSupportDetails supportDetails((PhysicalDeviceHandle) device, surface);
+        SwapChainSupportDetails supportDetails((PhysicalDeviceHandle) currentDevice, surface);
         imageCount = std::clamp(imageCount, supportDetails.capabilities.minImageCount, supportDetails.capabilities.maxImageCount);
 
         if (supportDetails.capabilities.currentExtent.width != UINT_MAX)
@@ -54,8 +54,8 @@ namespace vg
             oldSwapchain
         );
 
-        m_handle = device.m_handle.createSwapchainKHR(createInfo);
-        for (const auto& image : device.m_handle.getSwapchainImagesKHR(m_handle))
+        m_handle = ((DeviceHandle) currentDevice).createSwapchainKHR(createInfo);
+        for (const auto& image : ((DeviceHandle) currentDevice).getSwapchainImagesKHR(m_handle))
             m_images.push_back(image);
 
         m_imageViews.resize(m_images.size());
@@ -63,18 +63,18 @@ namespace vg
         {
             vk::ComponentMapping componentMapping;
             vk::ImageSubresourceRange subresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            vk::ImageViewCreateInfo createInfo({}, m_images[i], vk::ImageViewType::e2D, (vk::Format) surface.GetFormat(), {}, subresourceRange);
+            vk::ImageViewCreateInfo createInfo({}, m_images[i], vk::ImageViewType::e2D, (vk::Format) surface.GetFormat(), componentMapping, subresourceRange);
 
-            m_imageViews[i] = ((DeviceHandle) device).createImageView(createInfo);
+            m_imageViews[i] = ((DeviceHandle) currentDevice).createImageView(createInfo);
         }
     }
 
-    Swapchain::Swapchain() : m_handle(nullptr), m_device(nullptr) {}
+    Swapchain::Swapchain() : m_handle(nullptr) {}
 
     Swapchain::Swapchain(Swapchain&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_images, other.m_images);
         std::swap(m_imageViews, other.m_imageViews);
         std::swap(m_width, other.m_width);
@@ -86,9 +86,9 @@ namespace vg
         if (m_handle == nullptr) return;
         for (auto& imageView : m_imageViews)
         {
-            m_device.destroyImageView(imageView);
+            ((DeviceHandle) currentDevice).destroyImageView(imageView);
         }
-        m_device.destroySwapchainKHR(m_handle);
+        ((DeviceHandle) currentDevice).destroySwapchainKHR(m_handle);
         m_handle = nullptr;
     }
 
@@ -96,7 +96,7 @@ namespace vg
     {
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_images, other.m_images);
         std::swap(m_imageViews, other.m_imageViews);
         std::swap(m_width, other.m_width);
@@ -128,7 +128,7 @@ namespace vg
     uint32_t Swapchain::GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence, uint64_t timeout)
     {
         uint32_t index;
-        auto result = m_device.acquireNextImageKHR(vk::SwapchainKHR((SwapchainHandle) m_handle), timeout, (SemaphoreHandle) semaphore, (FenceHandle) fence, &index);
+        auto result = ((DeviceHandle) currentDevice).acquireNextImageKHR(vk::SwapchainKHR((SwapchainHandle) m_handle), timeout, (SemaphoreHandle) semaphore, (FenceHandle) fence, &index);
 
         return index;
     }
@@ -137,7 +137,7 @@ namespace vg
     {
         std::vector<Framebuffer> frameBuffers(GetImageViews().size());
         for (size_t i = 0; i < GetImageViews().size(); i++)
-            frameBuffers[i] = Framebuffer(m_device, renderPass, { GetImageViews()[i] }, GetWidth(), GetHeight(), 1);
+            frameBuffers[i] = Framebuffer(renderPass, { GetImageViews()[i] }, GetWidth(), GetHeight(), 1);
 
         return frameBuffers;
     }

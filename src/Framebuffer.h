@@ -14,14 +14,14 @@ namespace vg
         /**
          *@brief Construct a new Framebuffer object
          *
-         * @param device Device
+         * @param ((DeviceHandle)currentDevice).Device
          * @param renderPass Renderpass for determining format
          * @param attachments Array of ImageViews
          * @param width Width
          * @param height Height
          * @param layers Amount of layers, used for anaglif rendering
          */
-        Framebuffer(DeviceHandle device, RenderPassHandle renderPass, const std::vector<ImageViewHandle>& attachments, unsigned int width, unsigned int height, unsigned int layers = 1);
+        Framebuffer(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& attachments, unsigned int width, unsigned int height, unsigned int layers = 1);
 
         Framebuffer();
         Framebuffer(Framebuffer&& other) noexcept;
@@ -35,7 +35,5 @@ namespace vg
 
     private:
         FramebufferHandle m_handle;
-        DeviceHandle m_device;
-
     };
 }

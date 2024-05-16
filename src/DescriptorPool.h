@@ -10,7 +10,7 @@ namespace vg
     class DescriptorPool
     {
     public:
-        DescriptorPool(const Device& device, unsigned int maxSets, std::initializer_list<DescriptorPoolSize> sizes);
+        DescriptorPool(unsigned int maxSets, std::initializer_list<DescriptorPoolSize> sizes);
 
         DescriptorPool();
         DescriptorPool(DescriptorPool&& other) noexcept;
@@ -25,6 +25,6 @@ namespace vg
 
     private:
         DescriptorPoolHandle m_handle;
-        DeviceHandle m_device;
+
     };
 }

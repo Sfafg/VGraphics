@@ -5,9 +5,9 @@
 namespace vg
 {
     Surface::Surface() :m_handle(nullptr) {}
-    Surface::Surface(const Device& device, SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace) : m_handle(windowSurfaceHandle)
+    Surface::Surface(SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace) : m_handle(windowSurfaceHandle)
     {
-        auto supportedFormats = ((PhysicalDeviceHandle) device).getSurfaceFormatsKHR(m_handle);
+        auto supportedFormats = ((PhysicalDeviceHandle) currentDevice).getSurfaceFormatsKHR(m_handle);
         m_format = (Format) supportedFormats[0].format;
         m_colorSpace = (ColorSpace) supportedFormats[0].colorSpace;
 

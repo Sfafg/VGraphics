@@ -118,8 +118,8 @@ namespace vg
         };
         struct DrawIndexed : Command
         {
-            DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) :
-                indexCount(indexCount), instanceCount(instanceCount), firstIndex(firstIndex), vertexOffset(vertexOffset), firstInstance(firstInstance)
+            DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0)
+                : indexCount(indexCount), instanceCount(instanceCount), firstIndex(firstIndex), vertexOffset(vertexOffset), firstInstance(firstInstance)
             {}
 
         private:
@@ -240,7 +240,7 @@ namespace vg
          */
         Fence Submit(const std::vector<SubmitInfo>& submits)
         {
-            Fence fence(m_queue->GetDevice());
+            Fence fence;
             Submit(submits, fence);
             return fence;
         }

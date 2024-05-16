@@ -16,19 +16,19 @@ uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties memProperties, uint32
 }
 namespace vg
 {
-    void Allocate(const Device& device, std::initializer_list<Buffer*> buffers, Flags<MemoryProperty> memoryProperty)
+    void Allocate(std::initializer_list<Buffer*> buffers, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t totalSize = 0;
         uint32_t memoryTypeBits = ~0;
         for (int i = 0; i < buffers.size(); i++)
         {
-            vk::MemoryRequirements memRequirements = ((DeviceHandle) device).getBufferMemoryRequirements(*buffers.begin()[i]);
+            vk::MemoryRequirements memRequirements = ((DeviceHandle) currentDevice).getBufferMemoryRequirements(*buffers.begin()[i]);
             totalSize += memRequirements.size;
             memoryTypeBits &= memRequirements.memoryTypeBits;
         }
 
-        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) device).getMemoryProperties();
-        MemoryBlock* block = new MemoryBlock(device, ((DeviceHandle) device).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
+        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) currentDevice).getMemoryProperties();
+        MemoryBlock* block = new MemoryBlock(((DeviceHandle) currentDevice).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
 
         uint64_t offset = 0;
         for (int i = 0; i < buffers.size(); i++)
@@ -38,19 +38,19 @@ namespace vg
         }
     }
 
-    void Allocate(const Device& device, std::vector<Buffer>& buffers, Flags<MemoryProperty> memoryProperty)
+    void Allocate(std::vector<Buffer>& buffers, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t totalSize = 0;
         uint32_t memoryTypeBits = ~0;
         for (int i = 0; i < buffers.size(); i++)
         {
-            vk::MemoryRequirements memRequirements = ((DeviceHandle) device).getBufferMemoryRequirements(buffers.begin()[i]);
+            vk::MemoryRequirements memRequirements = ((DeviceHandle) currentDevice).getBufferMemoryRequirements(buffers.begin()[i]);
             totalSize += memRequirements.size;
             memoryTypeBits &= memRequirements.memoryTypeBits;
         }
 
-        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) device).getMemoryProperties();
-        MemoryBlock* block = new MemoryBlock(device, ((DeviceHandle) device).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
+        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) currentDevice).getMemoryProperties();
+        MemoryBlock* block = new MemoryBlock(((DeviceHandle) currentDevice).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
 
         uint64_t offset = 0;
         for (int i = 0; i < buffers.size(); i++)
@@ -68,7 +68,7 @@ namespace vg
     void MemoryBlock::Bind(Buffer* buffer, uint64_t offset)
     {
         m_referanceCount++;
-        m_device.bindBufferMemory((vk::Buffer) *buffer, m_handle, offset);
+        ((DeviceHandle) currentDevice).bindBufferMemory((vk::Buffer) *buffer, m_handle, offset);
         buffer->m_memory = this;
         buffer->m_offset = offset;
     }
@@ -78,7 +78,7 @@ namespace vg
         m_referanceCount--;
         if (m_referanceCount <= 0)
         {
-            m_device.freeMemory(m_handle);
+            ((DeviceHandle) currentDevice).freeMemory(m_handle);
             delete this;
         }
     }

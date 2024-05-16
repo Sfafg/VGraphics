@@ -6,7 +6,7 @@
 
 namespace vg
 {
-    Shader::Shader(const Device& device, ShaderStage stage, const char* path) : m_device(device), m_stage(stage)
+    Shader::Shader(ShaderStage stage, const char* path) : m_stage(stage)
     {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -21,30 +21,29 @@ namespace vg
         file.read(code.data(), fileSize);
         file.close();
 
-        m_handle = m_device.createShaderModule({ {}, code.size(), (const uint32_t*) code.data() });
+        m_handle = ((DeviceHandle) currentDevice).createShaderModule({ {}, code.size(), (const uint32_t*) code.data() });
     }
 
-    Shader::Shader() : m_handle(nullptr), m_device(nullptr), m_stage(ShaderStage::Vertex) {}
+    Shader::Shader() : m_handle(nullptr), m_stage(ShaderStage::Vertex) {}
 
     Shader::Shader(Shader&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         other.m_handle = nullptr;
-        other.m_device = nullptr;
     }
 
     Shader::~Shader()
     {
         if (m_handle == nullptr) return;
-        m_device.destroyShaderModule(m_handle);
+        ((DeviceHandle) currentDevice).destroyShaderModule(m_handle);
     }
 
     Shader& Shader::operator=(Shader&& other) noexcept
     {
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
 
         return *this;
     }

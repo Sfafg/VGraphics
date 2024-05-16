@@ -55,10 +55,10 @@ namespace vg
     //     colorBlending_.pAttachments = colorBlendattachments.data();
 
     //     vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, 0, nullptr, 0, nullptr);
-    //     vk::PipelineLayout m_layout = renderPass.m_device.createPipelineLayout(pipelineLayoutInfo);
+    //     vk::PipelineLayout m_layout = renderPass.((DeviceHandle)currentDevice).createPipelineLayout(pipelineLayoutInfo);
     //     this->layout = *(PipelineLayout*) &m_layout;
     //     vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &vertexInputInfo, &inputAssembly_, nullptr, &viewportState_, &rasterizer_, &multisampling_, nullptr, &colorBlending_, &dynamicState_, m_layout, renderPass, subpassIndex);
-    //     m_handle = renderPass.m_device.createGraphicsPipelines(nullptr, pipelineInfo).value[0];
+    //     m_handle = renderPass.((DeviceHandle)currentDevice).createGraphicsPipelines(nullptr, pipelineInfo).value[0];
     // }
 
     // GraphicsPipeline::GraphicsPipeline(
@@ -99,9 +99,9 @@ namespace vg
     //     colorBlending_.pAttachments = colorBlendattachments.data();
 
     //     vk::PipelineLayoutCreateInfo pipelineLayoutInfo({}, 0, nullptr, 0, nullptr);
-    //     // vk::PipelineLayout m_layout = renderPass.m_device.createPipelineLayout(pipelineLayoutInfo);
+    //     // vk::PipelineLayout m_layout = renderPass.((DeviceHandle)currentDevice).createPipelineLayout(pipelineLayoutInfo);
     //     vk::GraphicsPipelineCreateInfo pipelineInfo({}, shaderStages, &vertexInputInfo, &inputAssembly_, nullptr, &viewportState_, &rasterizer_, &multisampling_, nullptr, &colorBlending_, &dynamicState_, nullptr, renderPass, subpassIndex);
-    //     m_handle = renderPass.m_device.createGraphicsPipelines(nullptr, pipelineInfo).value[0];
+    //     m_handle = renderPass.((DeviceHandle)currentDevice).createGraphicsPipelines(nullptr, pipelineInfo).value[0];
     // }
 
     // GraphicsPipeline::GraphicsPipeline() :m_handle(nullptr), m_renderPass(nullptr) {}
@@ -117,8 +117,8 @@ namespace vg
     // {
     //     if (m_handle == nullptr) return;
 
-    //     // m_renderPass->m_device.destroyPipelineLayout(nullptr);
-    //     m_renderPass->m_device.destroyPipeline(m_handle);
+    //     // m_renderPass->((DeviceHandle)currentDevice).destroyPipelineLayout(nullptr);
+    //     m_renderPass->((DeviceHandle)currentDevice).destroyPipeline(m_handle);
     // }
 
     // GraphicsPipeline& GraphicsPipeline::operator=(GraphicsPipeline&& other) noexcept

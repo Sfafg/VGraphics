@@ -3,8 +3,8 @@
 #include "Attachment.h"
 namespace vg
 {
-    RenderPass::RenderPass(const Device& device, const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies) :
-        m_device(device), m_attachments(attachments), m_dependencies(dependencies)
+    RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies)
+        : m_attachments(attachments), m_dependencies(dependencies)
     {
         std::vector<vk::AttachmentDescription> colorAttachments(attachments.size());
         for (unsigned int i = 0; i < attachments.size(); i++)
@@ -45,7 +45,7 @@ namespace vg
         vk::SubpassDependency dependency(subpassDependency);
 
         vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, dependency);
-        m_handle = m_device.createRenderPass(renderPassInfo);
+        m_handle = ((DeviceHandle) currentDevice).createRenderPass(renderPassInfo);
 
 
         std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos(subpasses.size());
@@ -76,9 +76,9 @@ namespace vg
 
             std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
             descriptorSetLayouts.resize(1);
-            descriptorSetLayouts[0] = ((DeviceHandle) device).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings });
+            descriptorSetLayouts[0] = ((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings });
 
-            PipelineLayoutHandle layout = ((DeviceHandle) device).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
+            PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
             m_pipelineLayouts[i].m_handle = layout;
             m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 
@@ -92,17 +92,17 @@ namespace vg
 
         m_graphicsPipelines.resize(graphicPipelineCreateInfos.size());
         VkPipeline* ptr = (VkPipeline*) m_graphicsPipelines.data();
-        vkCreateGraphicsPipelines(m_device, nullptr, graphicPipelineCreateInfos.size(), (VkGraphicsPipelineCreateInfo*) graphicPipelineCreateInfos.data(), nullptr, ptr);
-        // std::vector<vk::Pipeline> graphicPipelines = m_device.createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
+        vkCreateGraphicsPipelines((DeviceHandle) currentDevice, nullptr, graphicPipelineCreateInfos.size(), (VkGraphicsPipelineCreateInfo*) graphicPipelineCreateInfos.data(), nullptr, ptr);
+        // std::vector<vk::Pipeline> graphicPipelines = ((DeviceHandle)currentDevice).createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
         // m_graphicsPipelines.assign(graphicPipelines.begin(), graphicPipelines.end());
     }
 
-    RenderPass::RenderPass() :m_handle(nullptr), m_device(nullptr) {}
+    RenderPass::RenderPass() :m_handle(nullptr) {}
 
     RenderPass::RenderPass(RenderPass&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
         std::swap(m_attachments, other.m_attachments);
@@ -113,15 +113,15 @@ namespace vg
     {
         if (m_handle == nullptr) return;
 
-        for (const auto& pipeline : m_graphicsPipelines) m_device.destroyPipeline(pipeline);
+        for (const auto& pipeline : m_graphicsPipelines) ((DeviceHandle) currentDevice).destroyPipeline(pipeline);
         for (const auto& layout : m_pipelineLayouts)
         {
             for (const auto& descriptor : layout.GetDescriptorSets())
-                m_device.destroyDescriptorSetLayout(descriptor);
-            m_device.destroyPipelineLayout(layout);
+                ((DeviceHandle) currentDevice).destroyDescriptorSetLayout(descriptor);
+            ((DeviceHandle) currentDevice).destroyPipelineLayout(layout);
         }
 
-        m_device.destroyRenderPass(m_handle);
+        ((DeviceHandle) currentDevice).destroyRenderPass(m_handle);
     }
 
     RenderPass& RenderPass::operator=(RenderPass&& other) noexcept
@@ -129,7 +129,7 @@ namespace vg
         if (&other == this) return *this;
 
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
         std::swap(m_attachments, other.m_attachments);

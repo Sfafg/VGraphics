@@ -15,12 +15,11 @@ namespace vg
         /**
          *@brief Construct a new Fence object
          *
-         * @param device Device
          * @param createSignalled If true then fence will start in signalled state
          */
-        Fence(DeviceHandle device, bool createSignalled = false);
+        Fence(bool createSignalled = false);
 
-        Fence();
+        Fence(void* ptr);
         Fence(Fence&& other) noexcept;
         Fence(const Fence& other) = delete;
         ~Fence();
@@ -28,8 +27,6 @@ namespace vg
         Fence& operator=(Fence&& other) noexcept;
         Fence& operator=(const Fence& other) = delete;
         operator const FenceHandle& () const;
-
-        DeviceHandle GetDevice() const;
 
         /**
          *@brief Check if fence is signalled or not
@@ -73,7 +70,7 @@ namespace vg
 
     private:
         FenceHandle m_handle;
-        DeviceHandle m_device;
+
     };
 
     /**
@@ -83,14 +80,9 @@ namespace vg
     class Semaphore
     {
     public:
-        /**
-         *@brief Construct a new Semaphore object
-         *
-         * @param device Device
-         */
-        Semaphore(DeviceHandle device);
-
         Semaphore();
+
+        Semaphore(void* ptr);
         Semaphore(Semaphore&& other) noexcept;
         Semaphore(const Semaphore& other) = delete;
         ~Semaphore();
@@ -101,6 +93,6 @@ namespace vg
 
     private:
         SemaphoreHandle m_handle;
-        DeviceHandle m_device;
+
     };
 }

@@ -78,18 +78,19 @@ int main()
         });
 
     SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
-    Device device({ Queue::Type::Graphics, Queue::Type::Present, Queue::Type::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
+    vg::currentDevice = Device({ Queue::Type::Graphics, Queue::Type::Present, Queue::Type::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
         [](auto supportedQueues, auto supportedExtensions, auto type, Limits limits) {
             return type == Device::Type::Integrated;
         });
-    Surface surface(device, windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);
+
+    Surface surface(windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);
 
     int w, h; glfwGetFramebufferSize(window, &w, &h);
-    Shader vertexShader(device, ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
-    Shader fragmentShader(device, ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
+    Shader vertexShader(ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
+    Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
 
     RenderPass renderPass(
-        device,
+
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
@@ -114,7 +115,7 @@ int main()
         },
         {}
     );
-    Swapchain swapchain(surface, device, 2, w, h);
+    Swapchain swapchain(surface, 2, w, h);
     std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
 
     std::vector<Buffer> uniformBuffers;
@@ -123,12 +124,12 @@ int main()
     buffersMappedMemory.resize(uniformBuffers.size());
     for (int i = 0; i < uniformBuffers.size(); i++)
     {
-        uniformBuffers[i] = Buffer(device, sizeof(UniformBufferObject), { BufferUsage::UniformBuffer });
-        vg::Allocate(device, &uniformBuffers[i], { { MemoryProperty::HostVisible, MemoryProperty::HostCoherent } });
+        uniformBuffers[i] = Buffer(sizeof(UniformBufferObject), { BufferUsage::UniformBuffer });
+        vg::Allocate(&uniformBuffers[i], { { MemoryProperty::HostVisible, MemoryProperty::HostCoherent } });
         buffersMappedMemory[i] = uniformBuffers[i].MapMemory();
     }
 
-    DescriptorPool descriptorPool(device, swapchain.GetImageViews().size(), { { DescriptorType::UniformBuffer, swapchain.GetImageViews().size() } });
+    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { { DescriptorType::UniformBuffer, swapchain.GetImageViews().size() } });
     auto descriptorSets = descriptorPool.Allocate({ swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0] });
 
     for (size_t i = 0; i < swapchain.GetImageViews().size(); i++)
@@ -146,33 +147,33 @@ int main()
         // descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         // descriptorWrite.descriptorCount = 1;
         // descriptorWrite.pBufferInfo = &bufferInfo;
-        // vkUpdateDescriptorSets((DeviceHandle) device, 1, &descriptorWrite, 0, nullptr);
+        // vkUpdateDescriptorSets((DeviceHandle)  1, &descriptorWrite, 0, nullptr);
 
     }
 
     // Allocate buffer in DeviceLocal memory.
-    Buffer vertexBuffer(device, sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
-    vg::Allocate(device, { &vertexBuffer }, { MemoryProperty::DeviceLocal });
+    Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
+    vg::Allocate({ &vertexBuffer }, { MemoryProperty::DeviceLocal });
     {
         // Allocate staging buffer in HostVisible memory.
-        Buffer stagingBuffer(device, vertexBuffer.GetSize(), vg::BufferUsage::TransferSrc);
-        vg::Allocate(device, { &stagingBuffer }, { MemoryProperty::HostVisible });
+        Buffer stagingBuffer(vertexBuffer.GetSize(), vg::BufferUsage::TransferSrc);
+        vg::Allocate({ &stagingBuffer }, { MemoryProperty::HostVisible });
         char* data = (char*) stagingBuffer.MapMemory();
         memcpy(data, vertices.data(), sizeof(vertices[0]) * vertices.size());
         memcpy(data + sizeof(vertices[0]) * vertices.size(), indices.data(), sizeof(indices[0]) * indices.size());
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
-        vg::CommandBuffer transfer(device.transferQueue);
+        vg::CommandBuffer transfer(currentDevice.transferQueue);
         transfer.Append(cmd::CopyBuffer(stagingBuffer, vertexBuffer, { CopyRegion {vertexBuffer.GetSize() } }));
         Fence copyFence = transfer.Submit({ vg::SubmitInfo({}, {transfer},{}) });
         Fence::AwaitAll({ copyFence });
     }
 
-    CommandBuffer commandBuffer(device.graphicsQueue);
-    Semaphore renderFinishedSemaphore(device);
-    Semaphore imageAvailableSemaphore(device);
-    Fence inFlightFence(device, true);
+    CommandBuffer commandBuffer(currentDevice.graphicsQueue);
+    Semaphore renderFinishedSemaphore;
+    Semaphore imageAvailableSemaphore;
+    Fence inFlightFence(true);
     auto startTime = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
     {
@@ -187,7 +188,7 @@ int main()
         if (recreateFramebuffer)
         {
             std::swap(oldSwapchain, swapchain);
-            swapchain = Swapchain(surface, device, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
+            swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
             swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
         }
 
@@ -215,7 +216,7 @@ int main()
         );
 
         commandBuffer.Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ commandBuffer },{ renderFinishedSemaphore }} }, inFlightFence);
-        device.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
+        currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });
     glfwTerminate();

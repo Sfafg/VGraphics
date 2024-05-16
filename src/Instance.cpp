@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.hpp>
 #include "Instance.h"
+#include "Device.h"
 #include <vector>
 #include <iostream>
 
@@ -114,6 +115,7 @@ namespace vg
     {
         if (m_handle == nullptr) return;
         if (enableValidationLayers)m_handle.destroyDebugUtilsMessengerEXT(m_debugMessenger);
+        currentDevice.~Device();
         m_handle.destroy();
     }
 

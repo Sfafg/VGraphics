@@ -18,12 +18,12 @@ namespace vg
         /**
          *@brief Construct a new Render Pass object
          *
-         * @param device Device
+         * @param ((DeviceHandle)currentDevice).Device
          * @param attachments Array of Attachments e.g. color, depth
          * @param subpasses Array of Subpasses used for multi pass rendering e.g. Differed Rendering
          * @param dependencies Dependencies
          */
-        RenderPass(const Device& device, const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies);
+        RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies);
 
         RenderPass();
         RenderPass(RenderPass&& other) noexcept;
@@ -36,7 +36,7 @@ namespace vg
 
     public:
         RenderPassHandle m_handle;
-        DeviceHandle m_device;
+
         std::vector<GraphicsPipelineHandle> m_graphicsPipelines;
         std::vector<PipelineLayout> m_pipelineLayouts;
         std::vector<Attachment> m_attachments;

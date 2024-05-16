@@ -84,4 +84,6 @@ namespace vg
         Queue presentQueue;
         Queue transferQueue;
     };
+
+    extern Device currentDevice;
 }

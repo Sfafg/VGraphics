@@ -4,15 +4,15 @@
 
 namespace vg
 {
-    Buffer::Buffer() : m_handle(nullptr), m_device(nullptr), m_offset(0), m_size(0), m_memory(0) {}
-    Buffer::Buffer(DeviceHandle device, uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing) :m_device(device), m_memory(nullptr), m_size(byteSize), m_offset(0)
+    Buffer::Buffer() : m_handle(nullptr), m_offset(0), m_size(0), m_memory(0) {}
+    Buffer::Buffer(uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing) : m_memory(nullptr), m_size(byteSize), m_offset(0)
     {
-        m_handle = m_device.createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
+        m_handle = ((DeviceHandle) currentDevice).createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
     }
     Buffer::Buffer(Buffer&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_size, other.m_size);
         std::swap(m_offset, other.m_offset);
         std::swap(m_memory, other.m_memory);
@@ -20,7 +20,7 @@ namespace vg
     Buffer::~Buffer()
     {
         if (!m_handle) return;
-        m_device.destroyBuffer(m_handle);
+        ((DeviceHandle) currentDevice).destroyBuffer(m_handle);
         if (m_memory) m_memory->Dereferance();
     }
 
@@ -28,7 +28,7 @@ namespace vg
     {
         if (this == &other) return *this;
         std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
+
         std::swap(m_size, other.m_size);
         std::swap(m_offset, other.m_offset);
         std::swap(m_memory, other.m_memory);
@@ -56,12 +56,12 @@ namespace vg
     void* Buffer::MapMemory()
     {
         void* data;
-        auto result = m_device.mapMemory(*GetMemory(), 0, m_size, {}, &data);
+        auto result = ((DeviceHandle) currentDevice).mapMemory(*GetMemory(), 0, m_size, {}, &data);
         return data;
     }
 
     void Buffer::UnmapMemory()
     {
-        m_device.unmapMemory(*GetMemory());
+        ((DeviceHandle) currentDevice).unmapMemory(*GetMemory());
     }
 }

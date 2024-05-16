@@ -19,6 +19,7 @@
 #include "Buffer.h"
 #include "MemoryManager.h"
 #include "Window.h"
+#include "DescriptorPool.h"
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;
@@ -28,17 +29,17 @@ struct Vertex
     struct Vector2 { float x, y; } position;
     struct Vector3 { float r, g, b; } color;
 
-    static vk::VertexInputBindingDescription& getBindingDescription()
+    static VertexBinding& getBindingDescription()
     {
-        static vk::VertexInputBindingDescription bindingDescription(0, sizeof(Vertex));
+        static VertexBinding bindingDescription(0, sizeof(Vertex));
 
         return bindingDescription;
     }
-    static std::array<vk::VertexInputAttributeDescription, 2>& getAttributeDescriptions()
+    static std::array<VertexAttribute, 2>& getAttributeDescriptions()
     {
-        static std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions = {
-            vk::VertexInputAttributeDescription(0,0,(vk::Format) Format::RG32SFLOAT,offsetof(Vertex,position)),
-            vk::VertexInputAttributeDescription(1,0,(vk::Format) Format::RGB32SFLOAT,offsetof(Vertex,color))
+        static std::array<VertexAttribute, 2> attributeDescriptions = {
+            VertexAttribute(0,0, Format::RG32SFLOAT,offsetof(Vertex,position)),
+            VertexAttribute(1,0, Format::RGB32SFLOAT,offsetof(Vertex,color))
         };
 
         return attributeDescriptions;
@@ -67,7 +68,7 @@ int main()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Vulkan", nullptr, nullptr);
-    glfwSetWindowPos(window, -1920 / 2 - 1600 / 2, 1080 / 2 - 900 / 2);
+    // glfwSetWindowPos(window, -1920 / 2 - 1600 / 2, 1080 / 2 - 900 / 2);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int w, int h) {recreateFramebuffer = true; });
 
     vg::instance = Instance({ "VK_KHR_surface", "VK_KHR_win32_surface" },
@@ -87,31 +88,6 @@ int main()
     Shader vertexShader(device, ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
     Shader fragmentShader(device, ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
 
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
-
-    if (vkCreateDescriptorSetLayout((DeviceHandle) device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-    VkPipelineLayout layout;
-    vkCreatePipelineLayout((DeviceHandle) device, &pipelineLayoutInfo, nullptr, &layout);
-
     RenderPass renderPass(
         device,
         {
@@ -130,7 +106,7 @@ int main()
                     DepthStencil(),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }),
                     { DynamicState::Viewport, DynamicState::Scissor },
-                    PipelineLayout((PipelineLayoutHandle) layout)
+                    {{0,DescriptorType::UniformBuffer, 1, {ShaderStage::Vertex}}}
                 },
                 {},
                 { AttachmentReference(0, ImageLayout::ColorAttachmentOptimal) }
@@ -152,32 +128,9 @@ int main()
         buffersMappedMemory[i] = uniformBuffers[i].MapMemory();
     }
 
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(swapchain.GetImageViews().size());
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(swapchain.GetImageViews().size());
-    VkDescriptorPool descriptorPool;
-    if (vkCreateDescriptorPool((DeviceHandle) device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
+    DescriptorPool descriptorPool(device, swapchain.GetImageViews().size(), { { DescriptorType::UniformBuffer, swapchain.GetImageViews().size() } });
+    auto descriptorSets = descriptorPool.Allocate({ swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0] });
 
-    std::vector<VkDescriptorSetLayout> layouts(swapchain.GetImageViews().size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchain.GetImageViews().size());
-    allocInfo.pSetLayouts = layouts.data();
-    std::vector<VkDescriptorSet> descriptorSets;
-    descriptorSets.resize(swapchain.GetImageViews().size());
-    if (vkAllocateDescriptorSets((DeviceHandle) device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate descriptor sets!");
-    }
     for (size_t i = 0; i < swapchain.GetImageViews().size(); i++)
     {
         VkDescriptorBufferInfo bufferInfo{};
@@ -185,15 +138,16 @@ int main()
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-        vkUpdateDescriptorSets((DeviceHandle) device, 1, &descriptorWrite, 0, nullptr);
+        // VkWriteDescriptorSet descriptorWrite{};
+        // descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        // descriptorWrite.dstSet = descriptorSets[i];
+        // descriptorWrite.dstBinding = 0;
+        // descriptorWrite.dstArrayElement = 0;
+        // descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        // descriptorWrite.descriptorCount = 1;
+        // descriptorWrite.pBufferInfo = &bufferInfo;
+        // vkUpdateDescriptorSets((DeviceHandle) device, 1, &descriptorWrite, 0, nullptr);
+
     }
 
     // Allocate buffer in DeviceLocal memory.
@@ -255,7 +209,7 @@ int main()
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), (int) vk::IndexType::eUint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
-            cmd::BindDescriptorSets((PipelineLayoutHandle) layout, 0, { descriptorSets[imageIndex] }),
+            // cmd::BindDescriptorSets(renderPass.m_pipelineLayouts[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         );
@@ -264,7 +218,5 @@ int main()
         device.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });
-    vkDestroyDescriptorSetLayout((DeviceHandle) device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool((DeviceHandle) device, descriptorPool, nullptr);
     glfwTerminate();
 }

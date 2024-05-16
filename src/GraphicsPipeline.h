@@ -25,7 +25,7 @@ namespace vg
         DepthStencil depthStencil;
         ColorBlending colorBlending;
         std::vector<DynamicState> dynamicState;
-        PipelineLayout layout;
+        std::vector<DescriptorSetLayoutBinding> setLayoutBindings;
 
     public:
         /**
@@ -54,6 +54,6 @@ namespace vg
             const DepthStencil& depthStencil,
             const ColorBlending& colorBlending,
             const std::vector<DynamicState>& dynamicState,
-            const PipelineLayout& layout);
+            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings);
     };
 }

@@ -22,7 +22,7 @@ namespace vg
 
         void BindDescriptorSets::operator()(CommandBuffer& commandBuffer) const
         {
-            CommandBufferHandle(commandBuffer).bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout.layout, firstSet, descriptorSets.size(), (vk::DescriptorSet*) &descriptorSets[0], 0, nullptr);
+            CommandBufferHandle(commandBuffer).bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, firstSet, descriptorSets.size(), (vk::DescriptorSet*) &descriptorSets[0], 0, nullptr);
         }
 
         void BeginRenderpass::operator()(CommandBuffer& commandBuffer) const

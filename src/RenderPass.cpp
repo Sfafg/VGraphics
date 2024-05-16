@@ -51,7 +51,7 @@ namespace vg
         std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos(subpasses.size());
         std::vector<std::vector<vk::PipelineShaderStageCreateInfo>> stages(subpasses.size());
         std::vector<std::vector<vk::PipelineColorBlendAttachmentState>> colorBlendAttachmentStates(subpasses.size());
-        m_pipelineLayouts = std::vector<PipelineLayoutHandle>(subpasses.size());
+        m_pipelineLayouts = std::vector<PipelineLayout>(subpasses.size());
         for (unsigned int i = 0; i < subpasses.size(); i++)
         {
             const GraphicsPipeline pipeline = subpasses.begin()[i].graphicsPipeline;
@@ -74,7 +74,13 @@ namespace vg
             auto states = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
             vk::PipelineDynamicStateCreateInfo* dynamicState = new vk::PipelineDynamicStateCreateInfo({}, states);
 
-            m_pipelineLayouts[i] = pipeline.layout.layout;
+            std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
+            descriptorSetLayouts.resize(1);
+            descriptorSetLayouts[0] = ((DeviceHandle) device).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings });
+
+            PipelineLayoutHandle layout = ((DeviceHandle) device).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
+            m_pipelineLayouts[i].m_handle = layout;
+            m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 
             graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
                 vk::PipelineCreateFlags(0), stages[i], vertexInput,
@@ -108,7 +114,12 @@ namespace vg
         if (m_handle == nullptr) return;
 
         for (const auto& pipeline : m_graphicsPipelines) m_device.destroyPipeline(pipeline);
-        for (const auto& layout : m_pipelineLayouts) m_device.destroyPipelineLayout(layout);
+        for (const auto& layout : m_pipelineLayouts)
+        {
+            for (const auto& descriptor : layout.GetDescriptorSets())
+                m_device.destroyDescriptorSetLayout(descriptor);
+            m_device.destroyPipelineLayout(layout);
+        }
 
         m_device.destroyRenderPass(m_handle);
     }

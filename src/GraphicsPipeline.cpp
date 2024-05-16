@@ -14,8 +14,8 @@ namespace vg
         const DepthStencil& depthStencil,
         const ColorBlending& colorBlending,
         const std::vector<DynamicState>& dynamicState,
-        const PipelineLayout& layout)
-        :shaders(shaders), vertexInput(vertexInput), inputAssembly(inputAssembly), tesselation(tesselation), viewportState(viewportState), rasterizer(rasterizer), multisampling(multisampling), depthStencil(depthStencil), colorBlending(colorBlending), dynamicState(dynamicState), layout(layout)
+        const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings)
+        :shaders(shaders), vertexInput(vertexInput), inputAssembly(inputAssembly), tesselation(tesselation), viewportState(viewportState), rasterizer(rasterizer), multisampling(multisampling), depthStencil(depthStencil), colorBlending(colorBlending), dynamicState(dynamicState), setLayoutBindings(setLayoutBindings)
     {}
     // GraphicsPipeline::GraphicsPipeline(
     //     RenderPass& renderPass,

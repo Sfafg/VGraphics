@@ -48,5 +48,8 @@ namespace vg
     HANDLE(CommandBufferHandle, CommandBuffer);
     HANDLE(BufferHandle, Buffer);
     HANDLE(DeviceMemoryHandle, DeviceMemory);
+    HANDLE(DescriptorSetLayoutHandle, DescriptorSetLayout);
+    HANDLE(DescriptorPoolHandle, DescriptorPool);
+    HANDLE(DescriptorSetHandle, DescriptorSet);
 }
 #undef HANDLE

@@ -1,6 +1,12 @@
 #pragma once
 #include <cstdint>
 #include "Enums.h"
+#include "Flags.h"
+
+#define VULKAN_NATIVE_CAST_OPERATOR(nativeName)\
+operator const vk::nativeName& () const { return *reinterpret_cast<const vk::nativeName*>(this); }\
+operator const vk::nativeName& () { return *reinterpret_cast<vk::nativeName*>(this); }
+
 namespace vg
 {
     struct Limits
@@ -123,8 +129,7 @@ namespace vg
         Viewport(float width, float height, float x = 0, float y = 0, float minDepth = 0, float maxDepth = 1) :x(x), y(y), width(width), height(height), minDepth(minDepth), maxDepth(maxDepth) {}
 
 #ifdef VULKAN_HPP
-        operator const vk::Viewport& () const { return *reinterpret_cast<const vk::Viewport*>(this); }
-        operator const vk::Viewport& () { return *reinterpret_cast<vk::Viewport*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(Viewport);
 #endif
     };
     struct Scissor
@@ -136,10 +141,11 @@ namespace vg
         Scissor(float width, float height, int x = 0, int y = 0) :x(x), y(y), width(width), height(height) {}
 
 #ifdef VULKAN_HPP
-        operator const vk::Rect2D& () const { return *reinterpret_cast<const vk::Rect2D*>(this); }
-        operator const vk::Rect2D& () { return *reinterpret_cast<vk::Rect2D*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(Rect2D);
 #endif
     };
+    struct VertexBinding;
+    struct VertexAttribute;
     struct VertexLayout
     {
     private:
@@ -149,17 +155,20 @@ namespace vg
 
     public:
         uint32_t vertexDescriptionCount = 0;
-        const void* vertexDescritpions = nullptr;
+        const VertexBinding* vertexDescritpions = nullptr;
         uint32_t vertexAttributesCount = 0;
-        const void* vertexAttributes = nullptr;
+        const VertexAttribute* vertexAttributes = nullptr;
 
-        VertexLayout(uint32_t vertexDescriptionCount, void* vertexDescriptions, uint32_t vertexAttributesCount, void* vertexAttributes)
+        VertexLayout(uint32_t vertexDescriptionCount, VertexBinding* vertexDescriptions, uint32_t vertexAttributesCount, VertexAttribute* vertexAttributes)
             : vertexDescriptionCount(vertexDescriptionCount), vertexDescritpions(vertexDescriptions), vertexAttributesCount(vertexAttributesCount), vertexAttributes(vertexAttributes)
         {}
 
+        VertexLayout(std::initializer_list<VertexBinding> vertexDescriptions, std::initializer_list<VertexAttribute> vertexAttributes)
+            : vertexDescriptionCount(vertexDescriptions.size()), vertexDescritpions(vertexDescriptions.begin()), vertexAttributesCount(vertexAttributes.size()), vertexAttributes(vertexAttributes.begin())
+        {}
+
 #ifdef VULKAN_HPP
-        operator const vk::PipelineVertexInputStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineVertexInputStateCreateInfo*>(this); }
-        operator const vk::PipelineVertexInputStateCreateInfo& () { return *reinterpret_cast<vk::PipelineVertexInputStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineVertexInputStateCreateInfo);
 #endif
     };
     struct InputAssembly
@@ -175,8 +184,7 @@ namespace vg
         InputAssembly(Primitive primitive = Primitive::Triangles, bool primitiveRestart = false) :primitive(primitive), primitiveRestart(primitiveRestart) {}
 
 #ifdef VULKAN_HPP
-        operator const vk::PipelineInputAssemblyStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineInputAssemblyStateCreateInfo*>(this); }
-        operator const vk::PipelineInputAssemblyStateCreateInfo& () { return *reinterpret_cast<vk::PipelineInputAssemblyStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineInputAssemblyStateCreateInfo);
 #endif
     };
     struct Tesselation
@@ -189,8 +197,7 @@ namespace vg
 
     public:
 #ifdef VULKAN_HPP
-        operator const vk::PipelineTessellationStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineTessellationStateCreateInfo*>(this); }
-        operator const vk::PipelineTessellationStateCreateInfo& () { return *reinterpret_cast<vk::PipelineTessellationStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineTessellationStateCreateInfo);
 #endif
     };
     struct ViewportState
@@ -212,8 +219,7 @@ namespace vg
             // if (scissorCount != 0) delete scissors;
         }
 #ifdef VULKAN_HPP
-        operator const vk::PipelineViewportStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineViewportStateCreateInfo*>(this); }
-        operator const vk::PipelineViewportStateCreateInfo& () { return *reinterpret_cast<vk::PipelineViewportStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineViewportStateCreateInfo);
 #endif
     };
     struct DepthBias
@@ -244,8 +250,7 @@ namespace vg
         {}
 
 #ifdef VULKAN_HPP
-        operator const vk::PipelineRasterizationStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineRasterizationStateCreateInfo*>(this); }
-        operator const vk::PipelineRasterizationStateCreateInfo& () { return *reinterpret_cast<vk::PipelineRasterizationStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineRasterizationStateCreateInfo);
 #endif
     };
     struct Multisampling
@@ -263,8 +268,7 @@ namespace vg
 
     public:
 #ifdef VULKAN_HPP
-        operator const vk::PipelineMultisampleStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineMultisampleStateCreateInfo*>(this); }
-        operator const vk::PipelineMultisampleStateCreateInfo& () { return *reinterpret_cast<vk::PipelineMultisampleStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineMultisampleStateCreateInfo);
 #endif
     };
     struct DepthStencil
@@ -285,8 +289,7 @@ namespace vg
 
     public:
 #ifdef VULKAN_HPP
-        operator const vk::PipelineDepthStencilStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineDepthStencilStateCreateInfo*>(this); }
-        operator const vk::PipelineDepthStencilStateCreateInfo& () { return *reinterpret_cast<vk::PipelineDepthStencilStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineDepthStencilStateCreateInfo);
 #endif
     };
     struct ColorBlending
@@ -308,14 +311,26 @@ namespace vg
         {}
 
 #ifdef VULKAN_HPP
-        operator const vk::PipelineColorBlendStateCreateInfo& () const { return *reinterpret_cast<const vk::PipelineColorBlendStateCreateInfo*>(this); }
-        operator const vk::PipelineColorBlendStateCreateInfo& () { return *reinterpret_cast<vk::PipelineColorBlendStateCreateInfo*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineColorBlendStateCreateInfo);
 #endif
     };
-    struct PipelineLayout
+
+    struct DescriptorSetLayoutBinding
     {
-        PipelineLayout(PipelineLayoutHandle layout) :layout(layout) {}
-        PipelineLayoutHandle layout;
+    public:
+        uint32_t binding;
+        DescriptorType descriptorType;
+        uint32_t descriptorCount;
+        Flags<ShaderStage> stageFlags;
+        const void* pImmutableSamplers;
+
+        DescriptorSetLayoutBinding(uint32_t binding, DescriptorType descriptorType, uint32_t descriptorCount, Flags<ShaderStage> stageFlags) :binding(binding), descriptorType(descriptorType), descriptorCount(descriptorCount), stageFlags(stageFlags)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(DescriptorSetLayoutBinding);
+#endif
+
     };
 
     struct CopyRegion
@@ -327,8 +342,46 @@ namespace vg
         CopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
 
 #ifdef VULKAN_HPP
-        operator const vk::BufferCopy& () const { return *reinterpret_cast<const vk::BufferCopy*>(this); }
-        operator const vk::BufferCopy& () { return *reinterpret_cast<vk::BufferCopy*>(this); }
+        VULKAN_NATIVE_CAST_OPERATOR(BufferCopy);
+#endif
+    };
+
+    struct DescriptorPoolSize
+    {
+        DescriptorType descriptorType;
+        uint32_t descriptorCount;
+
+        DescriptorPoolSize(DescriptorType descriptorType, uint32_t descriptorCount) :descriptorType(descriptorType), descriptorCount(descriptorCount) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(DescriptorPoolSize);
+#endif
+    };
+
+    struct VertexBinding
+    {
+        uint32_t binding;
+        uint32_t stride;
+        InputRate inputRate;
+
+        VertexBinding(int binding, int stride, InputRate inputRate = InputRate::Vertex) :binding(binding), stride(stride), inputRate(inputRate) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(VertexInputBindingDescription);
+#endif
+    };
+
+    struct VertexAttribute
+    {
+        uint32_t location;
+        uint32_t binding;
+        Format format;
+        uint32_t offset;
+
+        VertexAttribute(uint32_t location, uint32_t binding, Format format, uint32_t offset) :location(location), binding(binding), format(format), offset(offset) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(VertexInputAttributeDescription);
 #endif
     };
 }

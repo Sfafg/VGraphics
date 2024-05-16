@@ -2,6 +2,7 @@
 #include "Handle.h"
 #include "Attachment.h"
 #include "Subpass.h"
+#include "PipelineLayout.h"
 #include "Device.h"
 #include <vector>
 
@@ -37,7 +38,7 @@ namespace vg
         RenderPassHandle m_handle;
         DeviceHandle m_device;
         std::vector<GraphicsPipelineHandle> m_graphicsPipelines;
-        std::vector<PipelineLayoutHandle> m_pipelineLayouts;
+        std::vector<PipelineLayout> m_pipelineLayouts;
         std::vector<Attachment> m_attachments;
         std::vector<SubpassDependency> m_dependencies;
     };

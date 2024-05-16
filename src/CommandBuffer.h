@@ -45,10 +45,10 @@ namespace vg
         };
         struct BindDescriptorSets : Command
         {
-            BindDescriptorSets(PipelineLayout layout, uint32_t firstSet, std::vector<void*> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
+            BindDescriptorSets(PipelineLayoutHandle layout, uint32_t firstSet, std::vector<void*> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
 
         private:
-            PipelineLayout layout;
+            PipelineLayoutHandle layout;
             uint32_t firstSet;
             std::vector<void*> descriptorSets;
 

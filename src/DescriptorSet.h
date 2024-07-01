@@ -12,8 +12,7 @@ namespace vg
     public:
         operator const DescriptorSetHandle& () const;
 
-        void SetBufferInfo(Buffer buffer, uint64_t offset, uint64_t range, unsigned int dstBinding, unsigned int dstArrayElement, DescriptorType type);
-
+        void AttachBuffer(const Buffer& buffer, int offset, int range, int binding, int arrayElement);
     private:
         DescriptorSetHandle m_handle;
     };

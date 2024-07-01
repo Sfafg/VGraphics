@@ -1,3 +1,4 @@
+#define GLM_FORCE_RADIANS
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -88,9 +89,7 @@ int main()
     int w, h; glfwGetFramebufferSize(window, &w, &h);
     Shader vertexShader(ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
     Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
-
     RenderPass renderPass(
-
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
@@ -102,12 +101,12 @@ int main()
                     InputAssembly(),
                     Tesselation(),
                     ViewportState(Viewport(w, h), Scissor(w, h)),
-                    Rasterizer(true, false, PolygonMode::Fill, CullMode::Back, FrontFace::Clockwise, DepthBias(), 10.0f),
+                    Rasterizer(true, false, PolygonMode::Fill, CullMode::Back, FrontFace::CounterClockwise, DepthBias(), 10.0f),
                     Multisampling(),
                     DepthStencil(),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }),
                     { DynamicState::Viewport, DynamicState::Scissor },
-                    {{0,DescriptorType::UniformBuffer, 1, {ShaderStage::Vertex}}}
+                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex}}
                 },
                 {},
                 { AttachmentReference(0, ImageLayout::ColorAttachmentOptimal) }
@@ -117,39 +116,6 @@ int main()
     );
     Swapchain swapchain(surface, 2, w, h);
     std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
-
-    std::vector<Buffer> uniformBuffers;
-    std::vector<void*> buffersMappedMemory;
-    uniformBuffers.resize(swapchain.GetImageViews().size());
-    buffersMappedMemory.resize(uniformBuffers.size());
-    for (int i = 0; i < uniformBuffers.size(); i++)
-    {
-        uniformBuffers[i] = Buffer(sizeof(UniformBufferObject), { BufferUsage::UniformBuffer });
-        vg::Allocate(&uniformBuffers[i], { { MemoryProperty::HostVisible, MemoryProperty::HostCoherent } });
-        buffersMappedMemory[i] = uniformBuffers[i].MapMemory();
-    }
-
-    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { { DescriptorType::UniformBuffer, swapchain.GetImageViews().size() } });
-    auto descriptorSets = descriptorPool.Allocate({ swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0] });
-
-    for (size_t i = 0; i < swapchain.GetImageViews().size(); i++)
-    {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = (BufferHandle) uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        // VkWriteDescriptorSet descriptorWrite{};
-        // descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // descriptorWrite.dstSet = descriptorSets[i];
-        // descriptorWrite.dstBinding = 0;
-        // descriptorWrite.dstArrayElement = 0;
-        // descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // descriptorWrite.descriptorCount = 1;
-        // descriptorWrite.pBufferInfo = &bufferInfo;
-        // vkUpdateDescriptorSets((DeviceHandle)  1, &descriptorWrite, 0, nullptr);
-
-    }
 
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
@@ -170,6 +136,20 @@ int main()
         Fence::AwaitAll({ copyFence });
     }
 
+    Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageViews().size(), BufferUsage::UniformBuffer);
+    vg::Allocate(&uniformBuffers, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
+    char* uniformBufferMemory = (char*) uniformBuffers.MapMemory();
+
+    // Create descriptor pools
+    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { {DescriptorType::UniformBuffer,(int) swapchain.GetImageViews().size()} });
+
+    // Create and allocate descriptor set layouts.
+    std::vector<vg::DescriptorSetLayoutHandle> layouts((int) swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0]);
+    auto descriptorSets = descriptorPool.Allocate(layouts);
+
+    for (size_t i = 0; i < layouts.size(); i++)
+        descriptorSets[i].AttachBuffer(uniformBuffers, sizeof(UniformBufferObject) * i, sizeof(UniformBufferObject), 0, 0);
+
     CommandBuffer commandBuffer(currentDevice.graphicsQueue);
     Semaphore renderFinishedSemaphore;
     Semaphore imageAvailableSemaphore;
@@ -177,7 +157,7 @@ int main()
     auto startTime = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
     {
-        glfwFocusWindow(window);
+        // glfwFocusWindow(window);
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
 
@@ -194,14 +174,15 @@ int main()
 
         uint32_t imageIndex = swapchain.GetNextImageIndex(imageAvailableSemaphore);
 
+        // Update UniformBuffer.
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         UniformBufferObject ubo{};
-
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(90.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 10.0f);
-        memcpy(buffersMappedMemory[imageIndex], &ubo, sizeof(ubo));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+        memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
         commandBuffer.Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight()),
@@ -210,7 +191,7 @@ int main()
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), (int) vk::IndexType::eUint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
-            // cmd::BindDescriptorSets(renderPass.m_pipelineLayouts[0], 0, { descriptorSets[imageIndex] }),
+            cmd::BindDescriptorSets(renderPass.m_pipelineLayouts[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         );

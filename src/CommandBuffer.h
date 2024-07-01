@@ -45,12 +45,12 @@ namespace vg
         };
         struct BindDescriptorSets : Command
         {
-            BindDescriptorSets(PipelineLayoutHandle layout, uint32_t firstSet, std::vector<void*> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
+            BindDescriptorSets(PipelineLayoutHandle layout, uint32_t firstSet, std::vector<DescriptorSetHandle> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
 
         private:
             PipelineLayoutHandle layout;
             uint32_t firstSet;
-            std::vector<void*> descriptorSets;
+            std::vector<DescriptorSetHandle> descriptorSets;
 
             void operator ()(CommandBuffer& commandBuffer) const;
             friend CommandBuffer;

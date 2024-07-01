@@ -222,7 +222,7 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(PipelineViewportStateCreateInfo);
 #endif
     };
-    struct DepthBias
+    struct alignas(float) DepthBias
     {
         uint32_t enable = 0;
         float constantFactor = 0;
@@ -245,6 +245,7 @@ namespace vg
         FrontFace  frontFace = FrontFace::CounterClockwise;
         DepthBias depthBias;
         float lineWidth = 0;
+
         Rasterizer(bool enable, bool depthClamp, PolygonMode polygonMode, CullMode cullMode, FrontFace frontFace, DepthBias depthBias, float lineWidth)
             :discard(!enable), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
         {}

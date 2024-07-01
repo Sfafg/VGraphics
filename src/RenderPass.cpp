@@ -75,8 +75,7 @@ namespace vg
             vk::PipelineDynamicStateCreateInfo* dynamicState = new vk::PipelineDynamicStateCreateInfo({}, states);
 
             std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
-            descriptorSetLayouts.resize(1);
-            descriptorSetLayouts[0] = ((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings });
+            descriptorSetLayouts.push_back(((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings }));
 
             PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
             m_pipelineLayouts[i].m_handle = layout;
@@ -93,8 +92,6 @@ namespace vg
         m_graphicsPipelines.resize(graphicPipelineCreateInfos.size());
         VkPipeline* ptr = (VkPipeline*) m_graphicsPipelines.data();
         vkCreateGraphicsPipelines((DeviceHandle) currentDevice, nullptr, graphicPipelineCreateInfos.size(), (VkGraphicsPipelineCreateInfo*) graphicPipelineCreateInfos.data(), nullptr, ptr);
-        // std::vector<vk::Pipeline> graphicPipelines = ((DeviceHandle)currentDevice).createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
-        // m_graphicsPipelines.assign(graphicPipelines.begin(), graphicPipelines.end());
     }
 
     RenderPass::RenderPass() :m_handle(nullptr) {}

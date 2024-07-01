@@ -7,11 +7,21 @@ namespace vg
     {
         return m_handle;
     }
-    void DescriptorSet::SetBufferInfo(Buffer buffer, uint64_t offset, uint64_t range, unsigned int dstBinding, unsigned int dstArrayElement, DescriptorType type)
+    void DescriptorSet::AttachBuffer(const Buffer& buffer, int offset, int range, int binding, int arrayElement)
     {
-        // vk::DescriptorBufferInfo bufferInfo(buffer, offset, range);
-        // vk::WriteDescriptorSet descriptorWrite(m_handle, dstBinding, dstArrayElement, (vk::DescriptorType) type, 1, &bufferInfo);
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = (BufferHandle) buffer;
+        bufferInfo.offset = offset;
+        bufferInfo.range = range;
 
-        // ((((DeviceHandle)currentDevice).andle) ((DeviceHandle)currentDevice)..updateDescriptorSets()
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_handle;
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.dstArrayElement = arrayElement;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        ((vk::Device) currentDevice).updateDescriptorSets({ descriptorWrite }, {});
     }
 }

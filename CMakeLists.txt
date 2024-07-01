@@ -54,15 +54,19 @@ add_custom_command(TARGET VGraphics POST_BUILD
     COMMAND  lib.exe /OUT:${CMAKE_CURRENT_BINARY_DIR}/VGraphics.lib $<TARGET_FILE:VGraphics> ${CMAKE_CURRENT_BINARY_DIR}/libVGraphics.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/vulkan-1.lib
 )
 
-
-add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
-target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1)
-
 target_include_directories(VGraphics PUBLIC 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     "C:/VulkanSDK/1.3.261.1/include/")
-    
+
+add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
+
+target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1)
+
+add_custom_command(TARGET VGTest PRE_BUILD
+    COMMAND  ../CompileShaders.bat
+)
+
 target_link_directories(VGTest PRIVATE 
     "C:/VulkanSDK/1.3.261.1/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"

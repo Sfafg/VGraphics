@@ -5,7 +5,7 @@
 namespace vg
 {
     Buffer::Buffer() : m_handle(nullptr), m_offset(0), m_size(0), m_memory(0) {}
-    Buffer::Buffer(uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing) : m_memory(nullptr), m_size(byteSize), m_offset(0)
+    Buffer::Buffer(uint64_t byteSize, Flags<BufferUsage> usage, SharingMode sharing) : m_memory(nullptr), m_size(byteSize), m_offset(0)
     {
         m_handle = ((DeviceHandle) currentDevice).createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
     }

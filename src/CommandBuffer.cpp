@@ -58,9 +58,20 @@ namespace vg
         {
             CommandBufferHandle(commandBuffer).drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
         }
+
         void CopyBuffer::operator()(CommandBuffer& commandBuffer) const
         {
             CommandBufferHandle(commandBuffer).copyBuffer(src, dst, *(std::vector<vk::BufferCopy>*) & regions);
+        }
+
+        void CopyBufferToImage::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).copyBufferToImage(src, dst, (vk::ImageLayout) dstImageLayout, *(std::vector<vk::BufferImageCopy>*) & regions);
+        }
+
+        void PipelineBarier::operator()(CommandBuffer& commandBuffer) const
+        {
+            CommandBufferHandle(commandBuffer).pipelineBarrier((vk::PipelineStageFlags) srcStageMask, (vk::PipelineStageFlags) dstStageMask, (vk::DependencyFlags) dependency, *(std::vector<vk::MemoryBarrier>*) & memoryBarriers, *(std::vector<vk::BufferMemoryBarrier>*) & bufferMemoryBarriers, *(std::vector<vk::ImageMemoryBarrier>*) & imageMemoryBarriers);
         }
     }
 

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "Enums.h"
 #include "Flags.h"
+#include "Queue.h"
 
 #define VULKAN_NATIVE_CAST_OPERATOR(nativeName)\
 operator const vk::nativeName& () const { return *reinterpret_cast<const vk::nativeName*>(this); }\
@@ -9,7 +10,7 @@ operator const vk::nativeName& () { return *reinterpret_cast<vk::nativeName*>(th
 
 namespace vg
 {
-    struct Limits
+    struct DeviceLimits
     {
         uint32_t maxImageDimension1D;
         uint32_t maxImageDimension2D;
@@ -117,7 +118,41 @@ namespace vg
         uint64_t optimalBufferCopyOffsetAlignment;
         uint64_t optimalBufferCopyRowPitchAlignment;
         uint64_t nonCoherentAtomSize;
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceLimits);
+#endif
     };
+
+    struct DeviceSparseProperties
+    {
+        uint32_t residencyStandard2DBlockShape;
+        uint32_t residencyStandard2DMultisampleBlockShape;
+        uint32_t residencyStandard3DBlockShape;
+        uint32_t residencyAlignedMipSize;
+        uint32_t residencyNonResidentStrict;
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceSparseProperties);
+#endif
+    };
+
+    struct DeviceProperties
+    {
+        uint32_t apiVersion;
+        uint32_t driverVersion;
+        uint32_t vendorID;
+        uint32_t deviceID;
+        DeviceType deviceType;
+        char deviceName[256];
+        uint8_t pipelineCacheUUID[16];
+        DeviceLimits limits;
+        DeviceSparseProperties sparseProperties;
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceProperties);
+#endif
+    };
+
     struct Viewport
     {
         float x;
@@ -323,7 +358,7 @@ namespace vg
         DescriptorType descriptorType;
         uint32_t descriptorCount;
         Flags<ShaderStage> stageFlags;
-        const void* pImmutableSamplers;
+        const void* pImmutableSamplers = nullptr;
 
         DescriptorSetLayoutBinding(uint32_t binding, DescriptorType descriptorType, uint32_t descriptorCount, Flags<ShaderStage> stageFlags) :binding(binding), descriptorType(descriptorType), descriptorCount(descriptorCount), stageFlags(stageFlags)
         {}
@@ -334,16 +369,58 @@ namespace vg
 
     };
 
-    struct CopyRegion
+    struct BufferCopyRegion
     {
         uint64_t srcOffset;
         uint64_t dstOffset;
         uint64_t size;
 
-        CopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
+        BufferCopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(BufferCopy);
+#endif
+    };
+
+    struct ImageSubresourceLayers
+    {
+        Flags<ImageAspect> aspectMask;
+        uint32_t mipLevel;
+        uint32_t baseArrayLayer;
+        uint32_t layerCount;
+
+        ImageSubresourceLayers(Flags<ImageAspect> aspectMask, uint32_t mipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
+            :aspectMask(aspectMask), mipLevel(mipLevel), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ImageSubresourceLayers);
+#endif
+    };
+
+    struct BufferImageCopyRegion
+    {
+        uint64_t bufferOffset;
+        uint32_t bufferRowLength;
+        uint32_t bufferImageHeight;
+        ImageSubresourceLayers imageSubresource;
+        uint32_t imageOffsetX;
+        uint32_t imageOffsetY;
+        uint32_t imageOffsetZ;
+        uint32_t imageExtendX;
+        uint32_t imageExtendY;
+        uint32_t imageExtendZ;
+
+        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtendX, uint32_t imageExtendY, uint32_t imageExtendZ, uint32_t imageOffsetX = 0, uint32_t imageOffsetY = 0, uint32_t imageOffsetZ = 0)
+            :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffsetX(imageOffsetX), imageOffsetY(imageOffsetY), imageOffsetZ(imageOffsetZ), imageExtendX(imageExtendX), imageExtendY(imageExtendY), imageExtendZ(imageExtendZ)
+        {}
+
+        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, uint32_t imageExtendX, uint32_t imageExtendY, uint32_t imageExtendZ, uint32_t imageOffsetX = 0, uint32_t imageOffsetY = 0, uint32_t imageOffsetZ = 0)
+            :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffsetX(imageOffsetX), imageOffsetY(imageOffsetY), imageOffsetZ(imageOffsetZ), imageExtendX(imageExtendX), imageExtendY(imageExtendY), imageExtendZ(imageExtendZ)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(BufferImageCopy);
 #endif
     };
 
@@ -383,6 +460,111 @@ namespace vg
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(VertexInputAttributeDescription);
+#endif
+    };
+
+    struct ImageSubresourceRange
+    {
+        ImageAspect aspectMask;
+        uint32_t baseMipLevel;
+        uint32_t levelCount;
+        uint32_t baseArrayLayer;
+        uint32_t layerCount;
+
+        ImageSubresourceRange(ImageAspect aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
+            : aspectMask(aspectMask), baseMipLevel(baseMipLevel), levelCount(levelCount), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ImageSubresourceRange);
+#endif
+    };
+
+    struct BufferMemoryBarrier
+    {
+    private:
+        uint32_t sType = 44;
+        void* pNext = nullptr;
+
+    public:
+        Flags<Access> srcAccessMask;
+        Flags<Access> dstAccessMask;
+        uint32_t srcQueueFamilyIndex;
+        uint32_t dstQueueFamilyIndex;
+        BufferHandle buffer;
+        uint64_t offset;
+        uint64_t size;
+
+        BufferMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, BufferHandle buffer, uint64_t offset, uint64_t size)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), buffer(buffer), offset(offset), size(size)
+        {}
+        BufferMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, BufferHandle buffer, uint64_t offset, uint64_t size)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), buffer(buffer), offset(offset), size(size)
+        {}
+        BufferMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, BufferHandle buffer, uint64_t offset, uint64_t size)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), buffer(buffer), offset(offset), size(size)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(BufferMemoryBarrier);
+#endif
+    };
+
+    struct ImageMemoryBarrier
+    {
+    private:
+        uint32_t sType = 45;
+        void* pNext = nullptr;
+
+    public:
+        Flags<Access> srcAccessMask;
+        Flags<Access> dstAccessMask;
+        ImageLayout oldLayout;
+        ImageLayout newLayout;
+        uint32_t srcQueueFamilyIndex;
+        uint32_t dstQueueFamilyIndex;
+        ImageHandle image;
+        ImageSubresourceRange subresourceRange;
+
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, const Queue& srcQueue, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+        {}
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+        {}
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
+        {}
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& srcQueue, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+        {}
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+        {}
+        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, ImageHandle image, ImageSubresourceRange subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
+        {}
+
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ImageMemoryBarrier);
+#endif
+    };
+
+    struct MemoryBarrier
+    {
+    private:
+        uint32_t sType = 46;
+        void* pNext = nullptr;
+
+    public:
+        Flags<Access> srcAccessMask;
+        Flags<Access> dstAccessMask;
+
+        MemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask) :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(MemoryBarrier);
 #endif
     };
 }

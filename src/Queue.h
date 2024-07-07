@@ -12,20 +12,6 @@ namespace vg
     class Queue
     {
     public:
-        /**
-         *@brief Type of Queue
-         *
-         */
-        enum class Type
-        {
-            None = 0,
-            Graphics,
-            Compute,
-            Present,
-            Transfer
-        };
-
-    public:
         Queue();
         Queue(Queue&& other) noexcept;
         Queue(const Queue& other) = delete;
@@ -36,11 +22,11 @@ namespace vg
         operator const QueueHandle& () const;
 
         /**
-         *@brief Get the Type object
+         *@brief Get the QueueType object
          *
-         * @return Type
+         * @return QueueType
          */
-        Type GetType() const;
+        QueueType GetType() const;
         /**
          *@brief Get the Index object
          *
@@ -66,7 +52,7 @@ namespace vg
     private:
         QueueHandle m_handle;
         CommandPoolHandle m_commandPool;
-        Type m_type;
+        QueueType m_type;
         unsigned int m_index;
 
 

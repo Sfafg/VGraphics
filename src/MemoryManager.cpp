@@ -60,6 +60,52 @@ namespace vg
         }
     }
 
+
+    void Allocate(std::initializer_list<Image*> images, Flags<MemoryProperty> memoryProperty)
+    {
+        uint64_t totalSize = 0;
+        uint32_t memoryTypeBits = ~0;
+        for (int i = 0; i < images.size(); i++)
+        {
+            vk::MemoryRequirements memRequirements = ((DeviceHandle) currentDevice).getImageMemoryRequirements(*images.begin()[i]);
+            totalSize += memRequirements.size;
+            images.begin()[i]->m_size = memRequirements.size;
+            memoryTypeBits &= memRequirements.memoryTypeBits;
+        }
+
+        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) currentDevice).getMemoryProperties();
+        MemoryBlock* block = new MemoryBlock(((DeviceHandle) currentDevice).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
+
+        uint64_t offset = 0;
+        for (int i = 0; i < images.size(); i++)
+        {
+            block->Bind(images.begin()[i], offset);
+            offset += images.begin()[i]->GetSize();
+        }
+    }
+    void Allocate(std::vector<Image>& images, Flags<MemoryProperty> memoryProperty)
+    {
+        uint64_t totalSize = 0;
+        uint32_t memoryTypeBits = ~0;
+        for (int i = 0; i < images.size(); i++)
+        {
+            vk::MemoryRequirements memRequirements = ((DeviceHandle) currentDevice).getImageMemoryRequirements(images.begin()[i]);
+            totalSize += memRequirements.size;
+            images[i].m_size = memRequirements.size;
+            memoryTypeBits &= memRequirements.memoryTypeBits;
+        }
+
+        vk::PhysicalDeviceMemoryProperties memProperties = ((PhysicalDeviceHandle) currentDevice).getMemoryProperties();
+        MemoryBlock* block = new MemoryBlock(((DeviceHandle) currentDevice).allocateMemory({ totalSize, FindMemoryType(memProperties,memoryTypeBits, memoryProperty) }));
+
+        uint64_t offset = 0;
+        for (int i = 0; i < images.size(); i++)
+        {
+            block->Bind(&images.begin()[i], offset);
+            offset += images.begin()[i].GetSize();
+        }
+    }
+
     MemoryBlock::operator DeviceMemoryHandle() const
     {
         return m_handle;
@@ -71,6 +117,14 @@ namespace vg
         ((DeviceHandle) currentDevice).bindBufferMemory((vk::Buffer) *buffer, m_handle, offset);
         buffer->m_memory = this;
         buffer->m_offset = offset;
+    }
+
+    void MemoryBlock::Bind(Image* image, uint64_t offset)
+    {
+        m_referanceCount++;
+        ((DeviceHandle) currentDevice).bindImageMemory((vk::Image) *image, m_handle, offset);
+        image->m_memory = this;
+        image->m_offset = offset;
     }
 
     void MemoryBlock::Dereferance()

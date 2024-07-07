@@ -1,5 +1,6 @@
 #pragma once
 #include "Buffer.h"
+#include "Image.h"
 #include "Enums.h"
 #include "Flags.h"
 #include "Device.h"
@@ -13,6 +14,13 @@ namespace vg
         Allocate({ buffer }, memoryProperty);
     }
 
+    extern void Allocate(std::initializer_list<Image*> images, Flags<MemoryProperty> memoryProperty);
+    extern void Allocate(std::vector<Image>& images, Flags<MemoryProperty> memoryProperty);
+    inline void Allocate(Image* image, Flags<MemoryProperty> memoryProperty)
+    {
+        Allocate({ image }, memoryProperty);
+    }
+
     class MemoryBlock
     {
     public:
@@ -21,6 +29,7 @@ namespace vg
         operator DeviceMemoryHandle() const;
 
         void Bind(Buffer* buffer, uint64_t offset);
+        void Bind(Image* buffer, uint64_t offset);
 
     private:
         void Dereferance();
@@ -28,5 +37,6 @@ namespace vg
         DeviceMemoryHandle m_handle;
 
         friend class vg::Buffer;
+        friend class vg::Image;
     };
 }

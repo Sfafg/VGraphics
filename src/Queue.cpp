@@ -4,7 +4,7 @@
 
 namespace vg
 {
-    Queue::Queue() :m_handle(nullptr), m_commandPool(nullptr), m_type(Type::None), m_index(0) {}
+    Queue::Queue() :m_handle(nullptr), m_commandPool(nullptr), m_type(QueueType::None), m_index(0) {}
 
     Queue::Queue(Queue&& other) noexcept
     {
@@ -37,7 +37,7 @@ namespace vg
         return m_handle;
     }
 
-    Queue::Type Queue::GetType() const
+    QueueType Queue::GetType() const
     {
         return m_type;
     }

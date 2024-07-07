@@ -51,5 +51,6 @@ namespace vg
     HANDLE(DescriptorSetLayoutHandle, DescriptorSetLayout);
     HANDLE(DescriptorPoolHandle, DescriptorPool);
     HANDLE(DescriptorSetHandle, DescriptorSet);
+    HANDLE(SamplerHandle, Sampler);
 }
 #undef HANDLE

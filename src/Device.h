@@ -16,21 +16,6 @@ namespace vg
     {
     public:
         /**
-         *@brief Device Type
-         *
-         */
-        enum class Type
-        {
-            Other = 0,
-            Integrated = 1,
-            Dedicated = 2,
-            Virtual = 3,
-            Cpu = 4
-        };
-
-
-    public:
-        /**
          *@brief Construct a new Device object
          *
          * @param queues Required queues
@@ -39,10 +24,10 @@ namespace vg
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
-            const std::set<Queue::Type>& queues,
+            const std::set<QueueType>& queues,
             const std::set<std::string>& extensions = {},
             SurfaceHandle surface = {},
-            std::function<int(const std::set<Queue::Type>& supportedQueues, const std::set<std::string>& supportedExtensions, Type type, const Limits& limits)> scoreFunction = nullptr);
+            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction = nullptr);
         /**
          *@brief Construct a new Device object
         *
@@ -51,9 +36,9 @@ namespace vg
         * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
         */
         Device(
-            const std::set<Queue::Type>& queues,
+            const std::set<QueueType>& queues,
             const std::set<std::string>& extensions = {},
-            std::function<int(const std::set<Queue::Type>& supportedQueues, const std::set<std::string>& supportedExtensions, Type type, const Limits& limits)> scoreFunction = nullptr)
+            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction = nullptr)
             :Device::Device(queues, extensions, {}, scoreFunction) {}
 
         Device();
@@ -73,6 +58,8 @@ namespace vg
          *
          */
         void WaitUntilIdle();
+
+        DeviceProperties GetProperties() const;
 
     public:
         DeviceHandle m_handle;

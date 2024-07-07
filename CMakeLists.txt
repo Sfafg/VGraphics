@@ -24,11 +24,14 @@ set(SRC
     ${SRC_ROOT}/CommandBuffer.cpp
     ${SRC_ROOT}/Synchronization.cpp
     ${SRC_ROOT}/Buffer.cpp
+    ${SRC_ROOT}/Image.cpp
     ${SRC_ROOT}/MemoryManager.cpp
     ${SRC_ROOT}/Window.cpp
     ${SRC_ROOT}/PipelineLayout.cpp
     ${SRC_ROOT}/DescriptorPool.cpp
     ${SRC_ROOT}/DescriptorSet.cpp
+    ${SRC_ROOT}/ImageView.cpp
+    ${SRC_ROOT}/Sampler.cpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -61,7 +64,7 @@ target_include_directories(VGraphics PUBLIC
 
 add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
 
-target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1)
+target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
 
 add_custom_command(TARGET VGTest PRE_BUILD
     COMMAND  ../CompileShaders.bat

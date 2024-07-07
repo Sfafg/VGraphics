@@ -9,7 +9,7 @@ namespace vg
     {
     public:
         Buffer();
-        Buffer(uint64_t byteSize, Flags<BufferUsage> usage, BufferSharing sharing = BufferSharing::Exclusive);
+        Buffer(uint64_t byteSize, Flags<BufferUsage> usage, SharingMode sharing = SharingMode::Exclusive);
         Buffer(Buffer&& other) noexcept;
         Buffer(const Buffer& other) = delete;
         ~Buffer();

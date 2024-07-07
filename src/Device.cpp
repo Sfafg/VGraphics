@@ -7,12 +7,12 @@ namespace vg
 {
     Device currentDevice;
     int DefaultScoreFunction(
-        const std::set<Queue::Type>& queues,
+        const std::set<QueueType>& queues,
         const std::set<std::string>& extensions,
-        const std::set<Queue::Type>& supportedQueues,
+        const std::set<QueueType>& supportedQueues,
         const std::set<std::string>& supportedExtensions,
-        Device::Type type,
-        const Limits& limits)
+        DeviceType type,
+        const DeviceLimits& limits)
     {
         for (const auto& queue : queues)
             if (!supportedQueues.contains(queue)) return -1;
@@ -24,14 +24,14 @@ namespace vg
     }
 
     Device::Device(
-        const std::set<Queue::Type>& queues,
+        const std::set<QueueType>& queues,
         const std::set<std::string>& extensions,
         SurfaceHandle surface,
-        std::function<int(const std::set<Queue::Type>& supportedQueues, const std::set<std::string>& supportedExtensions, Type type, const Limits& limits)> scoreFunction
+        std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction
     )
     {
         assert(queues.size() > 0);
-        assert(queues.contains(Queue::Type::Present) ^ (surface == nullptr));
+        assert(queues.contains(QueueType::Present) ^ (surface == nullptr));
 
         // Pick physical device.
         int highestScore = -1;
@@ -50,27 +50,27 @@ namespace vg
                 if (formatCount == 0 || presentModeCount == 0) continue;
             }
 
-            std::set<Queue::Type> supportedQueues;
+            std::set<QueueType> supportedQueues;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
             for (unsigned int i = 0; i < queueFamilies.size(); i++)
             {
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)supportedQueues.insert(Queue::Type::Graphics);
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute) supportedQueues.insert(Queue::Type::Compute);
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)supportedQueues.insert(Queue::Type::Transfer);
-                if (surface != nullptr && physicalDevice.getSurfaceSupportKHR(i, surface)) supportedQueues.insert(Queue::Type::Present);
+                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)supportedQueues.insert(QueueType::Graphics);
+                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute) supportedQueues.insert(QueueType::Compute);
+                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)supportedQueues.insert(QueueType::Transfer);
+                if (surface != nullptr && physicalDevice.getSurfaceSupportKHR(i, surface)) supportedQueues.insert(QueueType::Present);
 
                 if ((int) supportedQueues.size() == 3 + (surface != nullptr)) break;
             }
 
-            Type type = (Type) physicalDevice.getProperties().deviceType;
+            DeviceType type = (DeviceType) physicalDevice.getProperties().deviceType;
             auto limits = physicalDevice.getProperties().limits;
 
             int score;
             if (scoreFunction != nullptr)
-                score = scoreFunction(supportedQueues, supportedExtensions, type, *(Limits*) &limits);
+                score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits);
 
             else
-                score = DefaultScoreFunction(queues, extensions, supportedQueues, supportedExtensions, type, *(Limits*) &limits);
+                score = DefaultScoreFunction(queues, extensions, supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits);
 
             if (score > highestScore)
             {
@@ -89,24 +89,24 @@ namespace vg
 
         for (unsigned int i = 0; i < queueFamilies.size(); i++)
         {
-            if (graphicsQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            if (graphicsQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
             {
-                graphicsQueue.m_type = Queue::Type::Graphics;
+                graphicsQueue.m_type = QueueType::Graphics;
                 graphicsQueue.m_index = i;
             }
-            if (computeQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
+            if (computeQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
             {
-                computeQueue.m_type = Queue::Type::Compute;
+                computeQueue.m_type = QueueType::Compute;
                 computeQueue.m_index = i;
             }
-            if (transferQueue.m_type == Queue::Type::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
+            if (transferQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
             {
-                transferQueue.m_type = Queue::Type::Transfer;
+                transferQueue.m_type = QueueType::Transfer;
                 transferQueue.m_index = i;
             }
-            if (surface != nullptr && presentQueue.m_type == Queue::Type::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
+            if (surface != nullptr && presentQueue.m_type == QueueType::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
             {
-                presentQueue.m_type = Queue::Type::Transfer;
+                presentQueue.m_type = QueueType::Transfer;
                 presentQueue.m_index = i;
             }
 
@@ -114,10 +114,10 @@ namespace vg
         }
 
         std::set<unsigned int> uniqueQueueFamilies;
-        if (graphicsQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
-        if (computeQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(computeQueue.GetIndex());
-        if (presentQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(presentQueue.GetIndex());
-        if (transferQueue.m_type != Queue::Type::None) uniqueQueueFamilies.insert(transferQueue.GetIndex());
+        if (graphicsQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
+        if (computeQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(computeQueue.GetIndex());
+        if (presentQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(presentQueue.GetIndex());
+        if (transferQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(transferQueue.GetIndex());
 
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         float priority = 0;
@@ -135,10 +135,10 @@ namespace vg
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
-        graphicsQueue.m_handle = graphicsQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
-        computeQueue.m_handle = computeQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
-        transferQueue.m_handle = transferQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
-        presentQueue.m_handle = presentQueue.m_type == Queue::Type::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
+        graphicsQueue.m_handle = graphicsQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
+        computeQueue.m_handle = computeQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
+        transferQueue.m_handle = transferQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
+        presentQueue.m_handle = presentQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
         graphicsQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
         computeQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
         transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
@@ -196,5 +196,11 @@ namespace vg
     void Device::WaitUntilIdle()
     {
         vkDeviceWaitIdle(m_handle);
+    }
+
+    DeviceProperties Device::GetProperties() const
+    {
+        auto properties = m_physicalDevice.getProperties();
+        return *(DeviceProperties*) &properties;
     }
 }

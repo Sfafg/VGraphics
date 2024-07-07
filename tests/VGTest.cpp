@@ -23,8 +23,6 @@
 #include "MemoryManager.h"
 #include "Window.h"
 #include "DescriptorPool.h"
-#include "ImageView.h"
-#include "Sampler.h"
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;
@@ -33,7 +31,6 @@ struct Vertex
 {
     struct Vector2 { float x, y; } position;
     struct Vector3 { float r, g, b; } color;
-    struct Vector2a { float u, v; } texCoord;
 
     static VertexBinding& getBindingDescription()
     {
@@ -41,22 +38,21 @@ struct Vertex
 
         return bindingDescription;
     }
-    static std::array<VertexAttribute, 3>& getAttributeDescriptions()
+    static std::array<VertexAttribute, 2>& getAttributeDescriptions()
     {
-        static std::array<VertexAttribute, 3> attributeDescriptions = {
+        static std::array<VertexAttribute, 2> attributeDescriptions = {
             VertexAttribute(0,0, Format::RG32SFLOAT,offsetof(Vertex,position)),
-            VertexAttribute(1,0, Format::RGB32SFLOAT,offsetof(Vertex,color)),
-            VertexAttribute(2,0, Format::RG32SFLOAT,offsetof(Vertex,texCoord)),
+            VertexAttribute(1,0, Format::RGB32SFLOAT,offsetof(Vertex,color))
         };
 
         return attributeDescriptions;
     }
 };
 std::vector<Vertex> vertices = {
-   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 };
 std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
@@ -85,9 +81,9 @@ int main()
         });
 
     SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
-    vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
+    vg::currentDevice = Device({ Queue::Type::Graphics, Queue::Type::Present, Queue::Type::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
         [](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits) {
-            return type == DeviceType::Integrated;
+            return type == Device::Type::Integrated;
         });
 
     Surface surface(windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);
@@ -112,8 +108,7 @@ int main()
                     DepthStencil(),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }),
                     { DynamicState::Viewport, DynamicState::Scissor },
-                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
-                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}
+                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex}}
                 },
                 {},
                 { AttachmentReference(0, ImageLayout::ColorAttachmentOptimal) }
@@ -123,6 +118,29 @@ int main()
     );
     Swapchain swapchain(surface, 2, w, h);
     std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
+
+    /// Load Image.
+    int texWidth, texHeight, texChannels;
+    unsigned char* pixels = stbi_load("C:/Projekty/Vulkan/VGraphics2/src/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+    Image texImage(texWidth, texHeight, Format::RGBA8SRGB, { ImageUsage::TransferDst , ImageUsage::Sampled });
+    vg::Allocate(&texImage, { MemoryProperty::DeviceLocal });
+    {
+        // Upload data to GPU memory
+        Buffer texStagingBuffer(texWidth * texHeight * 4, { BufferUsage::TransferSrc });
+        vg::Allocate(&texStagingBuffer, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
+        memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
+        stbi_image_free(pixels);
+
+        vg::CommandBuffer transfer(vg::currentDevice.transferQueue);
+        transfer.Append(
+            cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
+            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
+            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
+        );
+        Fence copyFence = transfer.Submit({ vg::SubmitInfo({}, {transfer},{}) });
+        Fence::AwaitAll({ copyFence });
+    }
 
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
@@ -147,43 +165,15 @@ int main()
     vg::Allocate(&uniformBuffers, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
     char* uniformBufferMemory = (char*) uniformBuffers.MapMemory();
 
-    /// Load Image.
-    int texWidth, texHeight, texChannels;
-    unsigned char* pixels = stbi_load("C:/Projekty/Vulkan/VGraphics2/src/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-    Image texImage(texWidth, texHeight, Format::RGBA8SRGB, { ImageUsage::TransferDst , ImageUsage::Sampled });
-    vg::Allocate(&texImage, { MemoryProperty::DeviceLocal });
-    {
-        // Upload data to GPU memory
-        Buffer texStagingBuffer(texWidth * texHeight * 4, { BufferUsage::TransferSrc });
-        vg::Allocate(&texStagingBuffer, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
-        memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
-        stbi_image_free(pixels);
-
-        vg::CommandBuffer transfer(vg::currentDevice.transferQueue);
-        transfer.Append(
-            cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
-            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
-            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
-        );
-        Fence copyFence = transfer.Submit({ vg::SubmitInfo({}, {transfer},{}) });
-        Fence::AwaitAll({ copyFence });
-    }
-    ImageView imageView(texImage, ImageViewType::TwoD, Format::RGBA8SRGB, { ImageAspect::Color });
-    Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
-
     // Create descriptor pools
-    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { {DescriptorType::UniformBuffer,(int) swapchain.GetImageViews().size()},{DescriptorType::CombinedImageSampler,(int) swapchain.GetImageViews().size()} });
+    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { {DescriptorType::UniformBuffer,(int) swapchain.GetImageViews().size()} });
 
     // Create and allocate descriptor set layouts.
     std::vector<vg::DescriptorSetLayoutHandle> layouts((int) swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0]);
     auto descriptorSets = descriptorPool.Allocate(layouts);
 
-    for (size_t i = 0; i < descriptorSets.size(); i++)
-    {
+    for (size_t i = 0; i < layouts.size(); i++)
         descriptorSets[i].AttachBuffer(uniformBuffers, sizeof(UniformBufferObject) * i, sizeof(UniformBufferObject), 0, 0);
-        descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
-    }
 
     CommandBuffer commandBuffer(currentDevice.graphicsQueue);
     Semaphore renderFinishedSemaphore;

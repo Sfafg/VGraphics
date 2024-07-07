@@ -4,6 +4,8 @@
 #include "Enums.h"
 #include "Structs.h"
 #include "Buffer.h"
+#include "ImageView.h"
+#include "Sampler.h"
 
 namespace vg
 {
@@ -13,6 +15,7 @@ namespace vg
         operator const DescriptorSetHandle& () const;
 
         void AttachBuffer(const Buffer& buffer, int offset, int range, int binding, int arrayElement);
+        void AttachImage(ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement);
     private:
         DescriptorSetHandle m_handle;
     };

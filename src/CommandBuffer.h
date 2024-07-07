@@ -6,6 +6,7 @@
 #include "Framebuffer.h"
 #include "Synchronization.h"
 #include "Buffer.h"
+#include "Image.h"
 
 namespace vg
 {
@@ -133,12 +134,52 @@ namespace vg
         };
         struct CopyBuffer : Command
         {
-            CopyBuffer(Buffer& src, Buffer& dst, const std::vector<CopyRegion>& regions) : src(src), dst(dst), regions(regions) {}
+            CopyBuffer(Buffer& src, Buffer& dst, const std::vector<BufferCopyRegion>& regions) : src(src), dst(dst), regions(regions) {}
 
         private:
             BufferHandle src;
             BufferHandle dst;
-            std::vector<CopyRegion> regions;
+            std::vector<BufferCopyRegion> regions;
+            void operator ()(CommandBuffer& commandBuffer) const;
+            friend CommandBuffer;
+        };
+
+        struct CopyBufferToImage : Command
+        {
+            CopyBufferToImage(const Buffer& src, const Image& dst, ImageLayout dstImageLayout, std::vector<BufferImageCopyRegion> regions)
+                : src(src), dst(dst), dstImageLayout(dstImageLayout), regions(regions)
+            {}
+
+        private:
+            BufferHandle src;
+            ImageHandle dst;
+            ImageLayout dstImageLayout;
+            std::vector<BufferImageCopyRegion> regions;
+            void operator ()(CommandBuffer& commandBuffer) const;
+            friend CommandBuffer;
+        };
+
+        struct PipelineBarier : Command
+        {
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, Flags<Dependency> dependency, std::vector<MemoryBarrier> memoryBarriers, std::vector<BufferMemoryBarrier> bufferMemoryBarriers = {}, std::vector<ImageMemoryBarrier> imageMemoryBarriers = {})
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(dependency), memoryBarriers(memoryBarriers), bufferMemoryBarriers(bufferMemoryBarriers), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, Flags<Dependency> dependency, std::vector<BufferMemoryBarrier> bufferMemoryBarriers, std::vector<ImageMemoryBarrier> imageMemoryBarriers = {})
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(dependency), bufferMemoryBarriers(bufferMemoryBarriers), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, Flags<Dependency> dependency, std::vector<ImageMemoryBarrier> imageMemoryBarriers)
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(dependency), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
+        private:
+            Flags<PipelineStage> srcStageMask;
+            Flags<PipelineStage> dstStageMask;
+            Flags<Dependency> dependency;
+            std::vector<MemoryBarrier> memoryBarriers;
+            std::vector<BufferMemoryBarrier> bufferMemoryBarriers;
+            std::vector<ImageMemoryBarrier> imageMemoryBarriers;
             void operator ()(CommandBuffer& commandBuffer) const;
             friend CommandBuffer;
         };

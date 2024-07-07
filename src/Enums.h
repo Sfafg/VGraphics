@@ -2,6 +2,24 @@
 
 namespace vg
 {
+    enum class DeviceType
+    {
+        Other = 0,
+        Integrated = 1,
+        Dedicated = 2,
+        Virtual = 3,
+        Cpu = 4
+    };
+
+    enum class QueueType
+    {
+        None = 0,
+        Graphics,
+        Compute,
+        Present,
+        Transfer
+    };
+
     enum class PresentMode
     {
         Immediate = 0,
@@ -295,6 +313,7 @@ namespace vg
         A1BGR5UNORMPACK16 = 1000470000,
         A8UNORM = 1000470001,
     };
+
     enum class ColorSpace
     {
         SRGBNL = 0,
@@ -409,6 +428,19 @@ namespace vg
         CoverageReductionMode = 1000455032,
         AttachmentFeedbackLoopEnable = 1000524000,
     };
+
+    enum class CompareOp
+    {
+        Never = 0,
+        Less = 1,
+        Equal = 2,
+        LessOrEqual = 3,
+        Greater = 4,
+        NotEqual = 5,
+        GreaterOrEqual = 6,
+        Always = 7,
+    };
+
     enum class Primitive
     {
         Points = 0,
@@ -619,6 +651,134 @@ namespace vg
         MeshShader = 0x00100000,
     };
 
+    enum class Dependency
+    {
+        None = 0,
+        ByRegion = 1
+    };
+
+    enum class Access
+    {
+        None = 0,
+        IndirectCommandRead = 0x00000001,
+        IndexRead = 0x00000002,
+        VertexAttributeRead = 0x00000004,
+        UniformRead = 0x00000008,
+        InputAttachmentRead = 0x00000010,
+        ShaderRead = 0x00000020,
+        ShaderWrite = 0x00000040,
+        ColorAttachmentRead = 0x00000080,
+        ColorAttachmentWrite = 0x00000100,
+        DepthStencilAttachmentRead = 0x00000200,
+        DepthStencilAttachmentWrite = 0x00000400,
+        TransferRead = 0x00000800,
+        TransferWrite = 0x00001000,
+        HostRead = 0x00002000,
+        HostWrite = 0x00004000,
+        MemoryRead = 0x00008000,
+        MemoryWrite = 0x00010000,
+        TransformFeedbackWrite = 0x02000000,
+        TransformFeedbackCounterRead = 0x04000000,
+        TransformFeedbackCounterWrite = 0x08000000,
+        ConditionalRenderingRead = 0x00100000,
+        ColorAttachmentReadNoncoherent = 0x00080000,
+        AccelerationStructureRead = 0x00200000,
+        AccelerationStructureWrite = 0x00400000,
+        FragmentDensityMapRead = 0x01000000,
+        FragmentShadingRateAttachmentRead = 0x00800000,
+        CommandPreprocessRead = 0x00020000,
+        CommandPreprocessWrite = 0x00040000,
+    };
+
+    enum class ImageAspect
+    {
+        None = 0,
+        Color = 0x00000001,
+        Depth = 0x00000002,
+        Stencil = 0x00000004,
+        Metadata = 0x00000008,
+        Plane0 = 0x00000010,
+        Plane1 = 0x00000020,
+        Plane2 = 0x00000040,
+        MemoryPlane0 = 0x00000080,
+        MemoryPlane1 = 0x00000100,
+        MemoryPlane2 = 0x00000200,
+        MemoryPlane3 = 0x00000400,
+    };
+
+    enum class Filter
+    {
+        Nearest = 0,
+        Linear = 1,
+        Cubic = 1000015000,
+    };
+
+    enum class SamplerMipmapMode
+    {
+        Nearest = 0,
+        Linear = 1,
+    };
+
+    enum class SamplerAddressMode
+    {
+        Repeat = 0,
+        MirroredRepeat = 1,
+        ClampToEdge = 2,
+        ClampToBorder = 3,
+        MirrorClampToEdge = 4,
+    };
+
+    enum class BorderColor
+    {
+        FloatTransparentBlack = 0,
+        IntTransparentBlack = 1,
+        FloatOpaqueBlack = 2,
+        IntOpaqueBlack = 3,
+        FloatOpaqueWhite = 4,
+        IntOpaqueWhite = 5,
+    };
+
+    enum class ImageViewType
+    {
+        OneD = 0,
+        TwoD = 1,
+        ThreeD = 2,
+        Cube = 3,
+        OneDArray = 4,
+        TwoDArray = 5,
+        CubeArray = 6,
+    };
+
+    enum class ImageTiling
+    {
+        Optimal = 0,
+        Linear = 1,
+    };
+    enum class ImageUsage
+    {
+        TransferSrc = 0x00000001,
+        TransferDst = 0x00000002,
+        Sampled = 0x00000004,
+        Storage = 0x00000008,
+        ColorAttachment = 0x00000010,
+        DepthStencilAttachment = 0x00000020,
+        TransientAttachment = 0x00000040,
+        InputAttachment = 0x00000080,
+        VideoDecodeDst = 0x00000400,
+        VideoDecodeSrc = 0x00000800,
+        VideoDecodeDpb = 0x00001000,
+        FragmentDensityMap = 0x00000200,
+        FragmentShadingRateAttachment = 0x00000100,
+        HostTransfer = 0x00400000,
+        VideoEncodeDst = 0x00002000,
+        VideoEncodeSrc = 0x00004000,
+        VideoEncodeDpb = 0x00008000,
+        AttachmentFeedbackLoop = 0x00080000,
+        InvocationMask = 0x00040000,
+        SampleWeight = 0x00100000,
+        SampleBlockMatch = 0x00200000,
+    };
+
     enum class BufferUsage
     {
         TransferSrc = 0x00000001,
@@ -646,7 +806,7 @@ namespace vg
         MicromapStorage = 0x01000000,
     };
 
-    enum class BufferSharing
+    enum class SharingMode
     {
         Exclusive = 0,
         Concurrent = 1,
@@ -660,9 +820,9 @@ namespace vg
         HostCached = 0x00000008,
         LazilyAllocated = 0x00000010,
         Protected = 0x00000020,
-        DeviceCoherentAMD = 0x00000040,
-        DeviceUncachedAMD = 0x00000080,
-        RdmaCapableNV = 0x00000100
+        DeviceCoherent = 0x00000040,
+        DeviceUncached = 0x00000080,
+        RdmaCapable = 0x00000100
     };
 
     enum class DescriptorType
@@ -680,7 +840,6 @@ namespace vg
         InputAttachment = 10,
         InlineUniformBlock = 1000138000,
         AccelerationStructure = 1000150000,
-        AccelerationStructureNv = 1000165000,
         SampleWeightImage = 1000440000,
         BlockMatchImage = 1000440001,
         Mutable = 1000351000,

@@ -7,6 +7,8 @@
 #include "Synchronization.h"
 #include "Framebuffer.h"
 #include "Flags.h"
+#include "Image.h"
+#include "ImageView.h"
 
 namespace vg
 {

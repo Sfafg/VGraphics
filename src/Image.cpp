@@ -13,14 +13,14 @@ namespace vg
         int mipLevels,
         int arrayLevels,
         ImageTiling tiling,
-        ImageLayout initialLayut,
+        ImageLayout initialLayout,
         int samples,
         SharingMode sharingMode)
     {
         vk::ImageCreateInfo imageInfo({}, vk::ImageType::e1D,
             (vk::Format) format, { width,1,1 },
             mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
-            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode);
+            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
         m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
     }
@@ -33,14 +33,14 @@ namespace vg
         int mipLevels,
         int arrayLevels,
         ImageTiling tiling,
-        ImageLayout initialLayut,
+        ImageLayout initialLayout,
         int samples,
         SharingMode sharingMode)
     {
         vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D,
             (vk::Format) format, { width,height,1 },
             mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
-            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode);
+            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
         m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
     }
@@ -54,14 +54,14 @@ namespace vg
         int mipLevels,
         int arrayLevels,
         ImageTiling tiling,
-        ImageLayout initialLayut,
+        ImageLayout initialLayout,
         int samples,
         SharingMode sharingMode)
     {
         vk::ImageCreateInfo imageInfo({}, vk::ImageType::e3D,
             (vk::Format) format, { width,height,depth },
             mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
-            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode);
+            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
         m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
     }

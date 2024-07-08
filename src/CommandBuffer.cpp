@@ -139,7 +139,7 @@ namespace vg
                 waitSemaphores[i][j] = (vk::Semaphore) std::get<1>(submits[i].waitStages[j]);
                 stages[i][j] = (vk::PipelineStageFlagBits) (Flags<PipelineStage>::TMask) std::get<0>(submits[i].waitStages[j]);
             }
-            vk::SubmitInfo sub(submits[i].waitStages.size(), waitSemaphores[i], stages[i], submits[i].commandBuffers.size(), (vk::CommandBuffer*) submits[i].commandBuffers.data(), submits[i].signalSemaphores.size(), (vk::Semaphore*) submits[i].signalSemaphores.data());
+            vk::SubmitInfo sub(submits[i].waitStages.size(), waitSemaphores[i], stages[i], 1, (vk::CommandBuffer*) &m_handle, submits[i].signalSemaphores.size(), (vk::Semaphore*) submits[i].signalSemaphores.data());
             submits_[i] = sub;
         }
 

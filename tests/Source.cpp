@@ -75,7 +75,6 @@ int main()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Vulkan", nullptr, nullptr);
-    // glfwSetWindowPos(window, -1920 / 2 - 1600 / 2, 1080 / 2 - 900 / 2);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int w, int h) {recreateFramebuffer = true; });
 
     vg::instance = Instance({ "VK_KHR_surface", "VK_KHR_win32_surface" },
@@ -137,9 +136,10 @@ int main()
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
+        // TO DO: transfer.Submit and then passing transfer does not make sense.
         vg::CommandBuffer transfer(currentDevice.transferQueue);
         transfer.Append(cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } }));
-        Fence copyFence = transfer.Submit({ vg::SubmitInfo({}, {transfer},{}) });
+        Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
         Fence::AwaitAll({ copyFence });
     }
 
@@ -166,17 +166,20 @@ int main()
             cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
             cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
         );
-        Fence copyFence = transfer.Submit({ vg::SubmitInfo({}, {transfer},{}) });
+        Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
         Fence::AwaitAll({ copyFence });
     }
     ImageView imageView(texImage, ImageViewType::TwoD, Format::RGBA8SRGB, { ImageAspect::Color });
     Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
 
     // Create descriptor pools
-    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), { {DescriptorType::UniformBuffer,(int) swapchain.GetImageViews().size()},{DescriptorType::CombinedImageSampler,(int) swapchain.GetImageViews().size()} });
+    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), {
+        {DescriptorType::UniformBuffer, swapchain.GetImageViews().size()},
+        {DescriptorType::CombinedImageSampler, swapchain.GetImageViews().size()}
+        });
 
     // Create and allocate descriptor set layouts.
-    std::vector<vg::DescriptorSetLayoutHandle> layouts((int) swapchain.GetImageViews().size(), renderPass.m_pipelineLayouts[0].GetDescriptorSets()[0]);
+    std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageViews().size(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]);
     auto descriptorSets = descriptorPool.Allocate(layouts);
 
     for (size_t i = 0; i < descriptorSets.size(); i++)
@@ -220,18 +223,18 @@ int main()
         memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
         commandBuffer.Append(
-            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight()),
-            cmd::BindPipeline(renderPass.m_graphicsPipelines[0]),
+            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
+            cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindVertexBuffer(vertexBuffer, 0),
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), (int) vk::IndexType::eUint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
-            cmd::BindDescriptorSets(renderPass.m_pipelineLayouts[0], 0, { descriptorSets[imageIndex] }),
+            cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         );
 
-        commandBuffer.Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ commandBuffer },{ renderFinishedSemaphore }} }, inFlightFence);
+        commandBuffer.Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
         currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });

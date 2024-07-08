@@ -139,4 +139,15 @@ namespace vg
     {
         return m_handle;
     }
+
+    const std::vector<PipelineLayout>& RenderPass::GetPipelineLayouts() const
+    {
+        return m_pipelineLayouts;
+    }
+
+    const std::vector<GraphicsPipelineHandle>& RenderPass::GetPipelines() const
+    {
+        return m_graphicsPipelines;
+    }
+
 }

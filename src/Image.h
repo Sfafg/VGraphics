@@ -17,7 +17,7 @@ namespace vg
             int mipLevels = 1,
             int arrayLevels = 1,
             ImageTiling tiling = ImageTiling::Optimal,
-            ImageLayout initialLayut = ImageLayout::Undefined,
+            ImageLayout initialLayout = ImageLayout::Undefined,
             int samples = 1,
             SharingMode sharingMode = SharingMode::Exclusive);
 
@@ -29,7 +29,7 @@ namespace vg
             int mipLevels = 1,
             int arrayLevels = 1,
             ImageTiling tiling = ImageTiling::Optimal,
-            ImageLayout initialLayut = ImageLayout::Undefined,
+            ImageLayout initialLayout = ImageLayout::Undefined,
             int samples = 1,
             SharingMode sharingMode = SharingMode::Exclusive);
 
@@ -42,7 +42,7 @@ namespace vg
             int mipLevels = 1,
             int arrayLevels = 1,
             ImageTiling tiling = ImageTiling::Optimal,
-            ImageLayout initialLayut = ImageLayout::Undefined,
+            ImageLayout initialLayout = ImageLayout::Undefined,
             int samples = 1,
             SharingMode sharingMode = SharingMode::Exclusive);
 

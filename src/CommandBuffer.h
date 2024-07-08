@@ -192,17 +192,15 @@ namespace vg
     struct SubmitInfo
     {
         std::vector <std::tuple<Flags<PipelineStage>, SemaphoreHandle>> waitStages;
-        std::vector<CommandBufferHandle> commandBuffers;
         std::vector<SemaphoreHandle> signalSemaphores;
         /**
          * @brief Construct a new Submit Info object
          *
          * @param waitStages Array of pairs of values FlagSet of pipeline stages and Semaphore for which to wait on those stages
-         * @param commandBuffers Array of command buffers to submit
          * @param signalSemaphores Semaphores signalled upon all command buffers complete execution
          */
-        SubmitInfo(const std::vector < std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<CommandBufferHandle>& commandBuffers, const std::vector<SemaphoreHandle>& signalSemaphores)
-            :waitStages(waitStages), commandBuffers(commandBuffers), signalSemaphores(signalSemaphores)
+        SubmitInfo(const std::vector < std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores)
+            :waitStages(waitStages), signalSemaphores(signalSemaphores)
         {}
     };
 

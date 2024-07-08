@@ -34,7 +34,10 @@ namespace vg
         RenderPass& operator=(const RenderPass& other) = delete;
         operator const RenderPassHandle& () const;
 
-    public:
+        const std::vector<PipelineLayout>& GetPipelineLayouts() const;
+        const std::vector<GraphicsPipelineHandle>& GetPipelines() const;
+
+    private:
         RenderPassHandle m_handle;
 
         std::vector<GraphicsPipelineHandle> m_graphicsPipelines;

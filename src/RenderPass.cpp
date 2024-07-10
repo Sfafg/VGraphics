@@ -58,8 +58,10 @@ namespace vg
             stages[i].resize(pipeline.shaders.size());
             for (int j = 0; j < pipeline.shaders.size(); j++)  stages[i][j] = *pipeline.shaders[j];
 
-            colorBlendAttachmentStates[i].resize(attachments.size());
-            for (int j = 0; j < attachments.size(); j++)  colorBlendAttachmentStates[i][j] = (vk::PipelineColorBlendAttachmentState) attachments[j].colorBlending;
+            colorBlendAttachmentStates[i].reserve(attachments.size());
+            for (int j = 0; j < attachments.size(); j++)
+                if (attachments[j].colorBlending)
+                    colorBlendAttachmentStates[i].push_back((vk::PipelineColorBlendAttachmentState) *attachments[j].colorBlending);
 
             vk::PipelineVertexInputStateCreateInfo* vertexInput = new vk::PipelineVertexInputStateCreateInfo(pipeline.vertexInput);
             vk::PipelineInputAssemblyStateCreateInfo* inputAssembly = new vk::PipelineInputAssemblyStateCreateInfo(pipeline.inputAssembly);

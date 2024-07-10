@@ -58,8 +58,8 @@ namespace vg
         };
         struct BeginRenderpass : Command
         {
-            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, int32_t offsetX, int32_t offsetY, uint32_t extendX, uint32_t extendY, float clearColorR = 0, float clearColorG = 0, float clearColorB = 0, float clearColorA = 0)
-                : renderpass(renderpass), framebuffer(framebuffer), offsetX(offsetX), offsetY(offsetY), extendX(extendX), extendY(extendY), clearColorR(clearColorR), clearColorG(clearColorG), clearColorB(clearColorB), clearColorA(clearColorA)
+            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, int32_t offsetX, int32_t offsetY, uint32_t extendX, uint32_t extendY, float clearColorR = 0, float clearColorG = 0, float clearColorB = 0, float clearColorA = 0, float depthClearColor = 1, float stencilClearColor = 0)
+                : renderpass(renderpass), framebuffer(framebuffer), offsetX(offsetX), offsetY(offsetY), extendX(extendX), extendY(extendY), clearColorR(clearColorR), clearColorG(clearColorG), clearColorB(clearColorB), clearColorA(clearColorA), depthClearColor(depthClearColor), stencilClearColor(stencilClearColor)
             {}
 
         private:
@@ -73,6 +73,8 @@ namespace vg
             float clearColorG;
             float clearColorB;
             float clearColorA;
+            float depthClearColor;
+            float stencilClearColor;
             void operator ()(CommandBuffer& commandBuffer) const;
             friend CommandBuffer;
         };

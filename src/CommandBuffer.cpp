@@ -27,10 +27,11 @@ namespace vg
 
         void BeginRenderpass::operator()(CommandBuffer& commandBuffer) const
         {
-            auto clear = vk::ClearColorValue(clearColorR, clearColorG, clearColorB, clearColorA);
-            auto clearValues = vk::ClearValue(clear);
+            std::vector<vk::ClearValue> clearValues = {
+                vk::ClearValue({clearColorR, clearColorG, clearColorB, clearColorA}),
+                vk::ClearValue{vk::ClearDepthStencilValue(depthClearColor,stencilClearColor)} };
 
-            auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D({ offsetX,offsetY }, { extendX,extendY }), 1, &clearValues);
+            auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D({ offsetX,offsetY }, { extendX,extendY }), clearValues);
             CommandBufferHandle(commandBuffer).beginRenderPass(info, vk::SubpassContents::eInline);
         }
 
@@ -103,6 +104,7 @@ namespace vg
 
         return *this;
     }
+
 
     CommandBuffer::operator const CommandBufferHandle& () const
     {

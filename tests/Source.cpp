@@ -1,4 +1,5 @@
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -31,9 +32,9 @@ bool recreateFramebuffer = false;
 
 struct Vertex
 {
-    struct Vector2 { float x, y; } position;
-    struct Vector3 { float r, g, b; } color;
-    struct Vector2a { float u, v; } texCoord;
+    glm::vec3 position;
+    glm::vec3 color;
+    glm::vec2 texCoord;
 
     static VertexBinding& getBindingDescription()
     {
@@ -44,7 +45,7 @@ struct Vertex
     static std::array<VertexAttribute, 3>& getAttributeDescriptions()
     {
         static std::array<VertexAttribute, 3> attributeDescriptions = {
-            VertexAttribute(0,0, Format::RG32SFLOAT,offsetof(Vertex,position)),
+            VertexAttribute(0,0, Format::RGB32SFLOAT,offsetof(Vertex,position)),
             VertexAttribute(1,0, Format::RGB32SFLOAT,offsetof(Vertex,color)),
             VertexAttribute(2,0, Format::RG32SFLOAT,offsetof(Vertex,texCoord)),
         };
@@ -52,14 +53,21 @@ struct Vertex
         return attributeDescriptions;
     }
 };
-std::vector<Vertex> vertices = {
-   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+const std::vector<Vertex> vertices = {
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
-std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4
 };
 
 struct UniformBufferObject
@@ -96,11 +104,12 @@ int main()
     Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
     RenderPass renderPass(
         {
-            Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
+            Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
+            Attachment(Format::D32SFLOAT, ImageLayout::DepthStencilAttachmentOptimal,ImageLayout::Undefined,nullptr)
         },
         {
             Subpass(
-                vg::GraphicsPipeline{
+                GraphicsPipeline{
                     {&vertexShader, &fragmentShader},
                     VertexLayout(1U,&Vertex::getBindingDescription(),Vertex::getAttributeDescriptions().size(),Vertex::getAttributeDescriptions().data()),
                     InputAssembly(),
@@ -108,20 +117,29 @@ int main()
                     ViewportState(Viewport(w, h), Scissor(w, h)),
                     Rasterizer(true, false, PolygonMode::Fill, CullMode::Back, FrontFace::CounterClockwise, DepthBias(), 10.0f),
                     Multisampling(),
-                    DepthStencil(),
+                    DepthStencil(true,true,CompareOp::Less),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }),
                     { DynamicState::Viewport, DynamicState::Scissor },
                     {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
                      {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}
                 },
                 {},
-                { AttachmentReference(0, ImageLayout::ColorAttachmentOptimal) }
+                {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
+                {},
+                new AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
         {}
     );
+
     Swapchain swapchain(surface, 2, w, h);
-    std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
+
+    // TO DO: Check if depth format supported by device.
+    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
+    Allocate(&depthImage, { MemoryProperty::DeviceLocal });
+    ImageView depthImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+
+    std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass, { depthImageView });
 
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
@@ -136,7 +154,6 @@ int main()
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
-        // TO DO: transfer.Submit and then passing transfer does not make sense.
         vg::CommandBuffer transfer(currentDevice.transferQueue);
         transfer.Append(cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } }));
         Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
@@ -205,9 +222,13 @@ int main()
         Swapchain oldSwapchain;
         if (recreateFramebuffer)
         {
+            depthImage = Image(w, h, Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
+            Allocate(&depthImage, { MemoryProperty::DeviceLocal });
+            depthImageView = ImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
-            swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass);
+            swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass, { depthImageView });
         }
 
         uint32_t imageIndex = swapchain.GetNextImageIndex(imageAvailableSemaphore);

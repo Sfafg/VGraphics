@@ -26,7 +26,7 @@ namespace vg
         Format format,
         ImageLayout finalLayout,
         ImageLayout initialLayout,
-        ColorBlend colorBlending,
+        ColorBlend* colorBlending,
         LoadOp loadOp,
         StoreOp storeOp,
         LoadOp stencilLoadOp,

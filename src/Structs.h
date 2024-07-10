@@ -313,17 +313,22 @@ namespace vg
         const uint32_t reserved_1 = 25;
         const void* reserved_2 = nullptr;
         const uint32_t reserved_3 = 0;
-        uint32_t  depthTestEnable = 0;
-        uint32_t  depthWriteEnable = 0;
-        uint32_t depthCompareOp = 0;
-        uint32_t  depthBoundsTestEnable = 0;
-        uint32_t  stencilTestEnable = 0;
+    public:
+        uint32_t depthTestEnable = 0;
+        uint32_t depthWriteEnable = 0;
+        CompareOp depthCompareOp = CompareOp::Never;
+        uint32_t depthBoundsTestEnable = 0;
+        uint32_t stencilTestEnable = 0;
         uint32_t front = 0;
         uint32_t back = 0;
-        float  minDepthBounds = 0;
-        float  maxDepthBounds = 0;
+        float minDepthBounds = 0;
+        float maxDepthBounds = 0;
 
     public:
+        DepthStencil() {}
+        DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp) {}
+        DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp, bool enabledepthBoundsTest, float minDepthBounds, float maxDepthBounds) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp), depthBoundsTestEnable(enabledepthBoundsTest), minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
+
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(PipelineDepthStencilStateCreateInfo);
 #endif

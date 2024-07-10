@@ -78,7 +78,7 @@ namespace vg
          * @param layers Amount of layers, used for anaglif rendering
          * @return Array of Framebuffers for each ImageView
          */
-        std::vector<Framebuffer> CreateFramebuffers(RenderPassHandle renderPass, int layers = 1) const;
+        std::vector<Framebuffer> CreateFramebuffers(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& additionalImageAttachments = {}, int layers = 1) const;
     private:
         SwapchainHandle m_handle;
 

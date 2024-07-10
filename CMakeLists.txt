@@ -74,3 +74,17 @@ target_link_directories(VGTest PRIVATE
     "C:/VulkanSDK/1.3.261.1/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
 )
+
+
+add_executable (VGTest2 ${TESTS_ROOT}/VGTest.cpp)
+
+target_link_libraries(VGTest2 PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+
+add_custom_command(TARGET VGTest2 PRE_BUILD
+    COMMAND  ../CompileShaders.bat
+)
+
+target_link_directories(VGTest2 PRIVATE 
+    "C:/VulkanSDK/1.3.261.1/lib/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
+)

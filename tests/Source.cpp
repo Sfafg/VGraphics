@@ -26,6 +26,8 @@
 #include "DescriptorPool.h"
 #include "ImageView.h"
 #include "Sampler.h"
+#include "FormatInfo.h"
+
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;
@@ -126,7 +128,7 @@ int main()
                 {},
                 {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
                 {},
-                new AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
+                AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
         {}
@@ -134,10 +136,9 @@ int main()
 
     Swapchain swapchain(surface, 2, w, h);
 
-    // TO DO: Check if depth format supported by device.
-    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
+    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
-    ImageView depthImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+    ImageView depthImageView(depthImage, { ImageAspect::Depth });
 
     std::vector<Framebuffer> swapChainFramebuffers;
     swapChainFramebuffers.resize(swapchain.GetImageCount());
@@ -157,10 +158,9 @@ int main()
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
-        vg::CommandBuffer transfer(currentDevice.transferQueue);
-        transfer.Append(cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } }));
-        Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
-        Fence::AwaitAll({ copyFence });
+        vg::CommandBuffer(currentDevice.transferQueue).Append(
+            cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } })
+        ).Submit().Await();
     }
 
     Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageCount(), BufferUsage::UniformBuffer);
@@ -180,16 +180,13 @@ int main()
         memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
-        vg::CommandBuffer transfer(vg::currentDevice.transferQueue);
-        transfer.Append(
+        vg::CommandBuffer(vg::currentDevice.transferQueue).Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
             cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
             cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
-        );
-        Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
-        Fence::AwaitAll({ copyFence });
+        ).Submit().Await();
     }
-    ImageView imageView(texImage, ImageViewType::TwoD, Format::RGBA8SRGB, { ImageAspect::Color });
+    ImageView imageView(texImage, { ImageAspect::Color });
     Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
 
     // Create descriptor pools
@@ -227,7 +224,7 @@ int main()
         {
             depthImage = Image(w, h, Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
             Allocate(&depthImage, { MemoryProperty::DeviceLocal });
-            depthImageView = ImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+            depthImageView = ImageView(depthImage, { ImageAspect::Depth });
 
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
@@ -258,9 +255,7 @@ int main()
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
-        );
-
-        commandBuffer.Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
+        ).Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
         currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });

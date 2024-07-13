@@ -111,23 +111,29 @@ namespace vg
         return m_handle;
     }
 
-    void CommandBuffer::Clear()
+    CommandBuffer& CommandBuffer::Clear()
     {
         m_handle.reset();
+
+        return *this;
     }
 
-    void CommandBuffer::Begin(bool clear)
+    CommandBuffer& CommandBuffer::Begin(bool clear)
     {
         if (clear) Clear();
         m_handle.begin(vk::CommandBufferBeginInfo());
+
+        return *this;
     }
 
-    void CommandBuffer::End()
+    CommandBuffer& CommandBuffer::End()
     {
         m_handle.end();
+
+        return *this;
     }
 
-    void CommandBuffer::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
+    CommandBuffer& CommandBuffer::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
     {
         vk::SubmitInfo* submits_ = new vk::SubmitInfo[submits.size()];
         vk::Semaphore** waitSemaphores = new vk::Semaphore * [submits.size()];
@@ -149,5 +155,7 @@ namespace vg
         delete[] submits_;
         delete[] waitSemaphores;
         delete[] stages;
+
+        return *this;
     }
 }

@@ -4,7 +4,8 @@
 
 namespace vg
 {
-    ImageView::ImageView() : m_handle(nullptr) {}
+    ImageView::ImageView(const Image& image, ImageSubresourceRange subresourceRange) :ImageView(image, (ImageViewType) (image.GetDimensionCount() - 1), image.GetFormat(), subresourceRange)
+    {}
 
     ImageView::ImageView(const Image& image, ImageViewType type, Format format, ImageSubresourceRange subresourceRange)
     {
@@ -12,6 +13,8 @@ namespace vg
 
         m_handle = ((DeviceHandle) currentDevice).createImageView(createInfo);
     }
+
+    ImageView::ImageView() : m_handle(nullptr) {}
 
     ImageView::ImageView(ImageView&& other) noexcept
     {

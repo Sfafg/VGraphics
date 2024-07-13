@@ -201,8 +201,9 @@ namespace vg
          * @param waitStages Array of pairs of values FlagSet of pipeline stages and Semaphore for which to wait on those stages
          * @param signalSemaphores Semaphores signalled upon all command buffers complete execution
          */
-        SubmitInfo(const std::vector < std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores)
-            :waitStages(waitStages), signalSemaphores(signalSemaphores)
+
+        SubmitInfo(const std::vector < std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages = {}, const std::vector<SemaphoreHandle>& signalSemaphores = {})
+            : waitStages(waitStages), signalSemaphores(signalSemaphores)
         {}
     };
 
@@ -237,13 +238,13 @@ namespace vg
          *@brief Clear commands
          *
          */
-        void Clear();
+        CommandBuffer& Clear();
         /**
          *@brief Begin appending to the command buffer
          *  Needs to be called before all Appends
          * @param clear if true buffer gets cleared before beginning
          */
-        void Begin(bool clear = true);
+        CommandBuffer& Begin(bool clear = true);
         /**
          *@brief Append commands, has to be between \ref CommandBuffer::Begin() and \ref CommandBuffer::End()
          * Appends array commands to the buffer
@@ -251,7 +252,7 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        void AppendNoBegin(const T&... commands) { (..., _Append(commands)); }
+        CommandBuffer& AppendNoBegin(const T&... commands) { (..., _Append(commands)); return *this; }
         /**
          *@brief Append commands
          * Appends array commands to the buffer
@@ -259,27 +260,27 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        void Append(const T&... commands) { Begin(); (..., _Append(commands)); End(); }
+        CommandBuffer& Append(const T&... commands) { Begin(); (..., _Append(commands)); End(); return *this; }
         /**
          *@brief End appending to command buffer
         * Has to be called before submiting
         */
-        void End();
+        CommandBuffer& End();
 
         /**
          *@brief Submit command buffers and all relevant data
         *
-        * @param submits Command buffers and relevant data
+        * @param submits Synchronization info
         * @param fence Fence to be signaled upon all submits finish
         */
-        void Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
+        CommandBuffer& Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
         /**
          *@brief Submit command buffer and all relevant data
          *
-         *@param submits Command buffers and relevant data
+         *@param submits Synchronization info
          *@return Fence to be signaled upon all submits finish
          */
-        Fence Submit(const std::vector<SubmitInfo>& submits)
+        Fence Submit(const std::vector<SubmitInfo>& submits = { SubmitInfo() })
         {
             Fence fence;
             Submit(submits, fence);

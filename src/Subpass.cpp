@@ -8,8 +8,8 @@ namespace vg
         std::vector<AttachmentReference> inputAttachments,
         std::vector<AttachmentReference> colorAttachments,
         std::vector<AttachmentReference> resolveAttachments,
-        AttachmentReference* depthStancilAttachment,
+        std::optional<AttachmentReference> depthStencilAttachment,
         std::vector<uint32_t> preserveAttachments)
-        : graphicsPipeline(graphicsPipeline), inputAttachments(inputAttachments), colorAttachments(colorAttachments), resolveAttachments(resolveAttachments), depthStancilAttachment(depthStancilAttachment), preserveAttachments(preserveAttachments)
+        : graphicsPipeline(graphicsPipeline), inputAttachments(inputAttachments), colorAttachments(colorAttachments), resolveAttachments(resolveAttachments), depthStencilAttachment(depthStencilAttachment), preserveAttachments(preserveAttachments)
     {}
 }

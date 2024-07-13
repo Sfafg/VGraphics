@@ -26,6 +26,8 @@
 #include "DescriptorPool.h"
 #include "ImageView.h"
 #include "Sampler.h"
+#include "FormatInfo.h"
+
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;
@@ -134,10 +136,9 @@ int main()
 
     Swapchain swapchain(surface, 2, w, h);
 
-    // TO DO: Check if depth format supported by device.
-    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
+    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
-    ImageView depthImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+    ImageView depthImageView(depthImage, ImageViewType::_2D, Format::D32SFLOAT, { ImageAspect::Depth });
 
     std::vector<Framebuffer> swapChainFramebuffers;
     swapChainFramebuffers.resize(swapchain.GetImageCount());
@@ -189,7 +190,7 @@ int main()
         Fence copyFence = transfer.Submit({ vg::SubmitInfo({},{}) });
         Fence::AwaitAll({ copyFence });
     }
-    ImageView imageView(texImage, ImageViewType::TwoD, Format::RGBA8SRGB, { ImageAspect::Color });
+    ImageView imageView(texImage, ImageViewType::_2D, Format::RGBA8SRGB, { ImageAspect::Color });
     Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
 
     // Create descriptor pools
@@ -227,7 +228,7 @@ int main()
         {
             depthImage = Image(w, h, Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
             Allocate(&depthImage, { MemoryProperty::DeviceLocal });
-            depthImageView = ImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
+            depthImageView = ImageView(depthImage, ImageViewType::_2D, Format::D32SFLOAT, { ImageAspect::Depth });
 
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);

@@ -38,5 +38,5 @@ int main()
         });
 
     Image test(1080, 1080, Format::RGBA32SFLOAT, { ImageUsage::ColorAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::General);
-    ImageView imageView(test, ImageViewType::TwoD, Format::RGBA32SFLOAT, ImageSubresourceRange(ImageAspect::Color));
+    ImageView imageView(test, ImageViewType::_2D, Format::RGBA32SFLOAT, ImageSubresourceRange(ImageAspect::Color));
 }

@@ -60,6 +60,7 @@ namespace vg
         SampleWeight = 0x00100000,
         SampleBlockMatch = 0x00200000,
     };
+
     enum class Format
     {
         Undefined = 0,
@@ -312,6 +313,52 @@ namespace vg
         RG16S105 = 1000464000,
         A1BGR5UNORMPACK16 = 1000470000,
         A8UNORM = 1000470001,
+    };
+
+    enum class FormatComponent
+    {
+        None = 0,
+        R = 1,
+        G = 2,
+        B = 4,
+        A = 8,
+        D = 16,
+        S = 32,
+    };
+
+    enum class FormatFeature
+    {
+        SampledImage = 0x00000001,
+        StorageImage = 0x00000002,
+        StorageImageAtomic = 0x00000004,
+        UniformTexelBuffer = 0x00000008,
+        StorageTexelBuffer = 0x00000010,
+        StorageTexelBufferAtomic = 0x00000020,
+        VertexBuffer = 0x00000040,
+        ColorAttachment = 0x00000080,
+        ColorAttachmentBlend = 0x00000100,
+        DepthStencilAttachment = 0x00000200,
+        BlitSrc = 0x00000400,
+        BlitDst = 0x00000800,
+        SampledImageFilterLinear = 0x00001000,
+        TransferSrc = 0x00004000,
+        TransferDst = 0x00008000,
+        MidpointChromaSamples = 0x00020000,
+        SampledImageYcbcrConversionLinearFilter = 0x00040000,
+        SampledImageYcbcrConversionSeparateReconstructionFilter = 0x00080000,
+        SampledImageYcbcrConversionChromaReconstructionExplicit = 0x00100000,
+        SampledImageYcbcrConversionChromaReconstructionExplicitForceable = 0x00200000,
+        Disjoint = 0x00400000,
+        CositedChromaSamples = 0x00800000,
+        SampledImageFilterMinmax = 0x00010000,
+        VideoDecodeOutput = 0x02000000,
+        VideoDecodeDpb = 0x04000000,
+        AccelerationStructureVertexBuffer = 0x20000000,
+        SampledImageFilterCubicExt = 0x00002000,
+        FragmentDensityMapExt = 0x01000000,
+        FragmentShadingRateAttachment = 0x40000000,
+        VideoEncodeInput = 0x08000000,
+        VideoEncodeDpb = 0x10000000,
     };
 
     enum class ColorSpace
@@ -740,12 +787,12 @@ namespace vg
 
     enum class ImageViewType
     {
-        OneD = 0,
-        TwoD = 1,
-        ThreeD = 2,
+        _1D = 0,
+        _2D = 1,
+        _3D = 2,
         Cube = 3,
-        OneDArray = 4,
-        TwoDArray = 5,
+        _1DArray = 4,
+        _2DArray = 5,
         CubeArray = 6,
     };
 
@@ -754,6 +801,7 @@ namespace vg
         Optimal = 0,
         Linear = 1,
     };
+
     enum class ImageUsage
     {
         TransferSrc = 0x00000001,

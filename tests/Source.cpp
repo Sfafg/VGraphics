@@ -139,7 +139,10 @@ int main()
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
     ImageView depthImageView(depthImage, ImageViewType::TwoD, Format::D32SFLOAT, { ImageAspect::Depth });
 
-    std::vector<Framebuffer> swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass, { depthImageView });
+    std::vector<Framebuffer> swapChainFramebuffers;
+    swapChainFramebuffers.resize(swapchain.GetImageCount());
+    for (int i = 0; i < swapchain.GetImageCount(); i++)
+        swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
 
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
@@ -160,7 +163,7 @@ int main()
         Fence::AwaitAll({ copyFence });
     }
 
-    Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageViews().size(), BufferUsage::UniformBuffer);
+    Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageCount(), BufferUsage::UniformBuffer);
     vg::Allocate(&uniformBuffers, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
     char* uniformBufferMemory = (char*) uniformBuffers.MapMemory();
 
@@ -190,13 +193,13 @@ int main()
     Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
 
     // Create descriptor pools
-    DescriptorPool descriptorPool(swapchain.GetImageViews().size(), {
-        {DescriptorType::UniformBuffer, swapchain.GetImageViews().size()},
-        {DescriptorType::CombinedImageSampler, swapchain.GetImageViews().size()}
+    DescriptorPool descriptorPool(swapchain.GetImageCount(), {
+        {DescriptorType::UniformBuffer, swapchain.GetImageCount()},
+        {DescriptorType::CombinedImageSampler, swapchain.GetImageCount()}
         });
 
     // Create and allocate descriptor set layouts.
-    std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageViews().size(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]);
+    std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageCount(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]);
     auto descriptorSets = descriptorPool.Allocate(layouts);
 
     for (size_t i = 0; i < descriptorSets.size(); i++)
@@ -228,7 +231,9 @@ int main()
 
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
-            swapChainFramebuffers = swapchain.CreateFramebuffers(renderPass, { depthImageView });
+            for (int i = 0; i < swapchain.GetImageCount(); i++)
+                swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
+
         }
 
         uint32_t imageIndex = swapchain.GetNextImageIndex(imageAvailableSemaphore);

@@ -109,6 +109,10 @@ namespace vg
     {
         return m_handle;
     }
+    unsigned int Swapchain::GetImageCount() const
+    {
+        return GetImageViews().size();
+    }
 
     unsigned int Swapchain::GetWidth() const
     {
@@ -132,19 +136,4 @@ namespace vg
 
         return index;
     }
-
-    std::vector<Framebuffer> Swapchain::CreateFramebuffers(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& additionalImageAttachments, int layers) const
-    {
-        std::vector<Framebuffer> frameBuffers(GetImageViews().size());
-        for (size_t i = 0; i < GetImageViews().size(); i++)
-        {
-            std::vector<ImageViewHandle> imageViews = additionalImageAttachments;
-            imageViews.insert(imageViews.begin(), GetImageViews()[i]);
-            frameBuffers[i] = Framebuffer(renderPass, imageViews, GetWidth(), GetHeight(), 1);
-
-        }
-
-        return frameBuffers;
-    }
-
 }

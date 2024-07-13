@@ -45,6 +45,12 @@ namespace vg
         operator const SwapchainHandle& () const;
 
         /**
+         *@brief Get the Image Count
+         *
+         * @return unsigned int
+         */
+        unsigned int GetImageCount() const;
+        /**
          *@brief Get the Width object
          *
          * @return unsigned int
@@ -71,14 +77,7 @@ namespace vg
          * @return uint32_t
          */
         uint32_t GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(nullptr), uint64_t timeout = UINT64_MAX);
-        /**
-         *@brief Create a Framebuffers for each ImageView
-         *
-         * @param renderPass RenderPass to which Framebuffers should be bound
-         * @param layers Amount of layers, used for anaglif rendering
-         * @return Array of Framebuffers for each ImageView
-         */
-        std::vector<Framebuffer> CreateFramebuffers(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& additionalImageAttachments = {}, int layers = 1) const;
+
     private:
         SwapchainHandle m_handle;
 

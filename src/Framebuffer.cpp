@@ -14,7 +14,6 @@ namespace vg
     Framebuffer::Framebuffer(Framebuffer&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-
     }
 
     Framebuffer::~Framebuffer()
@@ -27,7 +26,6 @@ namespace vg
     {
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
-
 
         return *this;
     }

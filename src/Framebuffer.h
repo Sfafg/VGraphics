@@ -16,7 +16,7 @@ namespace vg
          *
          * @param ((DeviceHandle)currentDevice).Device
          * @param renderPass Renderpass for determining format
-         * @param attachments Array of ImageViews
+         * @param attachments Array of ImageViews each attachment corresponds to attachments specified during RenderPass creation
          * @param width Width
          * @param height Height
          * @param layers Amount of layers, used for anaglif rendering

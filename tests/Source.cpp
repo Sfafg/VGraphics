@@ -28,6 +28,8 @@
 #include "Sampler.h"
 #include "FormatInfo.h"
 
+#include "FormatInfo.h"
+
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;

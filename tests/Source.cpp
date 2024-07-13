@@ -139,6 +139,7 @@ int main()
     Swapchain swapchain(surface, 2, w, h);
 
     Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
+    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
     ImageView depthImageView(depthImage, { ImageAspect::Depth });
 

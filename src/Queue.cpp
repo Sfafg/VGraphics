@@ -10,6 +10,7 @@ namespace vg
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_commandPool, other.m_commandPool);
+        std::swap(m_transientCommandPool, other.m_transientCommandPool);
         std::swap(m_type, other.m_type);
         std::swap(m_index, other.m_index);
 
@@ -19,6 +20,7 @@ namespace vg
     {
         if (m_commandPool == nullptr)return;
         ((DeviceHandle) currentDevice).destroyCommandPool(m_commandPool);
+        ((DeviceHandle) currentDevice).destroyCommandPool(m_transientCommandPool);
         m_commandPool = nullptr;
     }
     Queue& Queue::operator=(Queue&& other) noexcept
@@ -26,6 +28,7 @@ namespace vg
         if (&other == this) return *this;
         std::swap(m_handle, other.m_handle);
         std::swap(m_commandPool, other.m_commandPool);
+        std::swap(m_transientCommandPool, other.m_transientCommandPool);
         std::swap(m_type, other.m_type);
         std::swap(m_index, other.m_index);
 
@@ -47,8 +50,10 @@ namespace vg
         return m_index;
     }
 
-    CommandPoolHandle Queue::GetCommandPool() const
+    CommandPoolHandle Queue::GetCommandPool(bool transient) const
     {
+        if (transient)
+            return m_transientCommandPool;
         return m_commandPool;
     }
 

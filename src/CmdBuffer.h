@@ -10,7 +10,7 @@
 
 namespace vg
 {
-    class CommandBuffer;
+    class CmdBuffer;
     namespace cmd
     {
         struct Command {};
@@ -20,8 +20,8 @@ namespace vg
 
         private:
             GraphicsPipelineHandle pipeline;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct BindVertexBuffer : Command
         {
@@ -30,8 +30,8 @@ namespace vg
         private:
             BufferHandle buffers;
             uint64_t offset;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct BindIndexBuffer : Command
         {
@@ -41,8 +41,8 @@ namespace vg
             BufferHandle buffer;
             uint64_t offset;
             uint32_t type;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct BindDescriptorSets : Command
         {
@@ -53,8 +53,8 @@ namespace vg
             uint32_t firstSet;
             std::vector<DescriptorSetHandle> descriptorSets;
 
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct BeginRenderpass : Command
         {
@@ -75,8 +75,8 @@ namespace vg
             float clearColorA;
             float depthClearColor;
             float stencilClearColor;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct SetViewport : Command
         {
@@ -84,8 +84,8 @@ namespace vg
 
         private:
             Viewport viewport;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct SetScissor : Command
         {
@@ -93,8 +93,8 @@ namespace vg
 
         private:
             Scissor scissor;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct Draw : Command
         {
@@ -108,16 +108,16 @@ namespace vg
             int instanceCount;
             int firstVertex;
             int firstInstance;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct EndRenderpass : Command
         {
             EndRenderpass() {}
 
         private:
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct DrawIndexed : Command
         {
@@ -131,8 +131,8 @@ namespace vg
             uint32_t firstIndex;
             uint32_t vertexOffset;
             uint32_t firstInstance;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
         struct CopyBuffer : Command
         {
@@ -142,8 +142,8 @@ namespace vg
             BufferHandle src;
             BufferHandle dst;
             std::vector<BufferCopyRegion> regions;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
 
         struct CopyBufferToImage : Command
@@ -157,8 +157,8 @@ namespace vg
             ImageHandle dst;
             ImageLayout dstImageLayout;
             std::vector<BufferImageCopyRegion> regions;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
 
         struct PipelineBarier : Command
@@ -182,8 +182,8 @@ namespace vg
             std::vector<MemoryBarrier> memoryBarriers;
             std::vector<BufferMemoryBarrier> bufferMemoryBarriers;
             std::vector<ImageMemoryBarrier> imageMemoryBarriers;
-            void operator ()(CommandBuffer& commandBuffer) const;
-            friend CommandBuffer;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
         };
     }
 
@@ -215,7 +215,7 @@ namespace vg
      *@brief Array of commands
      * Used to send commands to the GPU in one big batch improving performance
      */
-    class CommandBuffer
+    class CmdBuffer
     {
     public:
         /**
@@ -223,28 +223,31 @@ namespace vg
          *
          * @param queue Queue object
          */
-        CommandBuffer(const Queue& queue);
+        CmdBuffer(const Queue& queue, bool isShortLived = true);
 
-        CommandBuffer();
-        CommandBuffer(CommandBuffer&& other) noexcept;
-        CommandBuffer(const CommandBuffer& other) = delete;
-        ~CommandBuffer();
+        CmdBuffer();
+        CmdBuffer(CmdBuffer&& other) noexcept;
+        CmdBuffer(const CmdBuffer& other) = delete;
+        ~CmdBuffer();
 
-        CommandBuffer& operator=(CommandBuffer&& other) noexcept;
-        CommandBuffer& operator=(const CommandBuffer& other) = delete;
-        operator const CommandBufferHandle& () const;
+        CmdBuffer& operator=(CmdBuffer&& other) noexcept;
+        CmdBuffer& operator=(const CmdBuffer& other) = delete;
+        operator const CmdBufferHandle& () const;
 
         /**
          *@brief Clear commands
          *
          */
-        CommandBuffer& Clear();
+        CmdBuffer& Clear();
+
         /**
          *@brief Begin appending to the command buffer
          *  Needs to be called before all Appends
+         * @param usage how the recorded buffer will be used
          * @param clear if true buffer gets cleared before beginning
          */
-        CommandBuffer& Begin(bool clear = true);
+        CmdBuffer& Begin(Flags<CmdBufferUsage> usage = { CmdBufferUsage::OneTimeSubmit }, bool clear = true);
+
         /**
          *@brief Append commands, has to be between \ref CommandBuffer::Begin() and \ref CommandBuffer::End()
          * Appends array commands to the buffer
@@ -252,20 +255,32 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        CommandBuffer& AppendNoBegin(const T&... commands) { (..., _Append(commands)); return *this; }
+        CmdBuffer& AppendNoBegin(const T&... commands) { (..., _Append(commands)); return *this; }
+
         /**
          *@brief Append commands
          * Appends array commands to the buffer
          * @tparam T class derived from cmd::Command
+         * @param usage how the recorded buffer will be used
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        CommandBuffer& Append(const T&... commands) { Begin(); (..., _Append(commands)); End(); return *this; }
+        CmdBuffer& Append(Flags<CmdBufferUsage> usage, const T&... commands) { Begin(usage); (..., _Append(commands)); End(); return *this; }
+
+        /**
+         *@brief Append commands
+        * Appends array commands to the buffer
+        * @tparam T class derived from cmd::Command
+        * @param commands Array of commands from cmd:: namespace
+        */
+        template<Commands... T>
+        CmdBuffer& Append(const T&... commands) { Begin(); (..., _Append(commands)); End(); return *this; }
+
         /**
          *@brief End appending to command buffer
         * Has to be called before submiting
         */
-        CommandBuffer& End();
+        CmdBuffer& End();
 
         /**
          *@brief Submit command buffers and all relevant data
@@ -273,7 +288,7 @@ namespace vg
         * @param submits Synchronization info
         * @param fence Fence to be signaled upon all submits finish
         */
-        CommandBuffer& Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
+        CmdBuffer& Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
         /**
          *@brief Submit command buffer and all relevant data
          *
@@ -292,7 +307,8 @@ namespace vg
         void _Append(const T& command) { command(*this); };
 
     private:
-        CommandBufferHandle m_handle;
+        CmdBufferHandle m_handle;
+        bool m_isShortLived;
         const Queue* m_queue;
     };
 }

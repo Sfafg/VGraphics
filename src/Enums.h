@@ -20,6 +20,13 @@ namespace vg
         Transfer
     };
 
+    enum class CmdBufferUsage
+    {
+        OneTimeSubmit = 1,
+        RenderPassContinue = 2,
+        SimultaneousUse = 4,
+    };
+
     enum class PresentMode
     {
         Immediate = 0,

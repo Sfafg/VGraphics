@@ -71,7 +71,7 @@ void INIT()
             swapChainFramebuffers[i] = Framebuffer(device, renderPass, { swapchain.GetImageViews()[i] }, swapchain.GetWidth(), swapchain.GetHeight(), 1);
 
         // Command buffers and synchronization.
-        CommandBuffer commandBuffer(device.graphicsQueue);
+        CmdBuffer commandBuffer(device.graphicsQueue);
         Semaphore renderFinishedSemaphore(device);
         Semaphore imageAvailableSemaphore(device);
         Fence inFlightFence(device, true);

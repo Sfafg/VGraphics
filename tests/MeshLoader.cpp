@@ -27,10 +27,113 @@
 #include "ImageView.h"
 #include "Sampler.h"
 #include "FormatInfo.h"
+#include <fstream>
+#include <string>
+#include <sstream>
 
 using namespace std::chrono_literals;
 using namespace vg;
 bool recreateFramebuffer = false;
+
+struct MeshData
+{
+    vg::VertexBinding binding;
+    std::vector <vg::VertexAttribute> attributes;
+    std::vector<float> vertexData;
+    std::vector<uint32_t> indexData;
+
+    MeshData() :binding(0, 0)
+    {}
+};
+MeshData ReadMeshData(const char* path)
+{
+    MeshData meshData;
+
+    std::ifstream meshFile("mesh.txt");
+    if (!meshFile.is_open())
+    {
+        std::cout << "Could not open mesh.txt";
+        return meshData;
+    }
+    vg::VertexBinding vertexBinding(0, 0);
+    std::vector<vg::VertexAttribute> attributes;
+    std::vector<float> vertexData;
+    std::vector<uint32_t> indexData;
+    int vertexCount;
+    int indexCount;
+
+    std::string str;
+    meshFile >> str >> vertexBinding.stride >> str;
+    std::cout << vertexBinding.stride << '\n';
+
+    while (!meshFile.eof())
+    {
+        vg::VertexAttribute attribute(0, 0, vg::Format::Undefined, 0);
+        meshFile
+            >> str >> attribute.location
+            >> str >> attribute.binding
+            >> str >> *(int*) &attribute.format
+            >> str >> attribute.offset
+            >> str;
+        attributes.push_back(attribute);
+
+        std::cout
+            << attribute.location << " "
+            << attribute.binding << " "
+            << (int) attribute.format << " "
+            << attribute.offset << '\n';
+
+        if (str == "}")
+            break;
+        meshFile >> str;
+    }
+    meshFile >> str >> vertexCount >> str;
+    std::cout << vertexCount << '\n';
+
+    std::getline(meshFile, str);
+    for (int i = 0; i < vertexCount; i++)
+    {
+        std::getline(meshFile, str);
+        std::stringstream ss;
+        ss << str;
+
+        while (!ss.eof())
+        {
+            float a;
+            ss >> a;
+
+            vertexData.push_back(a);
+            std::cout << vertexData[vertexData.size() - 1] << ", ";
+        }
+    }
+
+    meshFile >> str >> str >> indexCount >> str;
+    std::cout << indexCount << '\n';
+
+    std::getline(meshFile, str);
+    for (int i = 0; i < indexCount; i++)
+    {
+        std::getline(meshFile, str);
+        std::stringstream ss;
+        ss << str;
+
+        while (!ss.eof())
+        {
+            int a;
+            ss >> a;
+
+            indexData.push_back(a);
+            std::cout << indexData[indexData.size() - 1] << ", ";
+        }
+    }
+
+    meshData.binding = vertexBinding;
+    meshData.attributes = attributes;
+    meshData.vertexData = vertexData;
+    meshData.indexData = indexData;
+
+    return meshData;
+}
 
 struct Vertex
 {
@@ -55,22 +158,6 @@ struct Vertex
         return attributeDescriptions;
     }
 };
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-};
-
-const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
 
 struct UniformBufferObject
 {
@@ -81,8 +168,11 @@ struct UniformBufferObject
 
 int main()
 {
+    //TO DO: CmdBuffer usage
     //TO DO: CmdBuffer inheritance
     //TO DO: GraphicsPipeline inheritance
+
+    MeshData mesh = ReadMeshData("mesh.txt");
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -149,15 +239,15 @@ int main()
         swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
 
     // Allocate buffer in DeviceLocal memory.
-    Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
+    Buffer vertexBuffer(sizeof(mesh.vertexData[0]) * mesh.vertexData.size() + sizeof(mesh.indexData[0]) * mesh.indexData.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
     vg::Allocate({ &vertexBuffer }, { MemoryProperty::DeviceLocal });
     {
         // Allocate staging buffer in HostVisible memory.
         Buffer stagingBuffer(vertexBuffer.GetSize(), vg::BufferUsage::TransferSrc);
         vg::Allocate({ &stagingBuffer }, { MemoryProperty::HostVisible });
         char* data = (char*) stagingBuffer.MapMemory();
-        memcpy(data, vertices.data(), sizeof(vertices[0]) * vertices.size());
-        memcpy(data + sizeof(vertices[0]) * vertices.size(), indices.data(), sizeof(indices[0]) * indices.size());
+        memcpy(data, mesh.vertexData.data(), sizeof(mesh.vertexData[0]) * mesh.vertexData.size());
+        memcpy(data + sizeof(mesh.vertexData[0]) * mesh.vertexData.size(), mesh.indexData.data(), sizeof(mesh.indexData[0]) * mesh.indexData.size());
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
@@ -208,7 +298,7 @@ int main()
         descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
     }
 
-    CmdBuffer commandBuffer(currentDevice.graphicsQueue, false);
+    CmdBuffer commandBuffer(currentDevice.graphicsQueue);
     Semaphore renderFinishedSemaphore;
     Semaphore imageAvailableSemaphore;
     Fence inFlightFence(true);
@@ -252,11 +342,11 @@ int main()
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindVertexBuffer(vertexBuffer, 0),
-            cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), (int) vk::IndexType::eUint16),
+            cmd::BindIndexBuffer(vertexBuffer, sizeof(mesh.vertexData[0]) * mesh.vertexData.size(), (int) vk::IndexType::eUint32),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
-            cmd::DrawIndexed(indices.size()),
+            cmd::DrawIndexed(mesh.indexData.size()),
             cmd::EndRenderpass()
         ).Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
         currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });

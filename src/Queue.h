@@ -36,9 +36,10 @@ namespace vg
         /**
          *@brief Get the Command Pool object
          *
+         * @param transient if true returns handle to the transient command pool, used for short lived CmdBuffers
          * @return CommandPoolHandle
          */
-        CommandPoolHandle GetCommandPool() const;
+        CommandPoolHandle GetCommandPool(bool transient = false) const;
         /**
          *@brief Present image to the window. Queue Type must be Queue::Present
          *
@@ -52,6 +53,7 @@ namespace vg
     private:
         QueueHandle m_handle;
         CommandPoolHandle m_commandPool;
+        CommandPoolHandle m_transientCommandPool;
         QueueType m_type;
         unsigned int m_index;
 

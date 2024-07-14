@@ -45,7 +45,7 @@ namespace vg
     HANDLE(SemaphoreHandle, Semaphore);
     HANDLE(FenceHandle, Fence);
     HANDLE(CommandPoolHandle, CommandPool);
-    HANDLE(CommandBufferHandle, CommandBuffer);
+    HANDLE(CmdBufferHandle, CommandBuffer);
     HANDLE(BufferHandle, Buffer);
     HANDLE(DeviceMemoryHandle, DeviceMemory);
     HANDLE(DescriptorSetLayoutHandle, DescriptorSetLayout);

@@ -41,6 +41,11 @@ namespace vg
             m_width = std::clamp(width, min.width, max.width);
             m_height = std::clamp(height, min.height, max.height);
         }
+        if (m_width == 0 || m_height == 0)
+        {
+            m_handle = nullptr;
+            return;
+        }
 
         if (!supportDetails.presentModes.contains((vk::PresentModeKHR) presentMode))
         {

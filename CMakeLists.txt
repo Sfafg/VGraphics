@@ -19,7 +19,6 @@ set(SRC
     ${SRC_ROOT}/GraphicsPipeline.cpp
     ${SRC_ROOT}/Subpass.cpp
     ${SRC_ROOT}/RenderPass.cpp
-    ${SRC_ROOT}/Attachment.cpp
     ${SRC_ROOT}/Framebuffer.cpp
     ${SRC_ROOT}/CmdBuffer.cpp
     ${SRC_ROOT}/Synchronization.cpp

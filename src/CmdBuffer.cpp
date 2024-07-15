@@ -37,12 +37,12 @@ namespace vg
 
         void SetViewport::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).setViewport(0, 1, (vk::Viewport*) &viewport);
+            CmdBufferHandle(commandBuffer).setViewport(first, viewports.size(), (vk::Viewport*) &viewports[0]);
         }
 
         void SetScissor::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).setScissor(0, 1, (vk::Rect2D*) &scissor);
+            CmdBufferHandle(commandBuffer).setScissor(first, scissors.size(), (vk::Rect2D*) &scissors[0]);
         }
 
         void Draw::operator()(CmdBuffer& commandBuffer) const
@@ -79,7 +79,6 @@ namespace vg
     CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived) : m_queue(&queue), m_isShortLived(isShortLived)
     {
         m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ queue.GetCommandPool(isShortLived), vk::CommandBufferLevel::ePrimary, 1 })[0];
-
     }
 
     CmdBuffer::CmdBuffer() :m_handle(nullptr), m_queue(nullptr) {}

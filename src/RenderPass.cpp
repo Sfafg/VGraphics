@@ -1,6 +1,5 @@
 #include <vulkan/vulkan.hpp>
 #include "RenderPass.h"
-#include "Attachment.h"
 namespace vg
 {
     RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies)
@@ -48,33 +47,36 @@ namespace vg
         m_handle = ((DeviceHandle) currentDevice).createRenderPass(renderPassInfo);
 
 
-        std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos(subpasses.size());
-        std::vector<std::vector<vk::PipelineShaderStageCreateInfo>> stages(subpasses.size());
-        std::vector<std::vector<vk::PipelineColorBlendAttachmentState>> colorBlendAttachmentStates(subpasses.size());
-        m_pipelineLayouts = std::vector<PipelineLayout>(subpasses.size());
+        std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos;
+        std::vector<std::vector<vk::PipelineShaderStageCreateInfo>> shaderStages;
+        std::vector<vk::PipelineDynamicStateCreateInfo> dynamicStates;
+        graphicPipelineCreateInfos.resize(subpasses.size());
+        shaderStages.resize(subpasses.size());
+        dynamicStates.resize(subpasses.size());
+        m_pipelineLayouts.resize(subpasses.size());
         for (unsigned int i = 0; i < subpasses.size(); i++)
         {
-            const GraphicsPipeline pipeline = subpasses.begin()[i].graphicsPipeline;
-            stages[i].resize(pipeline.shaders.size());
-            for (int j = 0; j < pipeline.shaders.size(); j++)  stages[i][j] = *pipeline.shaders[j];
+            const GraphicsPipeline& pipeline = subpasses.begin()[i].graphicsPipeline;
+            if (pipeline.shaders)
+            {
+                shaderStages[i].resize(pipeline.shaders->size());
+                for (int j = 0; j < pipeline.shaders->size(); j++)
+                    shaderStages[i][j] = *(*pipeline.shaders)[j];
+            }
+            else
+                shaderStages[i] = {};
 
-            colorBlendAttachmentStates[i].reserve(attachments.size());
-            for (int j = 0; j < attachments.size(); j++)
-                if (attachments[j].colorBlending)
-                    colorBlendAttachmentStates[i].push_back((vk::PipelineColorBlendAttachmentState) *attachments[j].colorBlending);
+            auto* vertexInput = (vk::PipelineVertexInputStateCreateInfo*) (pipeline.vertexInput ? &*pipeline.vertexInput : nullptr);
+            auto* inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo*) (pipeline.inputAssembly ? &*pipeline.inputAssembly : nullptr);
+            auto* tesselation = (vk::PipelineTessellationStateCreateInfo*) (pipeline.tesselation ? &*pipeline.tesselation : nullptr);
+            auto* viewportState = (vk::PipelineViewportStateCreateInfo*) (pipeline.viewportState ? &*pipeline.viewportState : nullptr);
+            auto* rasterizer = (vk::PipelineRasterizationStateCreateInfo*) (pipeline.rasterizer ? &*pipeline.rasterizer : nullptr);
+            auto* multisampling = (vk::PipelineMultisampleStateCreateInfo*) (pipeline.multisampling ? &*pipeline.multisampling : nullptr);
+            auto* depthStencil = (vk::PipelineDepthStencilStateCreateInfo*) (pipeline.depthStencil ? &*pipeline.depthStencil : nullptr);
+            auto* colorBlending = (vk::PipelineColorBlendStateCreateInfo*) (pipeline.colorBlending ? &*pipeline.colorBlending : nullptr);
 
-            vk::PipelineVertexInputStateCreateInfo* vertexInput = new vk::PipelineVertexInputStateCreateInfo(pipeline.vertexInput);
-            vk::PipelineInputAssemblyStateCreateInfo* inputAssembly = new vk::PipelineInputAssemblyStateCreateInfo(pipeline.inputAssembly);
-            vk::PipelineTessellationStateCreateInfo* tesselation = new vk::PipelineTessellationStateCreateInfo(pipeline.tesselation);
-            vk::PipelineViewportStateCreateInfo* viewportState = new vk::PipelineViewportStateCreateInfo(pipeline.viewportState);
-            vk::PipelineRasterizationStateCreateInfo* rasterizer = new vk::PipelineRasterizationStateCreateInfo(pipeline.rasterizer);
-            vk::PipelineMultisampleStateCreateInfo* multisampling = new vk::PipelineMultisampleStateCreateInfo(pipeline.multisampling);
-            vk::PipelineDepthStencilStateCreateInfo* depthStencil = new vk::PipelineDepthStencilStateCreateInfo(pipeline.depthStencil);
-            vk::PipelineColorBlendStateCreateInfo* colorBlending = new vk::PipelineColorBlendStateCreateInfo(pipeline.colorBlending);
-            colorBlending->attachmentCount = colorBlendAttachmentStates[i].size();
-            colorBlending->pAttachments = colorBlendAttachmentStates[i].data();
-            auto states = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
-            vk::PipelineDynamicStateCreateInfo* dynamicState = new vk::PipelineDynamicStateCreateInfo({}, states);
+            if (pipeline.dynamicState)
+                dynamicStates[i] = vk::PipelineDynamicStateCreateInfo({}, *(std::vector<vk::DynamicState>*) & pipeline.dynamicState.value());
 
             std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
             descriptorSetLayouts.push_back(((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings }));
@@ -83,11 +85,16 @@ namespace vg
             m_pipelineLayouts[i].m_handle = layout;
             m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 
+            int creationFlags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+            if (pipeline.parentPipelineIndex != -1 || pipeline.parentPipeline != nullptr)
+                creationFlags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+
             graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
-                vk::PipelineCreateFlags(0), stages[i], vertexInput,
+                (vk::PipelineCreateFlags) creationFlags,
+                shaderStages[i], vertexInput,
                 inputAssembly, tesselation, viewportState, rasterizer,
-                multisampling, depthStencil, colorBlending, dynamicState,
-                m_pipelineLayouts[i], (vk::RenderPass) m_handle, i
+                multisampling, depthStencil, colorBlending, pipeline.dynamicState ? &dynamicStates[i] : nullptr,
+                m_pipelineLayouts[i], (vk::RenderPass) m_handle, i, pipeline.parentPipeline, pipeline.parentPipelineIndex
             );
         }
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #include <cstdint>
 #include "Enums.h"
 #include "Flags.h"
@@ -153,6 +154,97 @@ namespace vg
 #endif
     };
 
+    struct ColorBlend
+    {
+        uint32_t blendEnable;
+        BlendFactor srcColorBlendFactor;
+        BlendFactor dstColorBlendFactor;
+        BlendOp colorBlendOp;
+        BlendFactor srcAlphaBlendFactor;
+        BlendFactor dstAlphaBlendFactor;
+        BlendOp alphaBlendOp;
+        Flags<ColorComponent> colorWriteMask;
+
+        ColorBlend() :
+            blendEnable(false),
+            srcColorBlendFactor(BlendFactor::Zero),
+            dstColorBlendFactor(BlendFactor::Zero),
+            colorBlendOp(BlendOp::Add),
+            srcAlphaBlendFactor(BlendFactor::Zero),
+            dstAlphaBlendFactor(BlendFactor::Zero),
+            alphaBlendOp(BlendOp::Add),
+            colorWriteMask(ColorComponent::RGBA)
+        {}
+
+        ColorBlend(
+            BlendFactor srcColorBlendFactor,
+            BlendFactor dstColorBlendFactor,
+            BlendOp colorBlendOp,
+            BlendFactor srcAlphaBlendFactor,
+            BlendFactor dstAlphaBlendFactor,
+            BlendOp alphaBlendOp,
+            Flags<ColorComponent> colorWriteMask
+        ) :
+            blendEnable(true),
+            srcColorBlendFactor(srcColorBlendFactor),
+            dstColorBlendFactor(dstColorBlendFactor),
+            colorBlendOp(colorBlendOp),
+            srcAlphaBlendFactor(srcAlphaBlendFactor),
+            dstAlphaBlendFactor(dstAlphaBlendFactor),
+            alphaBlendOp(alphaBlendOp),
+            colorWriteMask(colorWriteMask)
+        {}
+
+#ifdef VULKAN_HPP
+        operator vk::PipelineColorBlendAttachmentState() const;
+#endif
+    };
+
+    struct Attachment
+    {
+    private:
+        uint32_t flags = 0;
+
+    public:
+        Format format;
+        unsigned int samples;
+        LoadOp loadOp;
+        StoreOp storeOp;
+        LoadOp stencilLoadOp;
+        StoreOp stencilStoreOp;
+        ImageLayout initialLayout;
+        ImageLayout finalLayout;
+
+        Attachment(
+            Format format,
+            ImageLayout finalLayout,
+            ImageLayout initialLayout = ImageLayout::Undefined,
+            LoadOp loadOp = LoadOp::Clear,
+            StoreOp storeOp = StoreOp::Store,
+            LoadOp stencilLoadOp = LoadOp::DontCare,
+            StoreOp stencilStoreOp = StoreOp::DontCare,
+            unsigned int samples = 1) :
+            format(format), samples(samples), loadOp(loadOp), storeOp(storeOp), stencilLoadOp(stencilLoadOp), stencilStoreOp(stencilStoreOp), initialLayout(initialLayout), finalLayout(finalLayout)
+        {}
+
+#ifdef VULKAN_HPP
+        operator vk::AttachmentDescription() const;
+#endif
+    };
+
+    struct AttachmentReference
+    {
+        unsigned int index;
+        ImageLayout layout;
+        AttachmentReference(unsigned int index = 0, ImageLayout layout = ImageLayout::Undefined)
+            :index(index), layout(layout)
+        {}
+
+#ifdef VULKAN_HPP
+        operator vk::AttachmentReference() const;
+#endif
+    };
+
     struct Viewport
     {
         float x;
@@ -161,6 +253,7 @@ namespace vg
         float height;
         float minDepth;
         float maxDepth;
+        Viewport() : Viewport(0, 0) {}
         Viewport(float width, float height, float x = 0, float y = 0, float minDepth = 0, float maxDepth = 1) :x(x), y(y), width(width), height(height), minDepth(minDepth), maxDepth(maxDepth) {}
 
 #ifdef VULKAN_HPP
@@ -173,14 +266,41 @@ namespace vg
         int y;
         int width;
         int height;
+        Scissor() :Scissor(0, 0) {}
         Scissor(float width, float height, int x = 0, int y = 0) :x(x), y(y), width(width), height(height) {}
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(Rect2D);
 #endif
     };
-    struct VertexBinding;
-    struct VertexAttribute;
+
+    struct VertexBinding
+    {
+        uint32_t binding;
+        uint32_t stride;
+        InputRate inputRate;
+
+        VertexBinding(int binding = 0, int stride = 0, InputRate inputRate = InputRate::Vertex) :binding(binding), stride(stride), inputRate(inputRate) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(VertexInputBindingDescription);
+#endif
+    };
+
+    struct VertexAttribute
+    {
+        uint32_t location;
+        uint32_t binding;
+        Format format;
+        uint32_t offset;
+
+        VertexAttribute(uint32_t location = 0, uint32_t binding = 0, Format format = Format::Undefined, uint32_t offset = 0) :location(location), binding(binding), format(format), offset(offset) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(VertexInputAttributeDescription);
+#endif
+    };
+
     struct VertexLayout
     {
     private:
@@ -194,13 +314,42 @@ namespace vg
         uint32_t vertexAttributesCount = 0;
         const VertexAttribute* vertexAttributes = nullptr;
 
-        VertexLayout(uint32_t vertexDescriptionCount, VertexBinding* vertexDescriptions, uint32_t vertexAttributesCount, VertexAttribute* vertexAttributes)
-            : vertexDescriptionCount(vertexDescriptionCount), vertexDescritpions(vertexDescriptions), vertexAttributesCount(vertexAttributesCount), vertexAttributes(vertexAttributes)
-        {}
+        VertexLayout(const std::vector<VertexBinding>& vertexDescriptions, const std::vector<VertexAttribute>& vertexAttributes)
+            : vertexDescriptionCount(vertexDescriptions.size()), vertexDescritpions(new VertexBinding[vertexDescriptionCount]), vertexAttributesCount(vertexAttributes.size()), vertexAttributes(new VertexAttribute[vertexAttributesCount])
+        {
+            memcpy((void*) this->vertexDescritpions, &vertexDescriptions[0], sizeof(VertexBinding) * vertexDescriptionCount);
+            memcpy((void*) this->vertexAttributes, &vertexAttributes[0], sizeof(VertexAttribute) * vertexAttributesCount);
+        }
 
-        VertexLayout(std::initializer_list<VertexBinding> vertexDescriptions, std::initializer_list<VertexAttribute> vertexAttributes)
-            : vertexDescriptionCount(vertexDescriptions.size()), vertexDescritpions(vertexDescriptions.begin()), vertexAttributesCount(vertexAttributes.size()), vertexAttributes(vertexAttributes.begin())
-        {}
+        VertexLayout(VertexLayout&& rhs) = default;
+        VertexLayout& operator=(VertexLayout&& rhs) = default;
+
+        VertexLayout(const VertexLayout& rhs)
+        {
+            vertexDescriptionCount = rhs.vertexDescriptionCount;
+            vertexDescritpions = new VertexBinding[vertexDescriptionCount];
+            memcpy((void*) vertexDescritpions, rhs.vertexDescritpions, sizeof(VertexBinding) * vertexDescriptionCount);
+
+            vertexAttributesCount = rhs.vertexAttributesCount;
+            vertexAttributes = new VertexAttribute[vertexAttributesCount];
+            memcpy((void*) vertexAttributes, rhs.vertexAttributes, sizeof(VertexAttribute) * vertexAttributesCount);
+        }
+        VertexLayout& operator=(const VertexLayout& rhs)
+        {
+            if (&rhs == this)return *this;
+            vertexDescriptionCount = rhs.vertexDescriptionCount;
+            vertexDescritpions = new VertexBinding[vertexDescriptionCount];
+            memcpy((void*) vertexDescritpions, rhs.vertexDescritpions, sizeof(VertexBinding) * vertexDescriptionCount);
+            vertexAttributesCount = rhs.vertexAttributesCount;
+            vertexAttributes = new VertexAttribute[vertexAttributesCount];
+            memcpy((void*) vertexAttributes, rhs.vertexAttributes, sizeof(VertexAttribute) * vertexAttributesCount);
+            return *this;
+        }
+        ~VertexLayout()
+        {
+            delete[] vertexDescritpions;
+            delete[] vertexAttributes;
+        }
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(PipelineVertexInputStateCreateInfo);
@@ -247,12 +396,43 @@ namespace vg
         Viewport* viewports = nullptr;
         uint32_t scissorCount = 0;
         Scissor* scissors = nullptr;
+        ViewportState() :viewportCount(0), viewports(nullptr), scissorCount(0), scissors(nullptr) {}
         ViewportState(Viewport viewport, Scissor scissor) :viewportCount(1), viewports(new Viewport(viewport)), scissorCount(1), scissors(new Scissor(scissor)) {}
+        ViewportState(std::vector<Viewport> viewports, std::vector<Scissor> scissors) :viewportCount(viewports.size()), viewports(new Viewport[viewportCount]), scissorCount(scissors.size()), scissors(new Scissor[scissorCount])
+        {
+            memcpy((void*) this->viewports, &viewports[0], sizeof(Viewport) * viewportCount);
+            memcpy((void*) this->scissors, &scissors[0], sizeof(Scissor) * scissorCount);
+        }
+
+        ViewportState(ViewportState&& rhs) = default;
+        ViewportState& operator=(ViewportState&& rhs) = default;
+
+        ViewportState(const ViewportState& rhs)
+        {
+            viewportCount = rhs.viewportCount;
+            viewports = new Viewport[viewportCount];
+            memcpy((void*) viewports, rhs.viewports, sizeof(Viewport) * viewportCount);
+            scissorCount = rhs.scissorCount;
+            scissors = new Scissor[scissorCount];
+            memcpy((void*) scissors, rhs.scissors, sizeof(Scissor) * scissorCount);
+        }
+        ViewportState& operator=(const ViewportState& rhs)
+        {
+            if (&rhs == this)return *this;
+            viewportCount = rhs.viewportCount;
+            viewports = new Viewport[viewportCount];
+            memcpy((void*) viewports, rhs.viewports, sizeof(Viewport) * viewportCount);
+            scissorCount = rhs.scissorCount;
+            scissors = new Scissor[scissorCount];
+            memcpy((void*) scissors, rhs.scissors, sizeof(Scissor) * scissorCount);
+            return *this;
+        }
         ~ViewportState()
         {
-            // if (viewportCount != 0) delete viewports;
-            // if (scissorCount != 0) delete scissors;
+            delete[] viewports;
+            delete[] scissors;
         }
+
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(PipelineViewportStateCreateInfo);
 #endif
@@ -344,12 +524,42 @@ namespace vg
         uint32_t enableLogicOp = 0;
         LogicOp logicOp = LogicOp::Clear;
         uint32_t attachmentCount = 0;
-        void* pAttachments = nullptr;
+        ColorBlend* attachments = nullptr;
         float blendConsts[4];
 
-        ColorBlending(bool enableLogicOp, LogicOp logicOp, const float(&blendConstants)[4])
-            :enableLogicOp(enableLogicOp), logicOp(logicOp), blendConsts{ blendConstants[0],blendConstants[1],blendConstants[2],blendConstants[3] }
-        {}
+        ColorBlending(bool enableLogicOp, LogicOp logicOp, const float(&blendConstants)[4], const std::vector<ColorBlend>& colorBlending = {})
+            :enableLogicOp(enableLogicOp), logicOp(logicOp), blendConsts{ blendConstants[0],blendConstants[1],blendConstants[2],blendConstants[3] }, attachmentCount(colorBlending.size()), attachments(new ColorBlend[attachmentCount])
+        {
+            memcpy((void*) this->attachments, &attachments[0], sizeof(ColorBlend) * attachmentCount);
+        }
+
+        ColorBlending(ColorBlending&& rhs) = default;
+        ColorBlending& operator=(ColorBlending&& rhs) = default;
+
+        ColorBlending(const ColorBlending& rhs)
+        {
+            enableLogicOp = rhs.enableLogicOp;
+            logicOp = rhs.logicOp;
+            memcpy(blendConsts, rhs.blendConsts, sizeof(float) * 4);
+            attachmentCount = rhs.attachmentCount;
+            attachments = new ColorBlend[attachmentCount];
+            memcpy((void*) attachments, rhs.attachments, sizeof(ColorBlend) * attachmentCount);
+        }
+        ColorBlending& operator=(const ColorBlending& rhs)
+        {
+            if (&rhs == this)return *this;
+            enableLogicOp = rhs.enableLogicOp;
+            logicOp = rhs.logicOp;
+            memcpy(blendConsts, rhs.blendConsts, sizeof(float) * 4);
+            attachmentCount = rhs.attachmentCount;
+            attachments = new ColorBlend[attachmentCount];
+            memcpy((void*) attachments, rhs.attachments, sizeof(ColorBlend) * attachmentCount);
+            return *this;
+        }
+        ~ColorBlending()
+        {
+            delete[] attachments;
+        }
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(PipelineColorBlendStateCreateInfo);
@@ -438,33 +648,6 @@ namespace vg
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(DescriptorPoolSize);
-#endif
-    };
-
-    struct VertexBinding
-    {
-        uint32_t binding;
-        uint32_t stride;
-        InputRate inputRate;
-
-        VertexBinding(int binding, int stride, InputRate inputRate = InputRate::Vertex) :binding(binding), stride(stride), inputRate(inputRate) {}
-
-#ifdef VULKAN_HPP
-        VULKAN_NATIVE_CAST_OPERATOR(VertexInputBindingDescription);
-#endif
-    };
-
-    struct VertexAttribute
-    {
-        uint32_t location;
-        uint32_t binding;
-        Format format;
-        uint32_t offset;
-
-        VertexAttribute(uint32_t location, uint32_t binding, Format format, uint32_t offset) :location(location), binding(binding), format(format), offset(offset) {}
-
-#ifdef VULKAN_HPP
-        VULKAN_NATIVE_CAST_OPERATOR(VertexInputAttributeDescription);
 #endif
     };
 

@@ -495,6 +495,13 @@ namespace vg
         Always = 7,
     };
 
+    enum class IndexType
+    {
+        Uint16 = 0,
+        Uint32 = 1,
+        Uint8 = 1000265000
+    };
+
     enum class Primitive
     {
         Points = 0,

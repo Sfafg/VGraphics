@@ -35,12 +35,12 @@ namespace vg
         };
         struct BindIndexBuffer : Command
         {
-            BindIndexBuffer(BufferHandle buffer, uint64_t offset, uint32_t type) :buffer(buffer), offset(offset), type(type) {}
+            BindIndexBuffer(BufferHandle buffer, uint64_t offset, IndexType type) :buffer(buffer), offset(offset), type(type) {}
 
         private:
             BufferHandle buffer;
             uint64_t offset;
-            uint32_t type;
+            IndexType type;
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -80,19 +80,23 @@ namespace vg
         };
         struct SetViewport : Command
         {
-            SetViewport(const Viewport& viewport) : viewport(viewport) {}
+            SetViewport(const Viewport& viewport) : viewports{ viewport }, first(0) {}
+            SetViewport(const std::vector<Viewport>& vieports, int first = 0) : viewports(vieports), first(first) {}
 
         private:
-            Viewport viewport;
+            uint32_t first;
+            std::vector<Viewport> viewports;
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct SetScissor : Command
         {
-            SetScissor(const Scissor& scissor) : scissor(scissor) {}
+            SetScissor(const Scissor& scissor) : scissors{ scissor }, first(0) {}
+            SetScissor(const std::vector<Scissor>& vieports, int first = 0) : scissors(vieports), first(first) {}
 
         private:
-            Scissor scissor;
+            uint32_t first;
+            std::vector<Scissor> scissors;
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };

@@ -1,6 +1,5 @@
 #pragma once
 #include "Handle.h"
-#include "Attachment.h"
 #include "Subpass.h"
 #include "PipelineLayout.h"
 #include "Device.h"
@@ -18,7 +17,6 @@ namespace vg
         /**
          *@brief Construct a new Render Pass object
          *
-         * @param ((DeviceHandle)currentDevice).Device
          * @param attachments Array of Attachments e.g. color, depth
          * @param subpasses Array of Subpasses used for multi pass rendering e.g. Differed Rendering
          * @param dependencies Dependencies

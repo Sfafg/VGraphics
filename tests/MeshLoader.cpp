@@ -147,9 +147,9 @@ struct Vertex
 
         return bindingDescription;
     }
-    static std::array<VertexAttribute, 3>& getAttributeDescriptions()
+    static std::vector<VertexAttribute>& getAttributeDescriptions()
     {
-        static std::array<VertexAttribute, 3> attributeDescriptions = {
+        static std::vector<VertexAttribute> attributeDescriptions = {
             VertexAttribute(0,0, Format::RGB32SFLOAT,offsetof(Vertex,position)),
             VertexAttribute(1,0, Format::RGB32SFLOAT,offsetof(Vertex,color)),
             VertexAttribute(2,0, Format::RG32SFLOAT,offsetof(Vertex,texCoord)),
@@ -200,23 +200,23 @@ int main()
     RenderPass renderPass(
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
-            Attachment(Format::D32SFLOAT, ImageLayout::DepthStencilAttachmentOptimal,ImageLayout::Undefined,nullptr)
+            Attachment(Format::D32SFLOAT, ImageLayout::DepthStencilAttachmentOptimal)
         },
         {
             Subpass(
                 GraphicsPipeline{
-                    {&vertexShader, &fragmentShader},
-                    VertexLayout(1U,&Vertex::getBindingDescription(),Vertex::getAttributeDescriptions().size(),Vertex::getAttributeDescriptions().data()),
+                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
+                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}},
+                    { &vertexShader,&fragmentShader },
+                    VertexLayout({Vertex::getBindingDescription()},Vertex::getAttributeDescriptions()),
                     InputAssembly(),
                     Tesselation(),
                     ViewportState(Viewport(w, h), Scissor(w, h)),
                     Rasterizer(true, false, PolygonMode::Fill, CullMode::Back, FrontFace::CounterClockwise, DepthBias(), 10.0f),
                     Multisampling(),
                     DepthStencil(true,true,CompareOp::Less),
-                    ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }),
-                    { DynamicState::Viewport, DynamicState::Scissor },
-                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
-                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}
+                    ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend()}),
+                    { DynamicState::Viewport, DynamicState::Scissor }
                 },
                 {},
                 {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
@@ -342,7 +342,7 @@ int main()
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindVertexBuffer(vertexBuffer, 0),
-            cmd::BindIndexBuffer(vertexBuffer, sizeof(mesh.vertexData[0]) * mesh.vertexData.size(), (int) vk::IndexType::eUint32),
+            cmd::BindIndexBuffer(vertexBuffer, sizeof(mesh.vertexData[0]) * mesh.vertexData.size(), IndexType::Uint32),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),

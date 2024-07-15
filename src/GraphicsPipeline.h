@@ -3,29 +3,27 @@
 #include "Enums.h"
 #include "Structs.h"
 #include "Shader.h"
-#include "Attachment.h"
 #include <vector>
+#include <optional>
 
 namespace vg
 {
-    /**
-     *@brief Holds GraphicsPipeline creation info
-     * Used in creating Renderpasses
-     */
-    struct GraphicsPipeline
+    class GraphicsPipeline
     {
     public:
-        std::vector<Shader*> shaders;
-        VertexLayout vertexInput;
-        InputAssembly inputAssembly;
-        Tesselation tesselation;
-        ViewportState viewportState;
-        Rasterizer rasterizer;
-        Multisampling multisampling;
-        DepthStencil depthStencil;
-        ColorBlending colorBlending;
-        std::vector<DynamicState> dynamicState;
+        std::optional<std::vector<Shader*>> shaders;
+        std::optional<VertexLayout> vertexInput;
+        std::optional<InputAssembly> inputAssembly;
+        std::optional<Tesselation> tesselation;
+        std::optional<ViewportState> viewportState;
+        std::optional<Rasterizer> rasterizer;
+        std::optional<Multisampling> multisampling;
+        std::optional<DepthStencil> depthStencil;
+        std::optional<ColorBlending> colorBlending;
+        std::optional<std::vector<DynamicState>> dynamicState;
         std::vector<DescriptorSetLayoutBinding> setLayoutBindings;
+        int parentPipelineIndex;
+        GraphicsPipelineHandle parentPipeline;
 
     public:
         /**
@@ -44,6 +42,7 @@ namespace vg
          * @param layout Information about layout e.g. uniforms
          */
         GraphicsPipeline(
+            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
             const std::vector<Shader*>& shaders,
             const VertexLayout& vertexInput,
             const InputAssembly& inputAssembly,
@@ -53,7 +52,35 @@ namespace vg
             const Multisampling& multisampling,
             const DepthStencil& depthStencil,
             const ColorBlending& colorBlending,
-            const std::vector<DynamicState>& dynamicState,
-            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings);
+            const std::vector<DynamicState>& dynamicState);
+
+        GraphicsPipeline(
+            int parentIndex,
+            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
+            const std::optional<std::vector<Shader*>>& shaders = std::nullopt,
+            const std::optional<VertexLayout>& vertexInput = std::nullopt,
+            const std::optional<InputAssembly>& inputAssembly = std::nullopt,
+            const std::optional<Tesselation>& tesselation = std::nullopt,
+            const std::optional<ViewportState>& viewportState = std::nullopt,
+            const std::optional<Rasterizer>& rasterizer = std::nullopt,
+            const std::optional<Multisampling>& multisampling = std::nullopt,
+            const std::optional<DepthStencil>& depthStencil = std::nullopt,
+            const std::optional<ColorBlending>& colorBlending = std::nullopt,
+            const std::optional<std::vector<DynamicState>>& dynamicState = std::nullopt);
+
+
+        GraphicsPipeline(
+            GraphicsPipelineHandle parentPipeline,
+            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
+            const std::optional<std::vector<Shader*>>& shaders = std::nullopt,
+            const std::optional<VertexLayout>& vertexInput = std::nullopt,
+            const std::optional<InputAssembly>& inputAssembly = std::nullopt,
+            const std::optional<Tesselation>& tesselation = std::nullopt,
+            const std::optional<ViewportState>& viewportState = std::nullopt,
+            const std::optional<Rasterizer>& rasterizer = std::nullopt,
+            const std::optional<Multisampling>& multisampling = std::nullopt,
+            const std::optional<DepthStencil>& depthStencil = std::nullopt,
+            const std::optional<ColorBlending>& colorBlending = std::nullopt,
+            const std::optional<std::vector<DynamicState>>& dynamicState = std::nullopt);
     };
 }

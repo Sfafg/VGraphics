@@ -14,7 +14,7 @@ namespace vg
      */
     struct Subpass
     {
-        GraphicsPipeline graphicsPipeline;
+        GraphicsPipeline* graphicsPipeline;
         std::vector<AttachmentReference> inputAttachments;
         std::vector<AttachmentReference> colorAttachments;
         std::vector<AttachmentReference> resolveAttachments;

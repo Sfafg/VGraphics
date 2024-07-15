@@ -81,14 +81,12 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: GraphicsPipeline inheritance, specified if it will be inherited from
-    //TO DO: Move subpass to Structs.h
-    //TO DO: Look into moving graphics pipeline to Structs.h
     //TO DO: Per thread CommandPools
     //TO DO: Allow for batch submits
     //TO DO: Secondary Commandbuffers
     //TO DO: Pipeline Cashe
     //TO DO: Push Constants
+    //TO DO: Subpass dependency
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -113,14 +111,14 @@ int main()
     int w, h; glfwGetFramebufferSize(window, &w, &h);
     Shader vertexShader(ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
     Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
-    RenderPass dummy(
+    RenderPass renderPass(
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
             Attachment(Format::D32SFLOAT, ImageLayout::DepthStencilAttachmentOptimal)
         },
         {
             Subpass(
-                GraphicsPipeline{
+                GraphicsPipeline(
                     {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
                      {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}},
                     {&vertexShader, &fragmentShader},
@@ -133,31 +131,9 @@ int main()
                     DepthStencil(true,true,CompareOp::Less),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend()}),
                     { DynamicState::Viewport, DynamicState::Scissor }
-                },
-                {},
-                {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
-                {},
-                AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
-            )
-        },
-        {}
-    );
-    RenderPass renderPass(
-        {
-            Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
-            Attachment(Format::D32SFLOAT, ImageLayout::DepthStencilAttachmentOptimal)
-        },
-        {
-            Subpass(
-                GraphicsPipeline{
-                    dummy.GetPipelines()[0],
-                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
-                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}
-                },
-                {},
-                {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
-                {},
-                AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
+                ),
+                {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
+                {}, AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
         {}

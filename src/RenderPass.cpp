@@ -5,6 +5,7 @@ namespace vg
     RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies)
         : m_attachments(attachments), m_dependencies(dependencies)
     {
+        // Attachments.
         std::vector<vk::AttachmentDescription> colorAttachments(attachments.size());
         for (unsigned int i = 0; i < attachments.size(); i++)
         {
@@ -20,6 +21,7 @@ namespace vg
             );
         }
 
+        // Subpass descriptions.
         std::vector <vk::SubpassDescription> subpassDescriptions(subpasses.size());
         for (unsigned int i = 0; i < subpasses.size(); i++)
         {
@@ -43,10 +45,11 @@ namespace vg
         subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         vk::SubpassDependency dependency(subpassDependency);
 
+        // RenderPass.
         vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, dependency);
         m_handle = ((DeviceHandle) currentDevice).createRenderPass(renderPassInfo);
 
-
+        // Graphics pipelines.
         std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos;
         std::vector<std::vector<vk::PipelineShaderStageCreateInfo>> shaderStages;
         std::vector<vk::PipelineDynamicStateCreateInfo> dynamicStates;
@@ -54,53 +57,74 @@ namespace vg
         shaderStages.resize(subpasses.size());
         dynamicStates.resize(subpasses.size());
         m_pipelineLayouts.resize(subpasses.size());
+        m_graphicsPipelines.resize(subpasses.size());
         for (unsigned int i = 0; i < subpasses.size(); i++)
         {
-            const GraphicsPipeline& pipeline = subpasses.begin()[i].graphicsPipeline;
-            if (pipeline.shaders)
-            {
-                shaderStages[i].resize(pipeline.shaders->size());
-                for (int j = 0; j < pipeline.shaders->size(); j++)
-                    shaderStages[i][j] = *(*pipeline.shaders)[j];
-            }
-            else
-                shaderStages[i] = {};
+            const Subpass& subpass = subpasses.begin()[i];
+            const GraphicsPipeline& pipeline = *subpasses.begin()[i].graphicsPipeline;
+            GraphicsPipeline::CreateInfo& createInfo = *pipeline.m_createInfo;
 
-            auto* vertexInput = (vk::PipelineVertexInputStateCreateInfo*) (pipeline.vertexInput ? &*pipeline.vertexInput : nullptr);
-            auto* inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo*) (pipeline.inputAssembly ? &*pipeline.inputAssembly : nullptr);
-            auto* tesselation = (vk::PipelineTessellationStateCreateInfo*) (pipeline.tesselation ? &*pipeline.tesselation : nullptr);
-            auto* viewportState = (vk::PipelineViewportStateCreateInfo*) (pipeline.viewportState ? &*pipeline.viewportState : nullptr);
-            auto* rasterizer = (vk::PipelineRasterizationStateCreateInfo*) (pipeline.rasterizer ? &*pipeline.rasterizer : nullptr);
-            auto* multisampling = (vk::PipelineMultisampleStateCreateInfo*) (pipeline.multisampling ? &*pipeline.multisampling : nullptr);
-            auto* depthStencil = (vk::PipelineDepthStencilStateCreateInfo*) (pipeline.depthStencil ? &*pipeline.depthStencil : nullptr);
-            auto* colorBlending = (vk::PipelineColorBlendStateCreateInfo*) (pipeline.colorBlending ? &*pipeline.colorBlending : nullptr);
+            if (createInfo.parentIndex != -1)
+                createInfo.parent = &m_graphicsPipelines[createInfo.parentIndex];
 
-            if (pipeline.dynamicState)
-                dynamicStates[i] = vk::PipelineDynamicStateCreateInfo({}, *(std::vector<vk::DynamicState>*) & pipeline.dynamicState.value());
+            shaderStages[i].resize(createInfo.GetShaders()->size());
+            for (int j = 0; j < createInfo.GetShaders()->size(); j++)
+                shaderStages[i][j] = *(*createInfo.GetShaders())[j];
+
+            auto* vertexInput = (vk::PipelineVertexInputStateCreateInfo*) createInfo.GetVertexInput();
+            auto* inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo*) createInfo.GetInputAssembly();
+            auto* tesselation = (vk::PipelineTessellationStateCreateInfo*) createInfo.GetTesselation();
+            auto* viewportState = (vk::PipelineViewportStateCreateInfo*) createInfo.GetViewportState();
+            auto* rasterizer = (vk::PipelineRasterizationStateCreateInfo*) createInfo.GetRasterizer();
+            auto* multisampling = (vk::PipelineMultisampleStateCreateInfo*) createInfo.GetMultisampling();
+            auto* depthStencil = (vk::PipelineDepthStencilStateCreateInfo*) createInfo.GetDepthStencil();
+            auto* colorBlending = (vk::PipelineColorBlendStateCreateInfo*) createInfo.GetColorBlending();
+
+            dynamicStates[i] = vk::PipelineDynamicStateCreateInfo({}, *(std::vector<vk::DynamicState>*) createInfo.GetDynamicState());
 
             std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
-            descriptorSetLayouts.push_back(((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & pipeline.setLayoutBindings }));
+            descriptorSetLayouts.resize(1);
+            descriptorSetLayouts[0] = (((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) createInfo.GetSetLayoutBindings() }));
 
             PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
             m_pipelineLayouts[i].m_handle = layout;
             m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 
-            int creationFlags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
-            if (pipeline.parentPipelineIndex != -1 || pipeline.parentPipeline != nullptr)
-                creationFlags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+            vk::PipelineCreateFlags flags = {};
+            if (createInfo.inheritanceCount > 0)
+                flags |= vk::PipelineCreateFlagBits::eAllowDerivatives;
+
+            if (createInfo.parent)
+                flags |= vk::PipelineCreateFlagBits::eDerivative;
 
             graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
-                (vk::PipelineCreateFlags) creationFlags,
+                flags,
                 shaderStages[i], vertexInput,
                 inputAssembly, tesselation, viewportState, rasterizer,
-                multisampling, depthStencil, colorBlending, pipeline.dynamicState ? &dynamicStates[i] : nullptr,
-                m_pipelineLayouts[i], (vk::RenderPass) m_handle, i, pipeline.parentPipeline, pipeline.parentPipelineIndex
+                multisampling, depthStencil, colorBlending, &dynamicStates[i],
+                m_pipelineLayouts[i], (vk::RenderPass) m_handle, i,
+                createInfo.parentIndex == -1 ? createInfo.GetParentHandle() : (GraphicsPipelineHandle)nullptr, createInfo.parentIndex
             );
+
+            createInfo.DecrementParentInheritance();
+            std::swap(m_graphicsPipelines[i], *subpasses.begin()[i].graphicsPipeline);
         }
 
-        m_graphicsPipelines.resize(graphicPipelineCreateInfos.size());
-        VkPipeline* ptr = (VkPipeline*) m_graphicsPipelines.data();
-        vkCreateGraphicsPipelines((DeviceHandle) currentDevice, nullptr, graphicPipelineCreateInfos.size(), (VkGraphicsPipelineCreateInfo*) graphicPipelineCreateInfos.data(), nullptr, ptr);
+        std::vector<vk::Pipeline> ptr = ((DeviceHandle) currentDevice).createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
+
+        for (int i = 0; i < m_graphicsPipelines.size(); i++)
+        {
+            m_graphicsPipelines[i].m_handle = ptr[i];
+
+            GraphicsPipeline::CreateInfo& createInfo = *m_graphicsPipelines[i].m_createInfo;
+            createInfo.UpdateParentInheritance();
+
+            if (createInfo.inheritanceCount == 0)
+            {
+                delete m_graphicsPipelines[i].m_createInfo;
+                m_graphicsPipelines[i].m_createInfo = nullptr;
+            }
+        }
     }
 
     RenderPass::RenderPass() :m_handle(nullptr) {}
@@ -108,7 +132,6 @@ namespace vg
     RenderPass::RenderPass(RenderPass&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
         std::swap(m_attachments, other.m_attachments);
@@ -119,7 +142,6 @@ namespace vg
     {
         if (m_handle == nullptr) return;
 
-        for (const auto& pipeline : m_graphicsPipelines) ((DeviceHandle) currentDevice).destroyPipeline(pipeline);
         for (const auto& layout : m_pipelineLayouts)
         {
             for (const auto& descriptor : layout.GetDescriptorSets())
@@ -135,7 +157,6 @@ namespace vg
         if (&other == this) return *this;
 
         std::swap(m_handle, other.m_handle);
-
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
         std::swap(m_attachments, other.m_attachments);
@@ -154,9 +175,13 @@ namespace vg
         return m_pipelineLayouts;
     }
 
-    const std::vector<GraphicsPipelineHandle>& RenderPass::GetPipelines() const
+    std::vector<GraphicsPipeline>& RenderPass::GetPipelines()
     {
         return m_graphicsPipelines;
     }
 
+    const std::vector<GraphicsPipeline>& RenderPass::GetPipelines() const
+    {
+        return m_graphicsPipelines;
+    }
 }

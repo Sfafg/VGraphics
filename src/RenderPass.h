@@ -33,12 +33,13 @@ namespace vg
         operator const RenderPassHandle& () const;
 
         const std::vector<PipelineLayout>& GetPipelineLayouts() const;
-        const std::vector<GraphicsPipelineHandle>& GetPipelines() const;
+        std::vector<GraphicsPipeline>& GetPipelines();
+        const std::vector<GraphicsPipeline>& GetPipelines() const;
 
     private:
         RenderPassHandle m_handle;
 
-        std::vector<GraphicsPipelineHandle> m_graphicsPipelines;
+        std::vector<GraphicsPipeline> m_graphicsPipelines;
         std::vector<PipelineLayout> m_pipelineLayouts;
         std::vector<Attachment> m_attachments;
         std::vector<SubpassDependency> m_dependencies;

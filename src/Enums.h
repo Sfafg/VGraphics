@@ -912,4 +912,10 @@ namespace vg
         Vertex = 0,
         Instance = 1
     };
+
+    enum class CmdPoolUsage
+    {
+        Transient = 0x00000001,
+        ResetCmdBuffer = 0x00000002,
+    };
 }

@@ -76,36 +76,40 @@ namespace vg
         }
     }
 
-    CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived) : m_queue(&queue), m_isShortLived(isShortLived)
+    CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)
     {
-        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ queue.GetCommandPool(isShortLived), vk::CommandBufferLevel::ePrimary, 1 })[0];
+        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, vk::CommandBufferLevel::ePrimary, 1 })[0];
     }
 
-    CmdBuffer::CmdBuffer() :m_handle(nullptr), m_queue(nullptr) {}
+    CmdBuffer::CmdBuffer(const CmdPool& pool) : m_commandPool(pool), m_queue(pool.GetQueue())
+    {
+        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, vk::CommandBufferLevel::ePrimary, 1 })[0];
+    }
+
+    CmdBuffer::CmdBuffer() :m_handle(nullptr), m_commandPool(nullptr) {}
 
     CmdBuffer::CmdBuffer(CmdBuffer&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
+        std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_queue, other.m_queue);
-        std::swap(m_isShortLived, other.m_isShortLived);
     }
 
     CmdBuffer::~CmdBuffer()
     {
         if (m_handle == nullptr) return;
-        ((DeviceHandle) currentDevice).freeCommandBuffers(m_queue->GetCommandPool(m_isShortLived), 1, (vk::CommandBuffer*) &m_handle);
+        ((DeviceHandle) currentDevice).freeCommandBuffers(m_commandPool, 1, (vk::CommandBuffer*) &m_handle);
     }
 
     CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) noexcept
     {
         if (this == &other) return *this;
         std::swap(m_handle, other.m_handle);
+        std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_queue, other.m_queue);
-        std::swap(m_isShortLived, other.m_isShortLived);
 
         return *this;
     }
-
 
     CmdBuffer::operator const CmdBufferHandle& () const
     {
@@ -119,9 +123,8 @@ namespace vg
         return *this;
     }
 
-    CmdBuffer& CmdBuffer::Begin(Flags<CmdBufferUsage> usage, bool clear)
+    CmdBuffer& CmdBuffer::Begin(Flags<CmdBufferUsage> usage)
     {
-        if (clear) Clear();
         m_handle.begin(vk::CommandBufferBeginInfo((vk::CommandBufferUsageFlags) usage));
 
         return *this;
@@ -134,28 +137,18 @@ namespace vg
         return *this;
     }
 
-    CmdBuffer& CmdBuffer::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
+    CmdBuffer& CmdBuffer::Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores, const Fence& fence)
     {
-        vk::SubmitInfo* submits_ = new vk::SubmitInfo[submits.size()];
-        vk::Semaphore** waitSemaphores = new vk::Semaphore * [submits.size()];
-        vk::PipelineStageFlags** stages = new vk::PipelineStageFlags * [submits.size()];
-        for (unsigned int i = 0; i < (unsigned int) submits.size(); i++)
+        std::vector<vk::Semaphore> semaphores(waitStages.size());
+        std::vector<vk::PipelineStageFlags> stages(waitStages.size());
+        for (int i = 0; i < waitStages.size(); i++)
         {
-            waitSemaphores[i] = new vk::Semaphore[submits[i].waitStages.size()];
-            stages[i] = new vk::PipelineStageFlags[submits[i].waitStages.size()];
-            for (unsigned int j = 0; j < (unsigned int) submits[i].waitStages.size(); j++)
-            {
-                waitSemaphores[i][j] = (vk::Semaphore) std::get<1>(submits[i].waitStages[j]);
-                stages[i][j] = (vk::PipelineStageFlagBits) (Flags<PipelineStage>::TMask) std::get<0>(submits[i].waitStages[j]);
-            }
-            vk::SubmitInfo sub(submits[i].waitStages.size(), waitSemaphores[i], stages[i], 1, (vk::CommandBuffer*) &m_handle, submits[i].signalSemaphores.size(), (vk::Semaphore*) submits[i].signalSemaphores.data());
-            submits_[i] = sub;
+            semaphores[i] = std::get<1>(waitStages[i]);
+            stages[i] = (vk::PipelineStageFlags) std::get<0>(waitStages[i]);
         }
-
-        auto result = ((QueueHandle) *m_queue).submit(submits.size(), submits_, (FenceHandle) fence);
-        delete[] submits_;
-        delete[] waitSemaphores;
-        delete[] stages;
+        std::vector<vk::CommandBuffer> buffers;
+        buffers.push_back(m_handle);
+        m_queue.submit({ vk::SubmitInfo(semaphores,stages,buffers, *(std::vector<vk::Semaphore>*) & signalSemaphores) }, (FenceHandle) fence);
 
         return *this;
     }

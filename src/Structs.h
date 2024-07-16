@@ -724,10 +724,10 @@ namespace vg
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
         {}
         ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& srcQueue, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
-            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
         ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
-            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
+            :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
         ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, ImageHandle image, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
@@ -753,6 +753,85 @@ namespace vg
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(MemoryBarrier);
+#endif
+    };
+
+    struct SubmitInfo
+    {
+    private:
+        uint32_t sType = 4;
+        void* pNext = nullptr;
+
+    public:
+        uint32_t waitSemaphoreCount;
+        SemaphoreHandle* waitSemaphores;
+        Flags<PipelineStage>* waitDstStageMask;
+        uint32_t cmdBufferCount;
+        CmdBufferHandle* cmdBuffers;
+        uint32_t signalSemaphoreCount;
+        SemaphoreHandle* signalSemaphores;
+
+        SubmitInfo(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages = {}, const std::vector<SemaphoreHandle>& signalSemaphores = {}, const std::vector<CmdBufferHandle>& cmdBuffers = {}) :
+            waitSemaphoreCount(waitStages.size()), waitSemaphores(new SemaphoreHandle[waitStages.size()]), waitDstStageMask(new Flags<PipelineStage>[waitStages.size()]),
+            cmdBufferCount(cmdBuffers.size()), cmdBuffers(new CmdBufferHandle[cmdBuffers.size()]), signalSemaphoreCount(signalSemaphores.size()), signalSemaphores(new SemaphoreHandle[signalSemaphores.size()])
+        {
+            for (int i = 0; i < waitStages.size(); i++)
+            {
+                this->waitSemaphores[i] = std::get<1>(waitStages[i]);
+                this->waitDstStageMask[i] = std::get<0>(waitStages[i]);
+            }
+            memcpy((void*) this->cmdBuffers, &cmdBuffers[0], sizeof(CmdBufferHandle) * cmdBufferCount);
+            memcpy((void*) this->signalSemaphores, &signalSemaphores[0], sizeof(SemaphoreHandle) * signalSemaphoreCount);
+        }
+
+        SubmitInfo(SubmitInfo&& rhs) = default;
+        SubmitInfo& operator=(SubmitInfo&& rhs) = default;
+
+        SubmitInfo(const SubmitInfo& rhs)
+        {
+            waitSemaphoreCount = rhs.waitSemaphoreCount;
+            cmdBufferCount = rhs.cmdBufferCount;
+            signalSemaphoreCount = rhs.signalSemaphoreCount;
+
+            waitSemaphores = new SemaphoreHandle[waitSemaphoreCount];
+            waitDstStageMask = new Flags<PipelineStage>[waitSemaphoreCount];
+            cmdBuffers = new CmdBufferHandle[waitSemaphoreCount];
+            signalSemaphores = new SemaphoreHandle[waitSemaphoreCount];
+            memcpy((void*) waitSemaphores, rhs.waitSemaphores, sizeof(SemaphoreHandle) * waitSemaphoreCount);
+            memcpy((void*) waitDstStageMask, rhs.waitDstStageMask, sizeof(Flags<PipelineStage>) * waitSemaphoreCount);
+            memcpy((void*) cmdBuffers, rhs.cmdBuffers, sizeof(CmdBufferHandle) * cmdBufferCount);
+            memcpy((void*) signalSemaphores, rhs.signalSemaphores, sizeof(SemaphoreHandle) * signalSemaphoreCount);
+        }
+        SubmitInfo& operator=(const SubmitInfo& rhs)
+        {
+            if (&rhs == this)return *this;
+
+            waitSemaphoreCount = rhs.waitSemaphoreCount;
+            cmdBufferCount = rhs.cmdBufferCount;
+            signalSemaphoreCount = rhs.signalSemaphoreCount;
+
+            waitSemaphores = new SemaphoreHandle[waitSemaphoreCount];
+            waitDstStageMask = new Flags<PipelineStage>[waitSemaphoreCount];
+            cmdBuffers = new CmdBufferHandle[waitSemaphoreCount];
+            signalSemaphores = new SemaphoreHandle[waitSemaphoreCount];
+            memcpy((void*) waitSemaphores, rhs.waitSemaphores, sizeof(SemaphoreHandle) * waitSemaphoreCount);
+            memcpy((void*) waitDstStageMask, rhs.waitDstStageMask, sizeof(Flags<PipelineStage>) * waitSemaphoreCount);
+            memcpy((void*) cmdBuffers, rhs.cmdBuffers, sizeof(CmdBufferHandle) * cmdBufferCount);
+            memcpy((void*) signalSemaphores, rhs.signalSemaphores, sizeof(SemaphoreHandle) * signalSemaphoreCount);
+
+            return *this;
+        }
+
+        ~SubmitInfo()
+        {
+            delete[] waitSemaphores;
+            delete[] waitDstStageMask;
+            delete[] cmdBuffers;
+            delete[] signalSemaphores;
+        }
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(SubmitInfo);
 #endif
     };
 }

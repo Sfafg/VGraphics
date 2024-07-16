@@ -1,10 +1,11 @@
 #include <vulkan/vulkan.hpp>
 #include "Queue.h"
+#include "Structs.h"
 #include "Synchronization.h"
 
 namespace vg
 {
-    Queue::Queue() :m_handle(nullptr), m_commandPool(nullptr), m_type(QueueType::None), m_index(0) {}
+    Queue::Queue() :m_handle(nullptr), m_type(QueueType::None), m_index(0) {}
 
     Queue::Queue(Queue&& other) noexcept
     {
@@ -13,16 +14,19 @@ namespace vg
         std::swap(m_transientCommandPool, other.m_transientCommandPool);
         std::swap(m_type, other.m_type);
         std::swap(m_index, other.m_index);
-
-        other.m_handle = nullptr;
     }
+
     Queue::~Queue()
     {
-        if (m_commandPool == nullptr)return;
+        if (m_handle == nullptr)
+            return;
+
         ((DeviceHandle) currentDevice).destroyCommandPool(m_commandPool);
         ((DeviceHandle) currentDevice).destroyCommandPool(m_transientCommandPool);
-        m_commandPool = nullptr;
+
+        m_handle = nullptr;
     }
+
     Queue& Queue::operator=(Queue&& other) noexcept
     {
         if (&other == this) return *this;
@@ -50,7 +54,7 @@ namespace vg
         return m_index;
     }
 
-    CommandPoolHandle Queue::GetCommandPool(bool transient) const
+    CmdPoolHandle Queue::GetCmdPool(bool transient) const
     {
         if (transient)
             return m_transientCommandPool;
@@ -61,4 +65,18 @@ namespace vg
     {
         auto result = m_handle.presentKHR({ *(std::vector<vk::Semaphore>*) & waitSemaphores,*(std::vector<vk::SwapchainKHR>*) & swapchains,imageIndices });
     }
+
+    void Queue::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
+    {
+        m_handle.submit(*(std::vector<vk::SubmitInfo>*) & submits, fence);
+    }
+
+    Fence Queue::Submit(const std::vector<class SubmitInfo>& submits)
+    {
+        Fence fence;
+        Submit(submits, fence);
+
+        return fence;
+    }
+
 }

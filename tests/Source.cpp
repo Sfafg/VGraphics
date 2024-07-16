@@ -27,6 +27,7 @@
 #include "ImageView.h"
 #include "Sampler.h"
 #include "FormatInfo.h"
+#include "CmdPool.h"
 
 using namespace std::chrono_literals;
 using namespace vg;
@@ -81,12 +82,13 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: Per thread CommandPools
-    //TO DO: Allow for batch submits
     //TO DO: Secondary Commandbuffers
+
     //TO DO: Pipeline Cashe
     //TO DO: Push Constants
     //TO DO: Subpass dependency
+
+    //TO DO: Add A bunch of commands.
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -150,6 +152,7 @@ int main()
     for (int i = 0; i < swapchain.GetImageCount(); i++)
         swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
 
+
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
     vg::Allocate({ &vertexBuffer }, { MemoryProperty::DeviceLocal });
@@ -163,9 +166,9 @@ int main()
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
-        vg::CmdBuffer(currentDevice.transferQueue).Append(
+        vg::CmdBuffer(currentDevice.transferQueue).Begin().Append(
             cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } })
-        ).Submit().Await();
+        ).End().Submit().Await();
     }
 
     Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageCount(), BufferUsage::UniformBuffer);
@@ -185,11 +188,11 @@ int main()
         memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
-        vg::CmdBuffer(vg::currentDevice.transferQueue).Append(
+        vg::CmdBuffer(vg::currentDevice.transferQueue).Begin().Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
             cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
             cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
-        ).Submit().Await();
+        ).End().Submit().Await();
     }
     ImageView imageView(texImage, { ImageAspect::Color });
     Sampler sampler(currentDevice.GetProperties().limits.maxSamplerAnisotropy, Filter::Linear, Filter::Linear);
@@ -210,7 +213,8 @@ int main()
         descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
     }
 
-    CmdBuffer commandBuffer(currentDevice.graphicsQueue, false);
+    CmdPool pool(currentDevice.graphicsQueue, { CmdPoolUsage::ResetCmdBuffer });
+    CmdBuffer commandBuffer(pool);
     Semaphore renderFinishedSemaphore;
     Semaphore imageAvailableSemaphore;
     Fence inFlightFence(true);
@@ -249,7 +253,7 @@ int main()
         ubo.proj[1][1] *= -1;
         memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
-        commandBuffer.Append(
+        commandBuffer.Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindVertexBuffer(vertexBuffer, 0),
@@ -259,7 +263,7 @@ int main()
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
-        ).Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
+        ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);
         currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });

@@ -61,7 +61,7 @@ namespace vg
 
         DeviceProperties GetProperties() const;
 
-    public:
+    private:
         DeviceHandle m_handle;
         PhysicalDeviceHandle m_physicalDevice;
 

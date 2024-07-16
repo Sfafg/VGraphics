@@ -348,7 +348,7 @@ int main()
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(mesh.indexData.size()),
             cmd::EndRenderpass()
-        ).Submit({ {{ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} },{ renderFinishedSemaphore }} }, inFlightFence);
+        ).Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);
         currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });

@@ -3,12 +3,9 @@
 #include "Handle.h"
 #include "Enums.h"
 #include "Flags.h"
+
 namespace vg
 {
-    /**
-     *@brief ((DeviceHandle)currentDevice).Queue
-     * ((DeviceHandle)currentDevice). have different Queues with differing capabilities, this class is meant to handle creation of Queues.
-     */
     class Queue
     {
     public:
@@ -37,9 +34,9 @@ namespace vg
          *@brief Get the Command Pool object
          *
          * @param transient if true returns handle to the transient command pool, used for short lived CmdBuffers
-         * @return CommandPoolHandle
+         * @return CmdPoolHandle
          */
-        CommandPoolHandle GetCommandPool(bool transient = false) const;
+        CmdPoolHandle GetCmdPool(bool transient = false) const;
         /**
          *@brief Present image to the window. Queue Type must be Queue::Present
          *
@@ -50,13 +47,16 @@ namespace vg
          */
         void Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices);
 
+        void Submit(const std::vector<class SubmitInfo>& submits, const class Fence& fence);
+
+        Fence Submit(const std::vector<class SubmitInfo>& submits);
+
     private:
         QueueHandle m_handle;
-        CommandPoolHandle m_commandPool;
-        CommandPoolHandle m_transientCommandPool;
+        CmdPoolHandle m_commandPool;
+        CmdPoolHandle m_transientCommandPool;
         QueueType m_type;
         unsigned int m_index;
-
 
         friend class Device;
     };

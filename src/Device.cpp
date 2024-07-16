@@ -135,20 +135,25 @@ namespace vg
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
+        auto prevCurrentHandle = currentDevice.m_handle;
+        currentDevice.m_handle = m_handle;
+
         graphicsQueue.m_handle = graphicsQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
         computeQueue.m_handle = computeQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
         transferQueue.m_handle = transferQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
         presentQueue.m_handle = presentQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
 
-        graphicsQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
-        computeQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
-        transferQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
-        presentQueue.m_commandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer });
+        graphicsQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },graphicsQueue.GetIndex() });
+        computeQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },computeQueue.GetIndex() });
+        transferQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },transferQueue.GetIndex() });
+        presentQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },presentQueue.GetIndex() });
 
-        graphicsQueue.m_transientCommandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
-        computeQueue.m_transientCommandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
-        transferQueue.m_transientCommandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
-        presentQueue.m_transientCommandPool = m_handle.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient });
+        graphicsQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },graphicsQueue.GetIndex() });
+        computeQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },computeQueue.GetIndex() });
+        transferQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },transferQueue.GetIndex() });
+        presentQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },presentQueue.GetIndex() });
+
+        currentDevice.m_handle = prevCurrentHandle;
     }
 
     Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr) {}

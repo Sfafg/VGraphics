@@ -32,6 +32,7 @@ set(SRC
     ${SRC_ROOT}/ImageView.cpp
     ${SRC_ROOT}/Sampler.cpp
     ${SRC_ROOT}/FormatInfo.cpp
+    ${SRC_ROOT}/CmdPool.cpp
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")

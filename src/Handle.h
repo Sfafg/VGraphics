@@ -44,7 +44,7 @@ namespace vg
     HANDLE(FramebufferHandle, Framebuffer);
     HANDLE(SemaphoreHandle, Semaphore);
     HANDLE(FenceHandle, Fence);
-    HANDLE(CommandPoolHandle, CommandPool);
+    HANDLE(CmdPoolHandle, CommandPool);
     HANDLE(CmdBufferHandle, CommandBuffer);
     HANDLE(BufferHandle, Buffer);
     HANDLE(DeviceMemoryHandle, DeviceMemory);

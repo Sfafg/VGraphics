@@ -1,5 +1,6 @@
 #pragma once
 #include "Queue.h"
+#include "CmdPool.h"
 #include "Structs.h"
 #include "RenderPass.h"
 #include "GraphicsPipeline.h"
@@ -191,26 +192,6 @@ namespace vg
         };
     }
 
-    /**
-     *@brief Holds information about submiting command buffer
-     *
-     */
-    struct SubmitInfo
-    {
-        std::vector <std::tuple<Flags<PipelineStage>, SemaphoreHandle>> waitStages;
-        std::vector<SemaphoreHandle> signalSemaphores;
-        /**
-         * @brief Construct a new Submit Info object
-         *
-         * @param waitStages Array of pairs of values FlagSet of pipeline stages and Semaphore for which to wait on those stages
-         * @param signalSemaphores Semaphores signalled upon all command buffers complete execution
-         */
-
-        SubmitInfo(const std::vector < std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages = {}, const std::vector<SemaphoreHandle>& signalSemaphores = {})
-            : waitStages(waitStages), signalSemaphores(signalSemaphores)
-        {}
-    };
-
     template<class T>
     concept Command = std::is_base_of<cmd::Command, T>::value;
     template<class... T>
@@ -228,6 +209,7 @@ namespace vg
          * @param queue Queue object
          */
         CmdBuffer(const Queue& queue, bool isShortLived = true);
+        CmdBuffer(const CmdPool& pool);
 
         CmdBuffer();
         CmdBuffer(CmdBuffer&& other) noexcept;
@@ -248,9 +230,8 @@ namespace vg
          *@brief Begin appending to the command buffer
          *  Needs to be called before all Appends
          * @param usage how the recorded buffer will be used
-         * @param clear if true buffer gets cleared before beginning
          */
-        CmdBuffer& Begin(Flags<CmdBufferUsage> usage = { CmdBufferUsage::OneTimeSubmit }, bool clear = true);
+        CmdBuffer& Begin(Flags<CmdBufferUsage> usage = { CmdBufferUsage::OneTimeSubmit });
 
         /**
          *@brief Append commands, has to be between \ref CommandBuffer::Begin() and \ref CommandBuffer::End()
@@ -259,26 +240,7 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        CmdBuffer& AppendNoBegin(const T&... commands) { (..., _Append(commands)); return *this; }
-
-        /**
-         *@brief Append commands
-         * Appends array commands to the buffer
-         * @tparam T class derived from cmd::Command
-         * @param usage how the recorded buffer will be used
-         * @param commands Array of commands from cmd:: namespace
-         */
-        template<Commands... T>
-        CmdBuffer& Append(Flags<CmdBufferUsage> usage, const T&... commands) { Begin(usage); (..., _Append(commands)); End(); return *this; }
-
-        /**
-         *@brief Append commands
-        * Appends array commands to the buffer
-        * @tparam T class derived from cmd::Command
-        * @param commands Array of commands from cmd:: namespace
-        */
-        template<Commands... T>
-        CmdBuffer& Append(const T&... commands) { Begin(); (..., _Append(commands)); End(); return *this; }
+        CmdBuffer& Append(const T&... commands) { (..., _Append(commands)); return *this; }
 
         /**
          *@brief End appending to command buffer
@@ -292,17 +254,18 @@ namespace vg
         * @param submits Synchronization info
         * @param fence Fence to be signaled upon all submits finish
         */
-        CmdBuffer& Submit(const std::vector<SubmitInfo>& submits, const Fence& fence);
+        CmdBuffer& Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores, const Fence& fence);
         /**
          *@brief Submit command buffer and all relevant data
          *
          *@param submits Synchronization info
          *@return Fence to be signaled upon all submits finish
          */
-        Fence Submit(const std::vector<SubmitInfo>& submits = { SubmitInfo() })
+
+        Fence Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages = {}, const std::vector<SemaphoreHandle>& signalSemaphores = {})
         {
             Fence fence;
-            Submit(submits, fence);
+            Submit(waitStages, signalSemaphores, fence);
             return fence;
         }
 
@@ -312,7 +275,7 @@ namespace vg
 
     private:
         CmdBufferHandle m_handle;
-        bool m_isShortLived;
-        const Queue* m_queue;
+        CmdPoolHandle m_commandPool;
+        QueueHandle m_queue;
     };
 }

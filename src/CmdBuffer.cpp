@@ -74,16 +74,21 @@ namespace vg
         {
             CmdBufferHandle(commandBuffer).pipelineBarrier((vk::PipelineStageFlags) srcStageMask, (vk::PipelineStageFlags) dstStageMask, (vk::DependencyFlags) dependency, *(std::vector<vk::MemoryBarrier>*) & memoryBarriers, *(std::vector<vk::BufferMemoryBarrier>*) & bufferMemoryBarriers, *(std::vector<vk::ImageMemoryBarrier>*) & imageMemoryBarriers);
         }
+
+        void ExecuteCommands::operator ()(CmdBuffer& commandBuffer) const
+        {
+            CmdBufferHandle(commandBuffer).executeCommands(cmdBuffers);
+        }
     }
 
-    CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)
+    CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived, CmdBufferLevel cmdLevel) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)
     {
-        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, vk::CommandBufferLevel::ePrimary, 1 })[0];
+        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
     }
 
-    CmdBuffer::CmdBuffer(const CmdPool& pool) : m_commandPool(pool), m_queue(pool.GetQueue())
+    CmdBuffer::CmdBuffer(const CmdPool& pool, CmdBufferLevel cmdLevel) : m_commandPool(pool), m_queue(pool.GetQueue())
     {
-        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, vk::CommandBufferLevel::ePrimary, 1 })[0];
+        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
     }
 
     CmdBuffer::CmdBuffer() :m_handle(nullptr), m_commandPool(nullptr) {}
@@ -126,6 +131,18 @@ namespace vg
     CmdBuffer& CmdBuffer::Begin(Flags<CmdBufferUsage> usage)
     {
         m_handle.begin(vk::CommandBufferBeginInfo((vk::CommandBufferUsageFlags) usage));
+
+        return *this;
+    }
+
+    CmdBuffer& CmdBuffer::Begin(Flags<CmdBufferUsage> usage, RenderPassHandle renderPass, uint32_t subpassIndex, FramebufferHandle framebuffer, bool occlusionQueryEnable, Flags<QueryControl> queryFlags, Flags<PipelineStatistic> pipelineStatistics)
+    {
+        vk::CommandBufferInheritanceInfo inheritance(renderPass, subpassIndex, framebuffer, occlusionQueryEnable, (vk::QueryControlFlags) queryFlags, (vk::QueryPipelineStatisticFlags) pipelineStatistics);
+        m_handle.begin(
+            vk::CommandBufferBeginInfo(
+                (vk::CommandBufferUsageFlags) usage,
+                &inheritance
+            ));
 
         return *this;
     }

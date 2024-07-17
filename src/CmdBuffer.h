@@ -190,6 +190,18 @@ namespace vg
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
+
+        struct ExecuteCommands : Command
+        {
+            ExecuteCommands(const std::vector<CmdBufferHandle>& cmdBuffers)
+                : cmdBuffers(cmdBuffers)
+            {}
+
+        private:
+            std::vector<CmdBufferHandle> cmdBuffers;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
+        };
     }
 
     template<class T>
@@ -208,8 +220,8 @@ namespace vg
          *
          * @param queue Queue object
          */
-        CmdBuffer(const Queue& queue, bool isShortLived = true);
-        CmdBuffer(const CmdPool& pool);
+        CmdBuffer(const Queue& queue, bool isShortLived = true, CmdBufferLevel cmdLevel = CmdBufferLevel::Primary);
+        CmdBuffer(const CmdPool& pool, CmdBufferLevel cmdLevel = CmdBufferLevel::Primary);
 
         CmdBuffer();
         CmdBuffer(CmdBuffer&& other) noexcept;
@@ -232,6 +244,9 @@ namespace vg
          * @param usage how the recorded buffer will be used
          */
         CmdBuffer& Begin(Flags<CmdBufferUsage> usage = { CmdBufferUsage::OneTimeSubmit });
+
+        CmdBuffer& Begin(Flags<CmdBufferUsage> usage,
+            RenderPassHandle renderPass, uint32_t subpassIndex, FramebufferHandle framebuffer = FramebufferHandle(), bool occlusionQueryEnable = false, Flags<QueryControl> queryFlags = {}, Flags<PipelineStatistic> pipelineStatistics = {});
 
         /**
          *@brief Append commands, has to be between \ref CommandBuffer::Begin() and \ref CommandBuffer::End()

@@ -918,4 +918,33 @@ namespace vg
         Transient = 0x00000001,
         ResetCmdBuffer = 0x00000002,
     };
+
+    enum class PipelineStatistic
+    {
+        InputAssemblyVertices = 0x00000001,
+        InputAssemblyPrimitives = 0x00000002,
+        VertexShaderInvocations = 0x00000004,
+        GeometryShaderInvocations = 0x00000008,
+        GeometryShaderPrimitives = 0x00000010,
+        ClippingInvocations = 0x00000020,
+        ClippingPrimitives = 0x00000040,
+        FragmentShaderInvocations = 0x00000080,
+        TessellationControlShaderPatches = 0x00000100,
+        TessellationEvaluationShaderInvocations = 0x00000200,
+        ComputeShaderInvocations = 0x00000400,
+        TaskShaderInvocations = 0x00000800,
+        MeshShaderInvocations = 0x00001000,
+        ClusterCullingShaderInvocations = 0x00002000,
+    };
+
+    enum class QueryControl
+    {
+        Precise = 0x00000001
+    };
+
+    enum class CmdBufferLevel
+    {
+        Primary = 0,
+        Secondary = 1,
+    };
 }

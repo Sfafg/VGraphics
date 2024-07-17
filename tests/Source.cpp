@@ -82,8 +82,6 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: Secondary Commandbuffers
-
     //TO DO: Pipeline Cashe
     //TO DO: Push Constants
     //TO DO: Subpass dependency
@@ -152,7 +150,6 @@ int main()
     for (int i = 0; i < swapchain.GetImageCount(); i++)
         swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
 
-
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
     vg::Allocate({ &vertexBuffer }, { MemoryProperty::DeviceLocal });
@@ -213,8 +210,7 @@ int main()
         descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
     }
 
-    CmdPool pool(currentDevice.graphicsQueue, { CmdPoolUsage::ResetCmdBuffer });
-    CmdBuffer commandBuffer(pool);
+    CmdBuffer commandBuffer(currentDevice.graphicsQueue);
     Semaphore renderFinishedSemaphore;
     Semaphore imageAvailableSemaphore;
     Fence inFlightFence(true);
@@ -256,11 +252,11 @@ int main()
         commandBuffer.Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
+            cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::BindVertexBuffer(vertexBuffer, 0),
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), IndexType::Uint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
-            cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);

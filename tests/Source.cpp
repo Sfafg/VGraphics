@@ -74,7 +74,7 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
+    4, 5, 6, 6, 7, 4,
 };
 
 struct UniformBufferObject
@@ -86,8 +86,6 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: Push Constants
-
     //TO DO: Add A bunch of commands.
 
     //TO DO: Add support for array creation where possible.
@@ -125,9 +123,8 @@ int main()
         }
     }
     PipelineCache pipelineCache(cacheData);
-
-    Shader vertexShader(ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
-    Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
+    Shader vertexShader(ShaderStage::Vertex, "shaders/shaderVert.spv");
+    Shader fragmentShader(ShaderStage::Fragment, "shaders/shaderFrag.spv");
     RenderPass renderPass(
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
@@ -138,6 +135,7 @@ int main()
                 GraphicsPipeline(
                     {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
                      {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}},
+                    {PushConstantRange({ShaderStage::Vertex},0,sizeof(glm::vec3))},
                     {&vertexShader, &fragmentShader},
                     VertexLayout({Vertex::getBindingDescription()},Vertex::getAttributeDescriptions()),
                     InputAssembly(),
@@ -197,7 +195,7 @@ int main()
 
     /// Load Image.
     int texWidth, texHeight, texChannels;
-    unsigned char* pixels = stbi_load("C:/Projekty/Vulkan/VGraphics2/src/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    unsigned char* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     Image texImage(texWidth, texHeight, Format::RGBA8SRGB, { ImageUsage::TransferDst , ImageUsage::Sampled });
     vg::Allocate(&texImage, { MemoryProperty::DeviceLocal });
@@ -268,9 +266,20 @@ int main()
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 10.0f);
+        ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 100.0f);
         ubo.proj[1][1] *= -1;
         memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
+
+        glm::vec3 pos(0, 0, 0);
+        glm::vec3 pos1(0, 0, 0);
+        if (glfwGetKey(window, GLFW_KEY_S))
+        {
+            pos1 = glm::vec3(-4, -4, -4);
+        }
+        if (glfwGetKey(window, GLFW_KEY_W))
+        {
+            pos = glm::vec3(-4, -4, -4);
+        }
 
         commandBuffer.Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
@@ -280,6 +289,9 @@ int main()
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), IndexType::Uint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
+            cmd::PushConstants(renderPass.GetPipelineLayouts()[0], { ShaderStage::Vertex }, 0, sizeof(glm::vec3), &pos),
+            cmd::DrawIndexed(indices.size()),
+            cmd::PushConstants(renderPass.GetPipelineLayouts()[0], { ShaderStage::Vertex }, 0, sizeof(glm::vec3), &pos1),
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);

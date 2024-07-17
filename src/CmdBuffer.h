@@ -202,6 +202,22 @@ namespace vg
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
+
+        struct PushConstants : Command
+        {
+            PushConstants(PipelineLayoutHandle layout, Flags<ShaderStage> stages, uint32_t offset, uint32_t size, void* values)
+                :layout(layout), stages(stages), offset(offset), size(size), values(values)
+            {}
+
+        private:
+            PipelineLayoutHandle layout;
+            Flags<ShaderStage> stages;
+            uint32_t offset;
+            uint32_t size;
+            void* values;
+            void operator ()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
+        };
     }
 
     template<class T>

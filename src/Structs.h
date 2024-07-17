@@ -487,6 +487,23 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(PipelineMultisampleStateCreateInfo);
 #endif
     };
+
+    struct StencilOpState
+    {
+        StencilOp failOp = StencilOp::Keep;
+        StencilOp passOp = StencilOp::Replace;
+        StencilOp depthFailOp = StencilOp::Replace;
+        CompareOp compareOp = CompareOp::Equal;
+        uint32_t compareMask = ~0;
+        uint32_t writeMask = ~0;
+        uint32_t reference = 0;
+
+        StencilOpState() {}
+        StencilOpState(StencilOp failOp, StencilOp passOp, StencilOp depthFailOp, CompareOp compareOp, uint32_t compareMask, uint32_t writeMask, uint32_t reference)
+            : failOp(failOp), passOp(passOp), depthFailOp(depthFailOp), compareOp(compareOp), compareMask(compareMask), writeMask(writeMask), reference(reference)
+        {}
+    };
+
     struct DepthStencil
     {
     private:
@@ -499,8 +516,8 @@ namespace vg
         CompareOp depthCompareOp = CompareOp::Never;
         uint32_t depthBoundsTestEnable = 0;
         uint32_t stencilTestEnable = 0;
-        uint32_t front = 0;
-        uint32_t back = 0;
+        StencilOpState front = {};
+        StencilOpState back = {};
         float minDepthBounds = 0;
         float maxDepthBounds = 0;
 
@@ -508,6 +525,7 @@ namespace vg
         DepthStencil() {}
         DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp) {}
         DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp, bool enabledepthBoundsTest, float minDepthBounds, float maxDepthBounds) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp), depthBoundsTestEnable(enabledepthBoundsTest), minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
+        DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp, StencilOpState front, StencilOpState back, bool enabledepthBoundsTest, float minDepthBounds, float maxDepthBounds) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp), depthBoundsTestEnable(enabledepthBoundsTest), stencilTestEnable(true), front(front), back(back), minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(PipelineDepthStencilStateCreateInfo);
@@ -832,6 +850,19 @@ namespace vg
 
 #ifdef VULKAN_HPP
         VULKAN_NATIVE_CAST_OPERATOR(SubmitInfo);
+#endif
+    };
+
+    struct PushConstantRange
+    {
+        Flags<ShaderStage> stageFlags;
+        uint32_t offset;
+        uint32_t size;
+
+        PushConstantRange(Flags<ShaderStage> stageFlags = {}, uint32_t offset = 0, uint32_t size = 0) :stageFlags(stageFlags), offset(offset), size(size) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(PushConstantRange);
 #endif
     };
 }

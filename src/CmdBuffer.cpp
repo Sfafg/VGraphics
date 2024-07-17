@@ -79,6 +79,11 @@ namespace vg
         {
             CmdBufferHandle(commandBuffer).executeCommands(cmdBuffers);
         }
+
+        void PushConstants::operator ()(CmdBuffer& commandBuffer) const
+        {
+            CmdBufferHandle(commandBuffer).pushConstants(layout, (vk::ShaderStageFlags) stages, offset, size, values);
+        }
     }
 
     CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived, CmdBufferLevel cmdLevel) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)

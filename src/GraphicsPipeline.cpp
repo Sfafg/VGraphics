@@ -7,6 +7,7 @@ namespace vg
 {
     GraphicsPipeline::GraphicsPipeline(
         const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
+        const std::vector<PushConstantRange>& pushConstantRanges,
         const std::vector<Shader*>& shaders,
         const VertexLayout& vertexInput,
         const InputAssembly& inputAssembly,
@@ -20,7 +21,7 @@ namespace vg
         uint32_t childrenCount
     ) :
         m_createInfo(new CreateInfo(
-            childrenCount, setLayoutBindings, shaders, vertexInput,
+            childrenCount, setLayoutBindings, pushConstantRanges, shaders, vertexInput,
             inputAssembly, tesselation, viewportState, rasterizer,
             multisampling, depthStencil, colorBlending, dynamicState, -1, nullptr
         )), m_handle(nullptr)
@@ -30,6 +31,7 @@ namespace vg
     GraphicsPipeline::GraphicsPipeline(
         uint32_t parentIndex,
         const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
+        const std::optional<std::vector<PushConstantRange>>& pushConstantRanges,
         const std::optional<std::vector<Shader*>>& shaders,
         const std::optional<VertexLayout>& vertexInput,
         const std::optional<InputAssembly>& inputAssembly,
@@ -43,7 +45,7 @@ namespace vg
         uint32_t childrenCount
     ) :
         m_createInfo(new CreateInfo(
-            childrenCount, setLayoutBindings, shaders, vertexInput,
+            childrenCount, setLayoutBindings, pushConstantRanges, shaders, vertexInput,
             inputAssembly, tesselation, viewportState, rasterizer,
             multisampling, depthStencil, colorBlending, dynamicState, parentIndex, nullptr
         )), m_handle(nullptr)
@@ -52,6 +54,7 @@ namespace vg
     GraphicsPipeline::GraphicsPipeline(
         GraphicsPipeline* parent,
         const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
+        const std::optional<std::vector<PushConstantRange>>& pushConstantRanges,
         const std::optional<std::vector<Shader*>>& shaders,
         const std::optional<VertexLayout>& vertexInput,
         const std::optional<InputAssembly>& inputAssembly,
@@ -65,7 +68,7 @@ namespace vg
         uint32_t childrenCount
     ) :
         m_createInfo(new CreateInfo(
-            childrenCount, setLayoutBindings, shaders, vertexInput,
+            childrenCount, setLayoutBindings, pushConstantRanges, shaders, vertexInput,
             inputAssembly, tesselation, viewportState, rasterizer,
             multisampling, depthStencil, colorBlending, dynamicState, -1, parent
         )), m_handle(nullptr)
@@ -116,6 +119,17 @@ namespace vg
     GraphicsPipeline::operator const GraphicsPipelineHandle& () const
     {
         return m_handle;
+    }
+
+    std::vector<PushConstantRange>* GraphicsPipeline::CreateInfo::GetPushConstantRanges()
+    {
+        if (pushConstantRanges)
+            return &*pushConstantRanges;
+
+        if (parent && parent->m_createInfo)
+            return parent->m_createInfo->GetPushConstantRanges();
+
+        return nullptr;
     }
 
     std::vector<DescriptorSetLayoutBinding>* GraphicsPipeline::CreateInfo::GetSetLayoutBindings()

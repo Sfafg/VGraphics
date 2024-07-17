@@ -32,7 +32,7 @@ namespace vg
                 *(std::vector<vk::AttachmentReference>*) & pass.inputAttachments,
                 *(std::vector<vk::AttachmentReference>*) & pass.colorAttachments,
                 *(std::vector<vk::AttachmentReference>*) & pass.resolveAttachments,
-                nullptr,
+                (vk::AttachmentReference*) (pass.depthStencilAttachment ? (void*) &*pass.depthStencilAttachment : nullptr),
                 *(std::vector<uint32_t>*) & pass.preserveAttachments
             );
         }
@@ -87,7 +87,7 @@ namespace vg
             descriptorSetLayouts.resize(1);
             descriptorSetLayouts[0] = (((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) createInfo.GetSetLayoutBindings() }));
 
-            PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts));
+            PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts, *(std::vector<vk::PushConstantRange>*)createInfo.GetPushConstantRanges()));
             m_pipelineLayouts[i].m_handle = layout;
             m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 

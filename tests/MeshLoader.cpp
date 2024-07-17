@@ -207,6 +207,7 @@ int main()
                 GraphicsPipeline{
                     {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
                      {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}},
+                    {},
                     { &vertexShader,&fragmentShader },
                     VertexLayout({Vertex::getBindingDescription()},Vertex::getAttributeDescriptions()),
                     InputAssembly(),

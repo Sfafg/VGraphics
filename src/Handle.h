@@ -38,6 +38,7 @@ namespace vg
     HANDLE(ImageHandle, Image);
     HANDLE(ImageViewHandle, ImageView);
     HANDLE(ShaderHandle, ShaderModule);
+    HANDLE(PipelineCacheHandle, PipelineCache);
     HANDLE(GraphicsPipelineHandle, Pipeline);
     HANDLE(PipelineLayoutHandle, PipelineLayout);
     HANDLE(RenderPassHandle, RenderPass);

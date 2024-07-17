@@ -27,6 +27,7 @@ set(SRC
     ${SRC_ROOT}/MemoryManager.cpp
     ${SRC_ROOT}/Window.cpp
     ${SRC_ROOT}/PipelineLayout.cpp
+    ${SRC_ROOT}/PipelineCache.cpp
     ${SRC_ROOT}/DescriptorPool.cpp
     ${SRC_ROOT}/DescriptorSet.cpp
     ${SRC_ROOT}/ImageView.cpp

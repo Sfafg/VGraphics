@@ -1,8 +1,9 @@
 #include <vulkan/vulkan.hpp>
 #include "RenderPass.h"
+#include "Device.h"
 namespace vg
 {
-    RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies)
+    RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies, PipelineCacheHandle cache)
         : m_attachments(attachments), m_dependencies(dependencies)
     {
         // Attachments.
@@ -110,7 +111,7 @@ namespace vg
             std::swap(m_graphicsPipelines[i], *subpasses.begin()[i].graphicsPipeline);
         }
 
-        std::vector<vk::Pipeline> ptr = ((DeviceHandle) currentDevice).createGraphicsPipelines(nullptr, graphicPipelineCreateInfos).value;
+        std::vector<vk::Pipeline> ptr = ((DeviceHandle) currentDevice).createGraphicsPipelines(cache, graphicPipelineCreateInfos).value;
 
         for (int i = 0; i < m_graphicsPipelines.size(); i++)
         {

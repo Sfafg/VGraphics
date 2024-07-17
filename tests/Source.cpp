@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 #include <thread>
 #include <chrono>
 #include <math.h>
@@ -28,8 +30,10 @@
 #include "Sampler.h"
 #include "FormatInfo.h"
 #include "CmdPool.h"
+#include "PipelineCache.h"
 
 using namespace std::chrono_literals;
+namespace fs = std::filesystem;
 using namespace vg;
 bool recreateFramebuffer = false;
 
@@ -82,11 +86,11 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: Pipeline Cashe
     //TO DO: Push Constants
-    //TO DO: Subpass dependency
 
     //TO DO: Add A bunch of commands.
+
+    //TO DO: Add support for array creation where possible.
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -109,6 +113,19 @@ int main()
     Surface surface(windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);
 
     int w, h; glfwGetFramebufferSize(window, &w, &h);
+
+    std::vector<char> cacheData;
+    {
+        std::ifstream cacheFile("pipelineCache.txt", std::ios_base::binary);
+        uint32_t size;
+        if (cacheFile.is_open() && (size = fs::file_size("pipelineCache.txt")) != 0)
+        {
+            cacheData.resize(size);
+            cacheFile.read(cacheData.data(), cacheData.size());
+        }
+    }
+    PipelineCache pipelineCache(cacheData);
+
     Shader vertexShader(ShaderStage::Vertex, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderVert.spv");
     Shader fragmentShader(ShaderStage::Fragment, "C:/Projekty/Vulkan/VGraphics2/src/shaders/shaderFrag.spv");
     RenderPass renderPass(
@@ -136,8 +153,14 @@ int main()
                 {}, AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
-        {}
+        {},
+        pipelineCache
     );
+    {
+        std::ofstream cacheFile("pipelineCache.txt", std::ios_base::binary);
+        auto data = pipelineCache.GetData();
+        cacheFile.write(data.data(), data.size());
+    }
 
     Swapchain swapchain(surface, 2, w, h);
 

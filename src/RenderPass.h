@@ -2,7 +2,7 @@
 #include "Handle.h"
 #include "Subpass.h"
 #include "PipelineLayout.h"
-#include "Device.h"
+#include "PipelineCache.h"
 #include <vector>
 
 namespace vg
@@ -21,7 +21,7 @@ namespace vg
          * @param subpasses Array of Subpasses used for multi pass rendering e.g. Differed Rendering
          * @param dependencies Dependencies
          */
-        RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies);
+        RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies = {}, PipelineCacheHandle cache = PipelineCacheHandle());
 
         RenderPass();
         RenderPass(RenderPass&& other) noexcept;

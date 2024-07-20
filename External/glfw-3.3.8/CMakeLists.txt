@@ -61,11 +61,6 @@ list(APPEND CMAKE_MODULE_PATH "${GLFW_SOURCE_DIR}/CMake/modules")
 
 find_package(Threads REQUIRED)
 
-if (GLFW_BUILD_DOCS)
-    set(DOXYGEN_SKIP_DOT TRUE)
-    find_package(Doxygen)
-endif()
-
 #--------------------------------------------------------------------
 # Apply Microsoft C runtime library option
 # This is here because it also applies to tests and examples

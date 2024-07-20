@@ -86,9 +86,12 @@ struct UniformBufferObject
 
 int main()
 {
-    //TO DO: Add A bunch of commands.
+    // TO DO: Add A bunch of commands.
+    // TO DO: Clear color format must be same as framebuffer format, enforce it.
+    // TO DO: BeginRenderpass ClearValue
+    // TO DO: CMake build add folder like resources(things that are to be shipped with application).
 
-    //TO DO: Add support for array creation where possible.
+    // TO DO: Features querry and turn on
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -105,7 +108,7 @@ int main()
     SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
     vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
         [](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits) {
-            return type == DeviceType::Integrated;
+            return (type == DeviceType::Dedicated) + 1;
         });
 
     Surface surface(windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);
@@ -123,8 +126,8 @@ int main()
         }
     }
     PipelineCache pipelineCache(cacheData);
-    Shader vertexShader(ShaderStage::Vertex, "shaders/shaderVert.spv");
-    Shader fragmentShader(ShaderStage::Fragment, "shaders/shaderFrag.spv");
+    Shader vertexShader(ShaderStage::Vertex, "resources/shaders/shader.vert.spv");
+    Shader fragmentShader(ShaderStage::Fragment, "resources/shaders/shader.frag.spv");
     RenderPass renderPass(
         {
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc),
@@ -160,7 +163,7 @@ int main()
         cacheFile.write(data.data(), data.size());
     }
 
-    Swapchain swapchain(surface, 2, w, h);
+    Swapchain swapchain(surface, 2, w, h, { Usage::ColorAttachment }, PresentMode::Fifo, CompositeAlpha::PreMultiplied);
 
     Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
@@ -195,7 +198,7 @@ int main()
 
     /// Load Image.
     int texWidth, texHeight, texChannels;
-    unsigned char* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    unsigned char* pixels = stbi_load("resources/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     Image texImage(texWidth, texHeight, Format::RGBA8SRGB, { ImageUsage::TransferDst , ImageUsage::Sampled });
     vg::Allocate(&texImage, { MemoryProperty::DeviceLocal });
@@ -206,9 +209,10 @@ int main()
         memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
+        auto s = BufferImageCopyRegion(0UL, { ImageAspect::Color }, { texWidth, texHeight });
         vg::CmdBuffer(vg::currentDevice.transferQueue).Begin().Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
-            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
+            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0UL,{ImageAspect::Color}, {texWidth,texHeight}) }),
             cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
         ).End().Submit().Await();
     }
@@ -225,9 +229,10 @@ int main()
     std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageCount(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]);
     auto descriptorSets = descriptorPool.Allocate(layouts);
 
+    uint64_t offsetAlignment = currentDevice.GetProperties().limits.minUniformBufferOffsetAlignment;
     for (size_t i = 0; i < descriptorSets.size(); i++)
     {
-        descriptorSets[i].AttachBuffer(uniformBuffers, sizeof(UniformBufferObject) * i, sizeof(UniformBufferObject), 0, 0);
+        descriptorSets[i].AttachBuffer(uniformBuffers, (sizeof(UniformBufferObject) * i / offsetAlignment) * offsetAlignment, sizeof(UniformBufferObject), 0, 0);
         descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
     }
 
@@ -264,7 +269,7 @@ int main()
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 100.0f);
         ubo.proj[1][1] *= -1;
@@ -282,7 +287,7 @@ int main()
         }
 
         commandBuffer.Clear().Begin().Append(
-            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], 0, 0, swapchain.GetWidth(), swapchain.GetHeight(), 0.01, 0.01, 0.01, 1),
+            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { 0,0,0,127 }),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
             cmd::BindVertexBuffer(vertexBuffer, 0),

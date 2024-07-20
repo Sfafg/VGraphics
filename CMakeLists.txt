@@ -1,7 +1,17 @@
 cmake_minimum_required (VERSION 3.30.1)
+cmake_minimum_required (VERSION 3.30.1)
 project (VGraphics)
 set(CMAKE_CXX_STANDARD 23)
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+ 
+set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
+set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
+set(RESOURCES_ROOT "${PROJECT_SOURCE_DIR}/resources")
+set(RESOURCES_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
+set(SHADER_COMPILER_DIR "C:/VulkanSDK/1.3.261.1/Bin/glslc.exe")
+set(SHADER_ROOT "${SRC_ROOT}/shaders")
+set(SHADER_OUTPUT_DIR "${RESOURCES_OUTPUT_DIR}/shaders")
 set(CMAKE_EXE_LINKER_FLAGS "-static")
  
 set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
@@ -55,6 +65,22 @@ add_subdirectory("External/glfw-3.3.8/")
 
 
 # Library
+set(SHADERS
+    ${SHADER_ROOT}/shader.vert
+    ${SHADER_ROOT}/shader.frag
+)
+
+set(RESOURCES
+    ${RESOURCES_ROOT}/textures/texture.jpg
+)
+
+file(MAKE_DIRECTORY ${TESTS_ROOT} ${SRC_ROOT} ${RESOURCES_ROOT} ${RESOURCES_OUTPUT_DIR} ${SHADER_ROOT} ${SHADER_OUTPUT_DIR})
+
+# GLFW 
+add_subdirectory("External/glfw-3.3.8/")
+
+
+# Library
 add_library(VGraphics STATIC ${SRC})
 target_include_directories(VGraphics PUBLIC 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
@@ -67,6 +93,41 @@ target_include_directories(VGraphics PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/"
     "C:/VulkanSDK/1.3.261.1/include/")
+target_link_libraries(VGraphics INTERFACE vulkan-1)
+add_custom_command(TARGET VGraphics POST_BUILD
+    COMMAND  lib.exe ARGS "/OUT:${CMAKE_CURRENT_BINARY_DIR}/VGraphics.lib $<TARGET_FILE:VGraphics> ${CMAKE_CURRENT_BINARY_DIR}/libVGraphics.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/vulkan-1.lib"
+    COMMENT "Joining libraries: libVGraphics.a and vulkan-1.lib"
+)
+
+# SHADERS
+foreach(SHADER ${SHADERS})
+    string(REPLACE "${SHADER_ROOT}/" "" SHADER_NAME "${SHADER}")
+    add_custom_command(
+        OUTPUT "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv"
+        COMMAND "${SHADER_COMPILER_DIR}" "${SHADER}" -o "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv"
+        DEPENDS "${SHADER}"
+        COMMENT "Compiling Shader: ${SHADER_NAME}.spv"
+    )
+    list(APPEND SHADER_DEPEND "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv")
+endforeach()
+add_custom_target(Shaders ALL DEPENDS ${SHADER_DEPEND})
+
+
+# RESOURCES
+foreach(RESOURCE ${RESOURCES})
+    string(REPLACE "${RESOURCES_ROOT}/" "" RESOURCE_NAME "${RESOURCE}")
+    add_custom_command(
+        OUTPUT "${RESOURCES_OUTPUT_DIR}/${RESOURCE_NAME}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${RESOURCE}" "${RESOURCES_OUTPUT_DIR}/${RESOURCE_NAME}"
+        DEPENDS "${RESOURCE}"
+        COMMENT "Copying resource: ${RESOURCE_NAME}"
+    )
+    list(APPEND RESOURCE_DEPEND "${RESOURCES_OUTPUT_DIR}/${RESOURCE_NAME}")
+endforeach()
+add_custom_target(Resources ALL DEPENDS ${RESOURCE_DEPEND})
+
+
+# TEST 
 target_link_libraries(VGraphics INTERFACE vulkan-1)
 add_custom_command(TARGET VGraphics POST_BUILD
     COMMAND  lib.exe ARGS "/OUT:${CMAKE_CURRENT_BINARY_DIR}/VGraphics.lib $<TARGET_FILE:VGraphics> ${CMAKE_CURRENT_BINARY_DIR}/libVGraphics.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/vulkan-1.lib"

@@ -242,4 +242,11 @@ namespace vg
         return *(DeviceFeatures*) &features;
     }
 
+    FormatProperties Device::GetFormatProperties(Format format) const
+    {
+        auto properties = m_physicalDevice.getFormatProperties((vk::Format) format);
+        return *(FormatProperties*) &properties;
+    }
+
+
 }

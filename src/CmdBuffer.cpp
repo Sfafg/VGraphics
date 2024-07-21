@@ -82,7 +82,7 @@ namespace vg
 
         void PushConstants::operator ()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).pushConstants(layout, (vk::ShaderStageFlags) stages, offset, size, values);
+            CmdBufferHandle(commandBuffer).pushConstants(layout, (vk::ShaderStageFlags) stages, offset, data.size(), data.data());
         }
 
         void SetLineWidth::operator ()(CmdBuffer& commandBuffer)const

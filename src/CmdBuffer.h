@@ -19,8 +19,9 @@ namespace vg
         {
             BindPipeline(GraphicsPipelineHandle pipeline) : pipeline(pipeline) {}
 
-        private:
             GraphicsPipelineHandle pipeline;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -28,9 +29,10 @@ namespace vg
         {
             BindVertexBuffer(BufferHandle buffers, uint64_t offset) :buffers(buffers), offset(offset) {}
 
-        private:
             BufferHandle buffers;
             uint64_t offset;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -38,10 +40,11 @@ namespace vg
         {
             BindIndexBuffer(BufferHandle buffer, uint64_t offset, IndexType type) :buffer(buffer), offset(offset), type(type) {}
 
-        private:
             BufferHandle buffer;
             uint64_t offset;
             IndexType type;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -49,11 +52,11 @@ namespace vg
         {
             BindDescriptorSets(PipelineLayoutHandle layout, uint32_t firstSet, std::vector<DescriptorSetHandle> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
 
-        private:
             PipelineLayoutHandle layout;
             uint32_t firstSet;
             std::vector<DescriptorSetHandle> descriptorSets;
 
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -63,7 +66,6 @@ namespace vg
                 : renderpass(renderpass), framebuffer(framebuffer), offset(offset), extend(extend), clearColor(clearColor), depthClearColor(depthClearColor), stencilClearColor(stencilClearColor)
             {}
 
-        private:
             RenderPassHandle renderpass;
             FramebufferHandle framebuffer;
             Point2D<int32_t> offset;
@@ -71,6 +73,8 @@ namespace vg
             ClearColor clearColor;
             float depthClearColor;
             float stencilClearColor;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -79,9 +83,10 @@ namespace vg
             SetViewport(const Viewport& viewport) : viewports{ viewport }, first(0) {}
             SetViewport(const std::vector<Viewport>& vieports, int first = 0) : viewports(vieports), first(first) {}
 
-        private:
             uint32_t first;
             std::vector<Viewport> viewports;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -90,9 +95,10 @@ namespace vg
             SetScissor(const Scissor& scissor) : scissors{ scissor }, first(0) {}
             SetScissor(const std::vector<Scissor>& vieports, int first = 0) : scissors(vieports), first(first) {}
 
-        private:
             uint32_t first;
             std::vector<Scissor> scissors;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -103,11 +109,12 @@ namespace vg
 
             {}
 
-        private:
             int vertexCount;
             int instanceCount;
             int firstVertex;
             int firstInstance;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -125,12 +132,13 @@ namespace vg
                 : indexCount(indexCount), instanceCount(instanceCount), firstIndex(firstIndex), vertexOffset(vertexOffset), firstInstance(firstInstance)
             {}
 
-        private:
             uint32_t indexCount;
             uint32_t instanceCount;
             uint32_t firstIndex;
             uint32_t vertexOffset;
             uint32_t firstInstance;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -138,24 +146,26 @@ namespace vg
         {
             CopyBuffer(Buffer& src, Buffer& dst, const std::vector<BufferCopyRegion>& regions) : src(src), dst(dst), regions(regions) {}
 
-        private:
             BufferHandle src;
             BufferHandle dst;
             std::vector<BufferCopyRegion> regions;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct CopyBufferToImage : Command
         {
-            CopyBufferToImage(const Buffer& src, const Image& dst, ImageLayout dstImageLayout, std::vector<BufferImageCopyRegion> regions)
+            CopyBufferToImage(const Buffer& src, const Image& dst, ImageLayout dstImageLayout, std::vector<BufferImageCopy> regions)
                 : src(src), dst(dst), dstImageLayout(dstImageLayout), regions(regions)
             {}
 
-        private:
             BufferHandle src;
             ImageHandle dst;
             ImageLayout dstImageLayout;
-            std::vector<BufferImageCopyRegion> regions;
+            std::vector<BufferImageCopy> regions;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -185,13 +195,14 @@ namespace vg
                 :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(Dependency::None), imageMemoryBarriers(imageMemoryBarriers)
             {}
 
-        private:
             Flags<PipelineStage> srcStageMask;
             Flags<PipelineStage> dstStageMask;
             Flags<Dependency> dependency;
             std::vector<MemoryBarrier> memoryBarriers;
             std::vector<BufferMemoryBarrier> bufferMemoryBarriers;
             std::vector<ImageMemoryBarrier> imageMemoryBarriers;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -201,23 +212,31 @@ namespace vg
                 : cmdBuffers(cmdBuffers)
             {}
 
-        private:
             std::vector<CmdBufferHandle> cmdBuffers;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct PushConstants : Command
         {
             PushConstants(PipelineLayoutHandle layout, Flags<ShaderStage> stages, uint32_t offset, uint32_t size, void* values)
-                :layout(layout), stages(stages), offset(offset), size(size), values(values)
+                :layout(layout), stages(stages), offset(offset)
+            {
+                data.assign((char*) values, (char*) values + size);
+            }
+
+            template <typename T>
+            PushConstants(PipelineLayoutHandle layout, Flags<ShaderStage> stages, uint32_t offset, const std::vector<T>& data)
+                : layout(layout), stages(stages), offset(offset), data(data)
             {}
 
-        private:
             PipelineLayoutHandle layout;
             Flags<ShaderStage> stages;
             uint32_t offset;
-            uint32_t size;
-            void* values;
+            std::vector<char> data;
+
+        private:
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -226,8 +245,9 @@ namespace vg
         {
             SetLineWidth(float lineWidth) :lineWidth(lineWidth) {}
 
-        private:
             float lineWidth;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -235,8 +255,9 @@ namespace vg
         {
             SetDepthBias(DepthBias bias) : bias(bias) {}
 
-        private:
             DepthBias bias;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -244,8 +265,9 @@ namespace vg
         {
             SetBlendConstants(float c1, float c2, float c3, float c4) :blendConstants{ c1,c2,c3,c4 } {}
 
-        private:
             const float blendConstants[4];
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -253,9 +275,10 @@ namespace vg
         {
             SetDepthBounds(float minDepthBounds, float maxDepthBounds) :minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
 
-        private:
             float minDepthBounds;
             float maxDepthBounds;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -263,9 +286,10 @@ namespace vg
         {
             SetStencilCompareMask(Flags<StencilFace> faceMask, uint32_t compareMask) :faceMask(faceMask), compareMask(compareMask) {}
 
-        private:
             Flags<StencilFace> faceMask;
             uint32_t compareMask;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -273,9 +297,10 @@ namespace vg
         {
             SetStencilWriteMask(Flags<StencilFace> faceMask, uint32_t writeMask) :faceMask(faceMask), writeMask(writeMask) {}
 
-        private:
             Flags<StencilFace> faceMask;
             uint32_t writeMask;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -283,9 +308,10 @@ namespace vg
         {
             SetStencilReference(Flags<StencilFace> faceMask, uint32_t reference) :faceMask(faceMask), reference(reference) {}
 
-        private:
             Flags<StencilFace> faceMask;
             uint32_t reference;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -296,11 +322,12 @@ namespace vg
                 :buffer(buffer), offset(offset), drawCount(drawCount), stride(stride)
             {}
 
-        private:
             BufferHandle buffer;
             uint64_t offset;
             uint32_t drawCount;
             uint32_t stride;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -310,11 +337,12 @@ namespace vg
                 :buffer(buffer), offset(offset), drawCount(drawCount), stride(stride)
             {}
 
-        private:
             BufferHandle buffer;
             uint64_t offset;
             uint32_t drawCount;
             uint32_t stride;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -324,10 +352,11 @@ namespace vg
                 :groupCountX(groupCountX), groupCountY(groupCountY), groupCountZ(groupCountZ)
             {}
 
-        private:
             uint32_t groupCountX;
             uint32_t groupCountY;
             uint32_t groupCountZ;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -337,54 +366,58 @@ namespace vg
                 :buffer(buffer), offset(offset)
             {}
 
-        private:
             BufferHandle buffer;
             uint64_t offset;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct CopyImage : Command
         {
-            CopyImage(ImageHandle srcImage, ImageLayout srcImageLayout, ImageHandle dstImage, ImageLayout dstImageLayout, const std::vector<ImageCopyRegion>& regions)
+            CopyImage(ImageHandle srcImage, ImageLayout srcImageLayout, ImageHandle dstImage, ImageLayout dstImageLayout, const std::vector<ImageCopy>& regions)
                 : srcImage(srcImage), srcImageLayout(srcImageLayout), dstImage(dstImage), dstImageLayout(dstImageLayout), regions(regions)
             {}
 
-        private:
             ImageHandle srcImage;
             ImageLayout srcImageLayout;
             ImageHandle dstImage;
             ImageLayout dstImageLayout;
-            std::vector<ImageCopyRegion> regions;
+            std::vector<ImageCopy> regions;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct BlitImage : Command
         {
-            BlitImage(ImageHandle srcImage, ImageLayout srcImageLayout, ImageHandle dstImage, ImageLayout dstImageLayout, const std::vector<ImageBlitRegion>& regions, Filter filter)
-                :srcImage(srcImage), srcImageLayout(srcImageLayout), dstImage(dstImage), dstImageLayout(dstImageLayout), regions(regions)
+            BlitImage(ImageHandle srcImage, ImageLayout srcImageLayout, ImageHandle dstImage, ImageLayout dstImageLayout, const std::vector<ImageBlit>& regions, Filter filter)
+                :srcImage(srcImage), srcImageLayout(srcImageLayout), dstImage(dstImage), dstImageLayout(dstImageLayout), regions(regions), filter(filter)
             {}
 
-        private:
             ImageHandle srcImage;
             ImageLayout srcImageLayout;
             ImageHandle dstImage;
             ImageLayout dstImageLayout;
-            std::vector<ImageBlitRegion> regions;
+            std::vector<ImageBlit> regions;
             Filter filter;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct CopyImageToBuffer : Command
         {
-            CopyImageToBuffer(ImageHandle srcImage, ImageLayout srcImageLayout, BufferHandle dstBuffer, const std::vector<BufferImageCopyRegion>& regions)
+            CopyImageToBuffer(ImageHandle srcImage, ImageLayout srcImageLayout, BufferHandle dstBuffer, const std::vector<BufferImageCopy>& regions)
                 :srcImage(srcImage), srcImageLayout(srcImageLayout), dstBuffer(dstBuffer), regions(regions)
             {}
 
-        private:
             ImageHandle srcImage;
             ImageLayout srcImageLayout;
             BufferHandle dstBuffer;
-            std::vector<BufferImageCopyRegion> regions;
+
+        private:
+            std::vector<BufferImageCopy> regions;
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -403,10 +436,11 @@ namespace vg
                 this->data.assign((char*) data.data(), (char*) data.data() + data.size() * sizeof(T));
             }
 
-        private:
             BufferHandle dstBuffer;
             uint64_t dstOffset;
             std::vector<char> data;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -416,25 +450,27 @@ namespace vg
                 :dstBuffer(dstBuffer), dstOffset(dstOffset), size(size), data(data)
             {}
 
-        private:
             BufferHandle dstBuffer;
             uint64_t dstOffset;
             uint64_t size;
             uint32_t data;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
         struct ClearColorImage : Command
         {
-            ClearColorImage(ImageHandle image, ImageLayout imageLayout, ClearColor color, const std::vector<ImageSubresourceRange>& ranges)
+            ClearColorImage(ImageHandle image, ImageLayout imageLayout, ClearColor color, const std::vector<ImageSubresource>& ranges)
                 :image(image), imageLayout(imageLayout), color(color), ranges(ranges)
             {}
 
-        private:
             ImageHandle image;
             ImageLayout imageLayout;
             ClearColor color;
-            std::vector<ImageSubresourceRange> ranges;
+            std::vector<ImageSubresource> ranges;
+
+        private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
@@ -628,7 +664,7 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        CmdBuffer& Append(const T&... commands) { (..., _Append(commands)); return *this; }
+        CmdBuffer& Append(const T... commands) { (..., _Append(commands)); return *this; }
 
         /**
          *@brief End appending to command buffer

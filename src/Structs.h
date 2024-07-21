@@ -403,6 +403,16 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceFeatures);
     };
 
+    struct FormatProperties
+    {
+        Flags<FormatFeature> linearTilingFeatures;
+        Flags<FormatFeature> optimalTilingFeatures;
+        Flags<FormatFeature> bufferFeatures;
+        
+        
+        VULKAN_NATIVE_CAST_OPERATOR(FormatProperties);
+    };
+
     struct ColorBlend
     {
         uint32_t blendEnable;
@@ -623,7 +633,7 @@ namespace vg
     public:
         Primitive primitive = Primitive::Points;
         uint32_t primitiveRestart = 0;
-        InputAssembly(Primitive primitive = Primitive::Triangles, bool primitiveRestart = false) :primitive(primitive), primitiveRestart(primitiveRestart) {}
+        InputAssembly(Primitive primitive, bool primitiveRestart = false) :primitive(primitive), primitiveRestart(primitiveRestart) {}
 
 
         VULKAN_NATIVE_CAST_OPERATOR(PipelineInputAssemblyStateCreateInfo);
@@ -714,10 +724,14 @@ namespace vg
         CullMode cullMode = CullMode::None;
         FrontFace  frontFace = FrontFace::CounterClockwise;
         DepthBias depthBias;
-        float lineWidth = 0;
+        float lineWidth = 1.0f;
 
-        Rasterizer(bool enable, bool depthClamp, PolygonMode polygonMode, CullMode cullMode, FrontFace frontFace, DepthBias depthBias, float lineWidth)
-            :discard(!enable), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
+        Rasterizer()
+            :discard(true)
+        {}
+
+        Rasterizer(bool depthClamp, PolygonMode polygonMode, CullMode cullMode = CullMode::Back, FrontFace frontFace = FrontFace::CounterClockwise, DepthBias depthBias = DepthBias(), float lineWidth = 1.0f)
+            :discard(false), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
         {}
 
 
@@ -925,7 +939,7 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(ClearColorValue);
     };
 
-    struct ImageCopyRegion
+    struct ImageCopy
     {
         ImageSubresourceLayers srcSubresource;
         Point3D<uint32_t> srcOffset;
@@ -933,7 +947,7 @@ namespace vg
         Point3D<uint32_t> dstOffset;
         Point3D<uint32_t> extent;
 
-        ImageCopyRegion(
+        ImageCopy(
             ImageSubresourceLayers srcSubresource,
             uint32_t srcOffset,
             ImageSubresourceLayers dstSubresource,
@@ -946,7 +960,7 @@ namespace vg
             extent{ extent, 1U, 1U }
         {}
 
-        ImageCopyRegion(
+        ImageCopy(
             ImageSubresourceLayers srcSubresource,
             Point2D<uint32_t> srcOffset,
             ImageSubresourceLayers dstSubresource,
@@ -959,7 +973,7 @@ namespace vg
             extent{ extent.x, extent.y, 1U }
         {}
 
-        ImageCopyRegion(
+        ImageCopy(
             ImageSubresourceLayers srcSubresource,
             Point3D<uint32_t> srcOffset,
             ImageSubresourceLayers dstSubresource,
@@ -976,14 +990,14 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(ImageCopy);
     };
 
-    struct ImageBlitRegion
+    struct ImageBlit
     {
         ImageSubresourceLayers srcSubresource;
         Point3D<int32_t> srcOffsets[2];
         ImageSubresourceLayers dstSubresource;
         Point3D<int32_t> dstOffsets[2];
 
-        ImageBlitRegion(
+        ImageBlit(
             ImageSubresourceLayers srcSubresource,
             const int32_t(&srcOffsets)[2],
             ImageSubresourceLayers dstSubresource,
@@ -995,7 +1009,7 @@ namespace vg
             dstOffsets{ {dstOffsets[0], 0, 0},{dstOffsets[1], 0, 0} }
         {}
 
-        ImageBlitRegion(
+        ImageBlit(
             ImageSubresourceLayers srcSubresource,
             const Point2D<int32_t>(&srcOffsets)[2],
             ImageSubresourceLayers dstSubresource,
@@ -1007,7 +1021,7 @@ namespace vg
             dstOffsets{ {dstOffsets[0].x,dstOffsets[0].y,0},{dstOffsets[1].x,dstOffsets[1].y,0} }
         {}
 
-        ImageBlitRegion(
+        ImageBlit(
             ImageSubresourceLayers srcSubresource,
             const Point3D<int32_t>(&srcOffsets)[2],
             ImageSubresourceLayers dstSubresource,
@@ -1022,7 +1036,7 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(ImageBlit);
     };
 
-    struct BufferImageCopyRegion
+    struct BufferImageCopy
     {
         uint64_t bufferOffset;
         uint32_t bufferRowLength;
@@ -1031,27 +1045,27 @@ namespace vg
         Point3D<uint32_t> imageOffset;
         Point3D<uint32_t> imageExtend;
 
-        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
+        BufferImageCopy(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
             :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset{ imageOffset,0U, 0U }, imageExtend{ imageExtend,1U, 1U }
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
+        BufferImageCopy(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
             :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset{ imageOffset,0U, 0U }, imageExtend{ imageExtend,1U, 1U }
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
+        BufferImageCopy(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
             :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset{ imageOffset.x,imageOffset.y, 0U }, imageExtend{ imageExtend.x, imageExtend.y, 1U }
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
+        BufferImageCopy(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
             :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset{ imageOffset.x,imageOffset.y, 0U }, imageExtend{ imageExtend.x, imageExtend.y, 1U }
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
+        BufferImageCopy(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
             :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset(imageOffset), imageExtend(imageExtend)
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
+        BufferImageCopy(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
             :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset(imageOffset), imageExtend(imageExtend)
         {}
 
@@ -1070,7 +1084,7 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(DescriptorPoolSize);
     };
 
-    struct ImageSubresourceRange
+    struct ImageSubresource
     {
         ImageAspect aspectMask;
         uint32_t baseMipLevel;
@@ -1078,7 +1092,7 @@ namespace vg
         uint32_t baseArrayLayer;
         uint32_t layerCount;
 
-        ImageSubresourceRange(ImageAspect aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
+        ImageSubresource(ImageAspect aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
             : aspectMask(aspectMask), baseMipLevel(baseMipLevel), levelCount(levelCount), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
         {}
 
@@ -1129,24 +1143,24 @@ namespace vg
         uint32_t srcQueueFamilyIndex;
         uint32_t dstQueueFamilyIndex;
         ImageHandle image;
-        ImageSubresourceRange subresourceRange;
+        ImageSubresource subresourceRange;
 
-        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
         {}
 

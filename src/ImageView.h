@@ -10,8 +10,8 @@ namespace vg
     class ImageView
     {
     public:
-        ImageView(const Image& image, ImageSubresourceRange subresourceRange);
-        ImageView(const Image& image, ImageViewType type, Format format, ImageSubresourceRange subresourceRange);
+        ImageView(const Image& image, ImageSubresource subresourceRange);
+        ImageView(const Image& image, ImageViewType type, Format format, ImageSubresource subresourceRange);
 
         ImageView();
         ImageView(ImageView&& other) noexcept;

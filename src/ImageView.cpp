@@ -4,10 +4,10 @@
 
 namespace vg
 {
-    ImageView::ImageView(const Image& image, ImageSubresourceRange subresourceRange) :ImageView(image, (ImageViewType) (image.GetDimensionCount() - 1), image.GetFormat(), subresourceRange)
+    ImageView::ImageView(const Image& image, ImageSubresource subresourceRange) :ImageView(image, (ImageViewType) (image.GetDimensionCount() - 1), image.GetFormat(), subresourceRange)
     {}
 
-    ImageView::ImageView(const Image& image, ImageViewType type, Format format, ImageSubresourceRange subresourceRange)
+    ImageView::ImageView(const Image& image, ImageViewType type, Format format, ImageSubresource subresourceRange)
     {
         vk::ImageViewCreateInfo createInfo({}, (ImageHandle) image, (vk::ImageViewType) type, (vk::Format) format, vk::ComponentMapping(), subresourceRange);
 

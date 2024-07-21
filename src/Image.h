@@ -5,6 +5,7 @@
 
 namespace vg
 {
+    class CmdBuffer;
     class Image
     {
     public:
@@ -92,12 +93,18 @@ namespace vg
         Image& operator=(const Image& other) = delete;
         operator const ImageHandle& () const;
 
+        /// @brief Append commands to an CmdBuffer to generate mimpmaps, all images have to be in Layout::TransferDstOptimal, and will end up in Layout::TransferSrcOptmial 
+        /// @param cmdBuffer Buffer
+        /// @param mipMapCount MipMapCount 
+        void AppendMipmapGenerationCommands(CmdBuffer* cmdBuffer, int mipMapCount) const;
+
         Format GetFormat() const;
         unsigned int GetDimensionCount() const;
         void GetDimensions(uint32_t* width, uint32_t* height, uint32_t* depth) const;
         std::vector<uint32_t> GetDimensions() const;
         uint64_t GetSize() const;
         uint64_t GetOffset() const;
+        uint32_t GetMipLevels() const;
         class MemoryBlock* GetMemory() const;
 
         /// @brief Find the supported format from candidates.
@@ -110,6 +117,8 @@ namespace vg
     private:
         ImageHandle m_handle;
         Format m_format;
+        ImageTiling m_tiling;
+        uint32_t m_mipLevels;
         unsigned int m_dimensionCount;
         uint32_t m_dimensions[3];
         uint64_t m_offset;

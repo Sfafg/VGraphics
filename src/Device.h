@@ -65,6 +65,8 @@ namespace vg
 
         DeviceProperties GetProperties() const;
         DeviceFeatures GetFeatures() const;
+        FormatProperties GetFormatProperties(Format format) const;
+
 
     private:
         DeviceHandle m_handle;

@@ -276,7 +276,7 @@ int main()
 
         vg::CmdBuffer(vg::currentDevice.transferQueue).Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
-            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0,{ImageAspect::Color},texWidth,texHeight,1) }),
+            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopy(0,{ImageAspect::Color},texWidth,texHeight,1) }),
             cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
         ).Submit().Await();
     }

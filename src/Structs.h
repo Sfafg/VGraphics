@@ -5,9 +5,13 @@
 #include "Flags.h"
 #include "Queue.h"
 
+#ifdef VULKAN_HPP
 #define VULKAN_NATIVE_CAST_OPERATOR(nativeName)\
 operator const vk::nativeName& () const { return *reinterpret_cast<const vk::nativeName*>(this); }\
 operator const vk::nativeName& () { return *reinterpret_cast<vk::nativeName*>(this); }
+#else
+#define VULKAN_NATIVE_CAST_OPERATOR(nativeName)
+#endif
 
 namespace vg
 {
@@ -120,9 +124,8 @@ namespace vg
         uint64_t optimalBufferCopyRowPitchAlignment;
         uint64_t nonCoherentAtomSize;
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceLimits);
-#endif
     };
 
     struct DeviceSparseProperties
@@ -132,9 +135,9 @@ namespace vg
         uint32_t residencyStandard3DBlockShape;
         uint32_t residencyAlignedMipSize;
         uint32_t residencyNonResidentStrict;
-#ifdef VULKAN_HPP
+
+
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceSparseProperties);
-#endif
     };
 
     struct DeviceProperties
@@ -149,9 +152,8 @@ namespace vg
         DeviceLimits limits;
         DeviceSparseProperties sparseProperties;
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceProperties);
-#endif
     };
 
     struct ColorBlend
@@ -195,9 +197,25 @@ namespace vg
             colorWriteMask(colorWriteMask)
         {}
 
-#ifdef VULKAN_HPP
-        operator vk::PipelineColorBlendAttachmentState() const;
-#endif
+
+        VULKAN_NATIVE_CAST_OPERATOR(PipelineColorBlendAttachmentState);
+    };
+
+    struct SubpassDependency
+    {
+        uint32_t srcSubpass;
+        uint32_t dstSubpass;
+        Flags<PipelineStage> srcStageMask;
+        Flags<PipelineStage> dstStageMask;
+        Flags<Access> srcAccessMask;
+        Flags<Access> dstAccessMask;
+        Flags<Dependency> dependencyFlags;
+
+        SubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, Flags<Dependency> dependencyFlags) :
+            srcSubpass(srcSubpass), dstSubpass(dstSubpass), srcStageMask(srcStageMask), dstStageMask(dstStageMask), srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), dependencyFlags(dependencyFlags)
+        {}
+
+        VULKAN_NATIVE_CAST_OPERATOR(SubpassDependency);
     };
 
     struct Attachment
@@ -227,9 +245,8 @@ namespace vg
             format(format), samples(samples), loadOp(loadOp), storeOp(storeOp), stencilLoadOp(stencilLoadOp), stencilStoreOp(stencilStoreOp), initialLayout(initialLayout), finalLayout(finalLayout)
         {}
 
-#ifdef VULKAN_HPP
-        operator vk::AttachmentDescription() const;
-#endif
+
+        VULKAN_NATIVE_CAST_OPERATOR(AttachmentDescription);
     };
 
     struct AttachmentReference
@@ -240,9 +257,8 @@ namespace vg
             :index(index), layout(layout)
         {}
 
-#ifdef VULKAN_HPP
-        operator vk::AttachmentReference() const;
-#endif
+
+        VULKAN_NATIVE_CAST_OPERATOR(AttachmentReference);
     };
 
     struct Viewport
@@ -256,9 +272,8 @@ namespace vg
         Viewport() : Viewport(0, 0) {}
         Viewport(float width, float height, float x = 0, float y = 0, float minDepth = 0, float maxDepth = 1) :x(x), y(y), width(width), height(height), minDepth(minDepth), maxDepth(maxDepth) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(Viewport);
-#endif
     };
     struct Scissor
     {
@@ -269,9 +284,8 @@ namespace vg
         Scissor() :Scissor(0, 0) {}
         Scissor(float width, float height, int x = 0, int y = 0) :x(x), y(y), width(width), height(height) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(Rect2D);
-#endif
     };
 
     struct VertexBinding
@@ -282,9 +296,8 @@ namespace vg
 
         VertexBinding(int binding = 0, int stride = 0, InputRate inputRate = InputRate::Vertex) :binding(binding), stride(stride), inputRate(inputRate) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(VertexInputBindingDescription);
-#endif
     };
 
     struct VertexAttribute
@@ -296,9 +309,8 @@ namespace vg
 
         VertexAttribute(uint32_t location = 0, uint32_t binding = 0, Format format = Format::Undefined, uint32_t offset = 0) :location(location), binding(binding), format(format), offset(offset) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(VertexInputAttributeDescription);
-#endif
     };
 
     struct VertexLayout
@@ -351,9 +363,8 @@ namespace vg
             delete[] vertexAttributes;
         }
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineVertexInputStateCreateInfo);
-#endif
     };
     struct InputAssembly
     {
@@ -367,9 +378,8 @@ namespace vg
         uint32_t primitiveRestart = 0;
         InputAssembly(Primitive primitive = Primitive::Triangles, bool primitiveRestart = false) :primitive(primitive), primitiveRestart(primitiveRestart) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineInputAssemblyStateCreateInfo);
-#endif
     };
     struct Tesselation
     {
@@ -380,9 +390,8 @@ namespace vg
         int reserved_4 = 0;
 
     public:
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineTessellationStateCreateInfo);
-#endif
     };
     struct ViewportState
     {
@@ -433,9 +442,8 @@ namespace vg
             delete[] scissors;
         }
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineViewportStateCreateInfo);
-#endif
     };
     struct alignas(float) DepthBias
     {
@@ -465,9 +473,8 @@ namespace vg
             :discard(!enable), depthClamp(depthClamp), polygonMode(polygonMode), cullMode(cullMode), frontFace(frontFace), depthBias(depthBias), lineWidth(lineWidth)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineRasterizationStateCreateInfo);
-#endif
     };
     struct Multisampling
     {
@@ -483,9 +490,8 @@ namespace vg
         uint32_t alphaToOneEnable = 0;
 
     public:
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineMultisampleStateCreateInfo);
-#endif
     };
 
     struct StencilOpState
@@ -527,9 +533,8 @@ namespace vg
         DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp, bool enabledepthBoundsTest, float minDepthBounds, float maxDepthBounds) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp), depthBoundsTestEnable(enabledepthBoundsTest), minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
         DepthStencil(bool enableDepthTest, bool enableDepthWrite, CompareOp depthCompareOp, StencilOpState front, StencilOpState back, bool enabledepthBoundsTest, float minDepthBounds, float maxDepthBounds) :depthTestEnable(enableDepthTest), depthWriteEnable(enableDepthWrite), depthCompareOp(depthCompareOp), depthBoundsTestEnable(enabledepthBoundsTest), stencilTestEnable(true), front(front), back(back), minDepthBounds(minDepthBounds), maxDepthBounds(maxDepthBounds) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineDepthStencilStateCreateInfo);
-#endif
     };
     struct ColorBlending
     {
@@ -579,9 +584,8 @@ namespace vg
             delete[] attachments;
         }
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PipelineColorBlendStateCreateInfo);
-#endif
     };
 
     struct DescriptorSetLayoutBinding
@@ -596,9 +600,8 @@ namespace vg
         DescriptorSetLayoutBinding(uint32_t binding, DescriptorType descriptorType, uint32_t descriptorCount, Flags<ShaderStage> stageFlags) :binding(binding), descriptorType(descriptorType), descriptorCount(descriptorCount), stageFlags(stageFlags)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(DescriptorSetLayoutBinding);
-#endif
 
     };
 
@@ -613,9 +616,8 @@ namespace vg
             :aspectMask(aspectMask), mipLevel(mipLevel), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ImageSubresourceLayers);
-#endif
     };
 
     struct BufferCopyRegion
@@ -626,9 +628,8 @@ namespace vg
 
         BufferCopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(BufferCopy);
-#endif
     };
 
     template<typename T = uint32_t>
@@ -641,9 +642,8 @@ namespace vg
         template<typename OT>
         Point2D(OT x, OT y) : x(x), y(y) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(Offset2D);
-#endif
     };
 
     template<typename T = uint32_t>
@@ -656,24 +656,26 @@ namespace vg
         template<typename OT>
         Point3D(OT x, OT y, OT z) : x(x), y(y), z(z) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(Offset3D);
-#endif
     };
 
+    // Make Sure to use data format that matches format of the image.
     union ClearColor
     {
         float float32[4];
         int32_t int32[4];
         uint32_t Uint32[4];
 
+        // Make Sure to use data format that matches format of the image.
         ClearColor(float r = 0, float g = 0, float b = 0, float a = 1) :float32{ r,g,b,a } {}
+        // Make Sure to use data format that matches format of the image.
         ClearColor(int32_t r, int32_t g, int32_t b, int32_t a) : int32{ r,g,b,a } {}
+        // Make Sure to use data format that matches format of the image.
         ClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) :Uint32{ r,g,b,a } {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ClearColorValue);
-#endif
     };
 
     struct ImageCopyRegion
@@ -723,9 +725,8 @@ namespace vg
             extent(extent)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ImageCopy);
-#endif
     };
 
     struct ImageBlitRegion
@@ -770,9 +771,8 @@ namespace vg
             dstSubresource(dstSubresource),
             dstOffsets{ dstOffsets[0],dstOffsets[1] }
         {}
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ImageBlit);
-#endif
     };
 
     struct BufferImageCopyRegion
@@ -808,9 +808,8 @@ namespace vg
             :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset(imageOffset), imageExtend(imageExtend)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(BufferImageCopy);
-#endif
     };
 
     struct DescriptorPoolSize
@@ -820,9 +819,8 @@ namespace vg
 
         DescriptorPoolSize(DescriptorType descriptorType, uint32_t descriptorCount) :descriptorType(descriptorType), descriptorCount(descriptorCount) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(DescriptorPoolSize);
-#endif
     };
 
     struct ImageSubresourceRange
@@ -837,9 +835,8 @@ namespace vg
             : aspectMask(aspectMask), baseMipLevel(baseMipLevel), levelCount(levelCount), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ImageSubresourceRange);
-#endif
     };
 
     struct BufferMemoryBarrier
@@ -867,9 +864,8 @@ namespace vg
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), buffer(buffer), offset(offset), size(size)
         {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(BufferMemoryBarrier);
-#endif
     };
 
     struct ImageMemoryBarrier
@@ -888,29 +884,28 @@ namespace vg
         ImageHandle image;
         ImageSubresourceRange subresourceRange;
 
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, const Queue& srcQueue, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout oldLayout, ImageLayout newLayout, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& srcQueue, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, const Queue& dstQueue, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& dstQueue, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
         {}
-        ImageMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageLayout newLayout, ImageHandle image, ImageSubresourceRange subresourceRange)
+        ImageMemoryBarrier(ImageHandle image, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, ImageSubresourceRange subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(ImageLayout::Undefined), newLayout(newLayout), srcQueueFamilyIndex(~0U), dstQueueFamilyIndex(~0U), image(image), subresourceRange(subresourceRange)
         {}
 
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(ImageMemoryBarrier);
-#endif
     };
 
     struct MemoryBarrier
@@ -925,9 +920,8 @@ namespace vg
 
         MemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask) :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(MemoryBarrier);
-#endif
     };
 
     struct SubmitInfo
@@ -1004,9 +998,8 @@ namespace vg
             delete[] signalSemaphores;
         }
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(SubmitInfo);
-#endif
     };
 
     struct PushConstantRange
@@ -1017,8 +1010,7 @@ namespace vg
 
         PushConstantRange(Flags<ShaderStage> stageFlags = {}, uint32_t offset = 0, uint32_t size = 0) :stageFlags(stageFlags), offset(offset), size(size) {}
 
-#ifdef VULKAN_HPP
+
         VULKAN_NATIVE_CAST_OPERATOR(PushConstantRange);
-#endif
     };
 }

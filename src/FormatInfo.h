@@ -24,4 +24,8 @@ namespace vg
     /// @param format Format
     /// @return Total format bit resolution, or -1 if any component are compressed
     int GetFormatResolutions(Format format);
+
+    bool IsFormatUnsigned(Format format);
+
+    bool IsFormatIntegral(Format format);
 }

@@ -173,6 +173,18 @@ namespace vg
                 :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(dependency), imageMemoryBarriers(imageMemoryBarriers)
             {}
 
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, std::vector<MemoryBarrier> memoryBarriers, std::vector<BufferMemoryBarrier> bufferMemoryBarriers = {}, std::vector<ImageMemoryBarrier> imageMemoryBarriers = {})
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(Dependency::None), memoryBarriers(memoryBarriers), bufferMemoryBarriers(bufferMemoryBarriers), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, std::vector<BufferMemoryBarrier> bufferMemoryBarriers, std::vector<ImageMemoryBarrier> imageMemoryBarriers = {})
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(Dependency::None), bufferMemoryBarriers(bufferMemoryBarriers), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
+            PipelineBarier(Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, std::vector<ImageMemoryBarrier> imageMemoryBarriers)
+                :srcStageMask(srcStageMask), dstStageMask(dstStageMask), dependency(Dependency::None), imageMemoryBarriers(imageMemoryBarriers)
+            {}
+
         private:
             Flags<PipelineStage> srcStageMask;
             Flags<PipelineStage> dstStageMask;

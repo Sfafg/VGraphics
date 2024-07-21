@@ -37,11 +37,14 @@ namespace vg
         int highestScore = -1;
         for (const auto& physicalDevice : ((InstanceHandle) vg::instance).enumeratePhysicalDevices())
         {
+            // Get Supported Extensions.
             std::set<std::string> supportedExtensions;
             for (const auto& extension : physicalDevice.enumerateDeviceExtensionProperties())
             {
                 supportedExtensions.insert(extension.extensionName);
             }
+
+            // If surface is specified then check if this device supports it.
             if (surface != nullptr && extensions.contains("VK_KHR_swapchain") && supportedExtensions.contains("VK_KHR_win32_surface"))
             {
                 unsigned int formatCount, presentModeCount;
@@ -50,6 +53,7 @@ namespace vg
                 if (formatCount == 0 || presentModeCount == 0) continue;
             }
 
+            // Get Supported Queues.
             std::set<QueueType> supportedQueues;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
             for (unsigned int i = 0; i < queueFamilies.size(); i++)
@@ -62,9 +66,11 @@ namespace vg
                 if ((int) supportedQueues.size() == 3 + (surface != nullptr)) break;
             }
 
+            // Get DeviceType and it's limits.
             DeviceType type = (DeviceType) physicalDevice.getProperties().deviceType;
             auto limits = physicalDevice.getProperties().limits;
 
+            // Score the
             int score;
             if (scoreFunction != nullptr)
                 score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits);
@@ -84,7 +90,7 @@ namespace vg
             return;
         }
 
-
+        // Pick queue families.
         std::vector<vk::QueueFamilyProperties> queueFamilies = m_physicalDevice.getQueueFamilyProperties();
 
         for (unsigned int i = 0; i < queueFamilies.size(); i++)

@@ -5,9 +5,6 @@
 
 namespace vg
 {
-    struct SubpassDependency
-    {};
-
     /**
      *@brief Subpass used in Renderpass
      *

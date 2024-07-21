@@ -86,9 +86,6 @@ struct UniformBufferObject
 
 int main()
 {
-    // TO DO: Clear color format must be same type as iamge format, enforce it.
-    // TO DO: BeginRenderpass ClearValue
-
     // TO DO: Features querry and turn on
 
     glfwInit();
@@ -153,13 +150,16 @@ int main()
                 {}, AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
-        {},
+        {
+            SubpassDependency(~0, 0, PipelineStage::ColorAttachmentOutput, PipelineStage::ColorAttachmentOutput, 0, Access::ColorAttachmentWrite, {})
+        },
         pipelineCache
     );
+
+
     std::ofstream("pipelineCache.txt", std::ios_base::binary)
         .write(pipelineCache.GetData().data(), pipelineCache.GetData().size());
-
-    Swapchain swapchain(surface, 2, w, h, { Usage::ColorAttachment }, PresentMode::Fifo, CompositeAlpha::PreMultiplied);
+    Swapchain swapchain(surface, 2, w, h);
 
     Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment });
     Allocate(&depthImage, { MemoryProperty::DeviceLocal });
@@ -205,12 +205,10 @@ int main()
         memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
-        auto s = BufferImageCopyRegion(0UL, { ImageAspect::Color }, { texWidth, texHeight });
         vg::CmdBuffer(vg::currentDevice.transferQueue).Begin().Append(
-            cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
-            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0UL,{ImageAspect::Color}, {texWidth,texHeight}) }),
-            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} }),
-            cmd::ClearColorImage(texImage, ImageLayout::ShaderReadOnlyOptimal, { ClearColor(1.0f,0.0f,0.0f,1.0f) }, { ImageSubresourceRange(ImageAspect::Color) })
+            cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, { {texImage, ImageLayout::TransferDstOptimal, Access::None, Access::TransferWrite, ImageAspect::Color} }),
+            cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { {0UL,{ImageAspect::Color}, {texWidth,texHeight} } }),
+            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, { {texImage, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, Access::TransferWrite, Access::ShaderRead, ImageAspect::Color} })
         ).End().Submit().Await();
     }
     ImageView imageView(texImage, { ImageAspect::Color });
@@ -252,7 +250,6 @@ int main()
         {
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
-
             depthImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
             Allocate(&depthImage, { MemoryProperty::DeviceLocal });
             depthImageView = ImageView(depthImage, { ImageAspect::Depth });

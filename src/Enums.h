@@ -723,7 +723,10 @@ namespace vg
     enum class Dependency
     {
         None = 0,
-        ByRegion = 1
+        ByRegion = 1,
+        DeviceGroup = 4,
+        ViewLocal = 2,
+        FeedbackLoop = 8,
     };
 
     enum class Access

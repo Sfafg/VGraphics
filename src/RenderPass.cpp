@@ -4,7 +4,6 @@
 namespace vg
 {
     RenderPass::RenderPass(const std::vector<Attachment>& attachments, const std::initializer_list<Subpass>&& subpasses, const std::vector<SubpassDependency>& dependencies, PipelineCacheHandle cache)
-        : m_attachments(attachments), m_dependencies(dependencies)
     {
         // Attachments.
         std::vector<vk::AttachmentDescription> colorAttachments(attachments.size());
@@ -37,17 +36,8 @@ namespace vg
             );
         }
 
-        VkSubpassDependency subpassDependency{};
-        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        subpassDependency.dstSubpass = 0;
-        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.srcAccessMask = 0;
-        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        vk::SubpassDependency dependency(subpassDependency);
-
         // RenderPass.
-        vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, dependency);
+        vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, *(std::vector<vk::SubpassDependency>*) & dependencies);
         m_handle = ((DeviceHandle) currentDevice).createRenderPass(renderPassInfo);
 
         // Graphics pipelines.
@@ -135,8 +125,6 @@ namespace vg
         std::swap(m_handle, other.m_handle);
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
-        std::swap(m_attachments, other.m_attachments);
-        std::swap(m_dependencies, other.m_dependencies);
     }
 
     RenderPass::~RenderPass()
@@ -160,8 +148,6 @@ namespace vg
         std::swap(m_handle, other.m_handle);
         std::swap(m_graphicsPipelines, other.m_graphicsPipelines);
         std::swap(m_pipelineLayouts, other.m_pipelineLayouts);
-        std::swap(m_attachments, other.m_attachments);
-        std::swap(m_dependencies, other.m_dependencies);
 
         return *this;
     }

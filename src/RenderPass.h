@@ -41,7 +41,5 @@ namespace vg
 
         std::vector<GraphicsPipeline> m_graphicsPipelines;
         std::vector<PipelineLayout> m_pipelineLayouts;
-        std::vector<Attachment> m_attachments;
-        std::vector<SubpassDependency> m_dependencies;
     };
 }

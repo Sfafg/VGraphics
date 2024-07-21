@@ -156,6 +156,253 @@ namespace vg
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceProperties);
     };
 
+    struct DeviceFeatures
+    {
+        uint32_t robustBufferAccess;
+        uint32_t fullDrawIndexUint32;
+        uint32_t imageCubeArray;
+        uint32_t independentBlend;
+        uint32_t geometryShader;
+        uint32_t tessellationShader;
+        uint32_t sampleRateShading;
+        uint32_t dualSrcBlend;
+        uint32_t logicOp;
+        uint32_t multiDrawIndirect;
+        uint32_t drawIndirectFirstInstance;
+        uint32_t depthClamp;
+        uint32_t depthBiasClamp;
+        uint32_t fillModeNonSolid;
+        uint32_t depthBounds;
+        uint32_t wideLines;
+        uint32_t largePoints;
+        uint32_t alphaToOne;
+        uint32_t multiViewport;
+        uint32_t samplerAnisotropy;
+        uint32_t textureCompressionETC2;
+        uint32_t textureCompressionASTC_LDR;
+        uint32_t textureCompressionBC;
+        uint32_t occlusionQueryPrecise;
+        uint32_t pipelineStatisticsQuery;
+        uint32_t vertexPipelineStoresAndAtomics;
+        uint32_t fragmentStoresAndAtomics;
+        uint32_t shaderTessellationAndGeometryPointSize;
+        uint32_t shaderImageGatherExtended;
+        uint32_t shaderStorageImageExtendedFormats;
+        uint32_t shaderStorageImageMultisample;
+        uint32_t shaderStorageImageReadWithoutFormat;
+        uint32_t shaderStorageImageWriteWithoutFormat;
+        uint32_t shaderUniformBufferArrayDynamicIndexing;
+        uint32_t shaderSampledImageArrayDynamicIndexing;
+        uint32_t shaderStorageBufferArrayDynamicIndexing;
+        uint32_t shaderStorageImageArrayDynamicIndexing;
+        uint32_t shaderClipDistance;
+        uint32_t shaderCullDistance;
+        uint32_t shaderFloat64;
+        uint32_t shaderInt64;
+        uint32_t shaderInt16;
+        uint32_t shaderResourceResidency;
+        uint32_t shaderResourceMinLod;
+        uint32_t sparseBinding;
+        uint32_t sparseResidencyBuffer;
+        uint32_t sparseResidencyImage2D;
+        uint32_t sparseResidencyImage3D;
+        uint32_t sparseResidency2Samples;
+        uint32_t sparseResidency4Samples;
+        uint32_t sparseResidency8Samples;
+        uint32_t sparseResidency16Samples;
+        uint32_t sparseResidencyAliased;
+        uint32_t variableMultisampleRate;
+        uint32_t inheritedQueries;
+
+        DeviceFeatures()
+            :
+            robustBufferAccess(false),
+            fullDrawIndexUint32(false),
+            imageCubeArray(false),
+            independentBlend(false),
+            geometryShader(false),
+            tessellationShader(false),
+            sampleRateShading(false),
+            dualSrcBlend(false),
+            logicOp(false),
+            multiDrawIndirect(false),
+            drawIndirectFirstInstance(false),
+            depthClamp(false),
+            depthBiasClamp(false),
+            fillModeNonSolid(false),
+            depthBounds(false),
+            wideLines(false),
+            largePoints(false),
+            alphaToOne(false),
+            multiViewport(false),
+            samplerAnisotropy(false),
+            textureCompressionETC2(false),
+            textureCompressionASTC_LDR(false),
+            textureCompressionBC(false),
+            occlusionQueryPrecise(false),
+            pipelineStatisticsQuery(false),
+            vertexPipelineStoresAndAtomics(false),
+            fragmentStoresAndAtomics(false),
+            shaderTessellationAndGeometryPointSize(false),
+            shaderImageGatherExtended(false),
+            shaderStorageImageExtendedFormats(false),
+            shaderStorageImageMultisample(false),
+            shaderStorageImageReadWithoutFormat(false),
+            shaderStorageImageWriteWithoutFormat(false),
+            shaderUniformBufferArrayDynamicIndexing(false),
+            shaderSampledImageArrayDynamicIndexing(false),
+            shaderStorageBufferArrayDynamicIndexing(false),
+            shaderStorageImageArrayDynamicIndexing(false),
+            shaderClipDistance(false),
+            shaderCullDistance(false),
+            shaderFloat64(false),
+            shaderInt64(false),
+            shaderInt16(false),
+            shaderResourceResidency(false),
+            shaderResourceMinLod(false),
+            sparseBinding(false),
+            sparseResidencyBuffer(false),
+            sparseResidencyImage2D(false),
+            sparseResidencyImage3D(false),
+            sparseResidency2Samples(false),
+            sparseResidency4Samples(false),
+            sparseResidency8Samples(false),
+            sparseResidency16Samples(false),
+            sparseResidencyAliased(false),
+            variableMultisampleRate(false),
+            inheritedQueries(false)
+        {}
+
+        DeviceFeatures& operator&=(const DeviceFeatures& rhs)
+        {
+            robustBufferAccess &= rhs.robustBufferAccess;
+            fullDrawIndexUint32 &= rhs.fullDrawIndexUint32;
+            imageCubeArray &= rhs.imageCubeArray;
+            independentBlend &= rhs.independentBlend;
+            geometryShader &= rhs.geometryShader;
+            tessellationShader &= rhs.tessellationShader;
+            sampleRateShading &= rhs.sampleRateShading;
+            dualSrcBlend &= rhs.dualSrcBlend;
+            logicOp &= rhs.logicOp;
+            multiDrawIndirect &= rhs.multiDrawIndirect;
+            drawIndirectFirstInstance &= rhs.drawIndirectFirstInstance;
+            depthClamp &= rhs.depthClamp;
+            depthBiasClamp &= rhs.depthBiasClamp;
+            fillModeNonSolid &= rhs.fillModeNonSolid;
+            depthBounds &= rhs.depthBounds;
+            wideLines &= rhs.wideLines;
+            largePoints &= rhs.largePoints;
+            alphaToOne &= rhs.alphaToOne;
+            multiViewport &= rhs.multiViewport;
+            samplerAnisotropy &= rhs.samplerAnisotropy;
+            textureCompressionETC2 &= rhs.textureCompressionETC2;
+            textureCompressionASTC_LDR &= rhs.textureCompressionASTC_LDR;
+            textureCompressionBC &= rhs.textureCompressionBC;
+            occlusionQueryPrecise &= rhs.occlusionQueryPrecise;
+            pipelineStatisticsQuery &= rhs.pipelineStatisticsQuery;
+            vertexPipelineStoresAndAtomics &= rhs.vertexPipelineStoresAndAtomics;
+            fragmentStoresAndAtomics &= rhs.fragmentStoresAndAtomics;
+            shaderTessellationAndGeometryPointSize &= rhs.shaderTessellationAndGeometryPointSize;
+            shaderImageGatherExtended &= rhs.shaderImageGatherExtended;
+            shaderStorageImageExtendedFormats &= rhs.shaderStorageImageExtendedFormats;
+            shaderStorageImageMultisample &= rhs.shaderStorageImageMultisample;
+            shaderStorageImageReadWithoutFormat &= rhs.shaderStorageImageReadWithoutFormat;
+            shaderStorageImageWriteWithoutFormat &= rhs.shaderStorageImageWriteWithoutFormat;
+            shaderUniformBufferArrayDynamicIndexing &= rhs.shaderUniformBufferArrayDynamicIndexing;
+            shaderSampledImageArrayDynamicIndexing &= rhs.shaderSampledImageArrayDynamicIndexing;
+            shaderStorageBufferArrayDynamicIndexing &= rhs.shaderStorageBufferArrayDynamicIndexing;
+            shaderStorageImageArrayDynamicIndexing &= rhs.shaderStorageImageArrayDynamicIndexing;
+            shaderClipDistance &= rhs.shaderClipDistance;
+            shaderCullDistance &= rhs.shaderCullDistance;
+            shaderFloat64 &= rhs.shaderFloat64;
+            shaderInt64 &= rhs.shaderInt64;
+            shaderInt16 &= rhs.shaderInt16;
+            shaderResourceResidency &= rhs.shaderResourceResidency;
+            shaderResourceMinLod &= rhs.shaderResourceMinLod;
+            sparseBinding &= rhs.sparseBinding;
+            sparseResidencyBuffer &= rhs.sparseResidencyBuffer;
+            sparseResidencyImage2D &= rhs.sparseResidencyImage2D;
+            sparseResidencyImage3D &= rhs.sparseResidencyImage3D;
+            sparseResidency2Samples &= rhs.sparseResidency2Samples;
+            sparseResidency4Samples &= rhs.sparseResidency4Samples;
+            sparseResidency8Samples &= rhs.sparseResidency8Samples;
+            sparseResidency16Samples &= rhs.sparseResidency16Samples;
+            sparseResidencyAliased &= rhs.sparseResidencyAliased;
+            variableMultisampleRate &= rhs.variableMultisampleRate;
+            inheritedQueries &= rhs.inheritedQueries;
+
+            return *this;
+        }
+
+        DeviceFeatures& operator&(const DeviceFeatures& rhs) const
+        {
+            DeviceFeatures features(*this);
+            return features.operator&=(rhs);
+        }
+
+        bool operator==(const DeviceFeatures& rhs) const
+        {
+            return
+                robustBufferAccess == rhs.robustBufferAccess &&
+                fullDrawIndexUint32 == rhs.fullDrawIndexUint32 &&
+                imageCubeArray == rhs.imageCubeArray &&
+                independentBlend == rhs.independentBlend &&
+                geometryShader == rhs.geometryShader &&
+                tessellationShader == rhs.tessellationShader &&
+                sampleRateShading == rhs.sampleRateShading &&
+                dualSrcBlend == rhs.dualSrcBlend &&
+                logicOp == rhs.logicOp &&
+                multiDrawIndirect == rhs.multiDrawIndirect &&
+                drawIndirectFirstInstance == rhs.drawIndirectFirstInstance &&
+                depthClamp == rhs.depthClamp &&
+                depthBiasClamp == rhs.depthBiasClamp &&
+                fillModeNonSolid == rhs.fillModeNonSolid &&
+                depthBounds == rhs.depthBounds &&
+                wideLines == rhs.wideLines &&
+                largePoints == rhs.largePoints &&
+                alphaToOne == rhs.alphaToOne &&
+                multiViewport == rhs.multiViewport &&
+                samplerAnisotropy == rhs.samplerAnisotropy &&
+                textureCompressionETC2 == rhs.textureCompressionETC2 &&
+                textureCompressionASTC_LDR == rhs.textureCompressionASTC_LDR &&
+                textureCompressionBC == rhs.textureCompressionBC &&
+                occlusionQueryPrecise == rhs.occlusionQueryPrecise &&
+                pipelineStatisticsQuery == rhs.pipelineStatisticsQuery &&
+                vertexPipelineStoresAndAtomics == rhs.vertexPipelineStoresAndAtomics &&
+                fragmentStoresAndAtomics == rhs.fragmentStoresAndAtomics &&
+                shaderTessellationAndGeometryPointSize == rhs.shaderTessellationAndGeometryPointSize &&
+                shaderImageGatherExtended == rhs.shaderImageGatherExtended &&
+                shaderStorageImageExtendedFormats == rhs.shaderStorageImageExtendedFormats &&
+                shaderStorageImageMultisample == rhs.shaderStorageImageMultisample &&
+                shaderStorageImageReadWithoutFormat == rhs.shaderStorageImageReadWithoutFormat &&
+                shaderStorageImageWriteWithoutFormat == rhs.shaderStorageImageWriteWithoutFormat &&
+                shaderUniformBufferArrayDynamicIndexing == rhs.shaderUniformBufferArrayDynamicIndexing &&
+                shaderSampledImageArrayDynamicIndexing == rhs.shaderSampledImageArrayDynamicIndexing &&
+                shaderStorageBufferArrayDynamicIndexing == rhs.shaderStorageBufferArrayDynamicIndexing &&
+                shaderStorageImageArrayDynamicIndexing == rhs.shaderStorageImageArrayDynamicIndexing &&
+                shaderClipDistance == rhs.shaderClipDistance &&
+                shaderCullDistance == rhs.shaderCullDistance &&
+                shaderFloat64 == rhs.shaderFloat64 &&
+                shaderInt64 == rhs.shaderInt64 &&
+                shaderInt16 == rhs.shaderInt16 &&
+                shaderResourceResidency == rhs.shaderResourceResidency &&
+                shaderResourceMinLod == rhs.shaderResourceMinLod &&
+                sparseBinding == rhs.sparseBinding &&
+                sparseResidencyBuffer == rhs.sparseResidencyBuffer &&
+                sparseResidencyImage2D == rhs.sparseResidencyImage2D &&
+                sparseResidencyImage3D == rhs.sparseResidencyImage3D &&
+                sparseResidency2Samples == rhs.sparseResidency2Samples &&
+                sparseResidency4Samples == rhs.sparseResidency4Samples &&
+                sparseResidency8Samples == rhs.sparseResidency8Samples &&
+                sparseResidency16Samples == rhs.sparseResidency16Samples &&
+                sparseResidencyAliased == rhs.sparseResidencyAliased &&
+                variableMultisampleRate == rhs.variableMultisampleRate &&
+                inheritedQueries == rhs.inheritedQueries;
+        }
+
+        VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceFeatures);
+    };
+
     struct ColorBlend
     {
         uint32_t blendEnable;

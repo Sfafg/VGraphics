@@ -18,28 +18,32 @@ namespace vg
         /**
          *@brief Construct a new Device object
          *
-         * @param queues Required queues
-         * @param extensions Required extensions
-         * @param surface Optional surface needed when device is used to render to a window
+         * @param queues Queues that are required
+         * @param extensions Extensions that are required
+         * @param hintedDeviceEnabledFeatures Features to be enabled if available, by default all
+         * @param surface Surface when device is used to render to a window
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
             const std::set<QueueType>& queues,
             const std::set<std::string>& extensions = {},
+            const DeviceFeatures& hintedDeviceEnabledFeatures = {},
             SurfaceHandle surface = {},
-            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction = nullptr);
+            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
         /**
          *@brief Construct a new Device object
-        *
-        * @param queues Required queues
-        * @param extensions Required extensions
-        * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
-        */
+         *
+         * @param queues Queues that are required
+         * @param extensions Extensions that are required
+         * @param hintedDeviceEnabledFeatures Features to be enabled if available, by default none
+         * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
+         */
         Device(
             const std::set<QueueType>& queues,
             const std::set<std::string>& extensions = {},
-            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction = nullptr)
-            :Device::Device(queues, extensions, {}, scoreFunction) {}
+            const DeviceFeatures& hintedDeviceEnabledFeatures = {},
+            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
+            :Device::Device(queues, extensions, hintedDeviceEnabledFeatures, {}, scoreFunction) {}
 
         Device();
         Device(Device&& other) noexcept;
@@ -60,6 +64,7 @@ namespace vg
         void WaitUntilIdle();
 
         DeviceProperties GetProperties() const;
+        DeviceFeatures GetFeatures() const;
 
     private:
         DeviceHandle m_handle;

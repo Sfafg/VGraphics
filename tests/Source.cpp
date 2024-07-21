@@ -101,9 +101,13 @@ int main()
         });
 
     SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
-    vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, windowSurface,
-        [](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits) {
-            return (type == DeviceType::Dedicated) + 1;
+    DeviceFeatures deviceFeatures;
+    deviceFeatures.wideLines = true;
+    deviceFeatures.logicOp = true;
+    deviceFeatures.samplerAnisotropy = true;
+    vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, deviceFeatures, windowSurface,
+        [&deviceFeatures](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits, DeviceFeatures features) {
+            return (type == DeviceType::Dedicated) + 1 + (deviceFeatures == features);
         });
 
     Surface surface(windowSurface, Format::BGRA8SRGB, ColorSpace::SRGBNL);

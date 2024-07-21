@@ -12,7 +12,8 @@ namespace vg
         const std::set<QueueType>& supportedQueues,
         const std::set<std::string>& supportedExtensions,
         DeviceType type,
-        const DeviceLimits& limits)
+        const DeviceLimits& limits,
+        const DeviceFeatures& features)
     {
         for (const auto& queue : queues)
             if (!supportedQueues.contains(queue)) return -1;
@@ -26,8 +27,9 @@ namespace vg
     Device::Device(
         const std::set<QueueType>& queues,
         const std::set<std::string>& extensions,
+        const DeviceFeatures& hintedDeviceEnabledFeatures,
         SurfaceHandle surface,
-        std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits)> scoreFunction
+        std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
     )
     {
         assert(queues.size() > 0);
@@ -69,14 +71,15 @@ namespace vg
             // Get DeviceType and it's limits.
             DeviceType type = (DeviceType) physicalDevice.getProperties().deviceType;
             auto limits = physicalDevice.getProperties().limits;
+            auto features = physicalDevice.getFeatures();
 
             // Score the
             int score;
             if (scoreFunction != nullptr)
-                score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits);
+                score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
 
             else
-                score = DefaultScoreFunction(queues, extensions, supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits);
+                score = DefaultScoreFunction(queues, extensions, supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
 
             if (score > highestScore)
             {
@@ -95,29 +98,40 @@ namespace vg
 
         for (unsigned int i = 0; i < queueFamilies.size(); i++)
         {
+            int pickCount = 0;
             if (graphicsQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
             {
                 graphicsQueue.m_type = QueueType::Graphics;
                 graphicsQueue.m_index = i;
+                pickCount++;
             }
-            if (computeQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
+
+            if (surface != nullptr && presentQueue.m_type == QueueType::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
             {
-                computeQueue.m_type = QueueType::Compute;
-                computeQueue.m_index = i;
+                presentQueue.m_type = QueueType::Present;
+                presentQueue.m_index = i;
+                pickCount++;
             }
+
             if (transferQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
             {
                 transferQueue.m_type = QueueType::Transfer;
                 transferQueue.m_index = i;
+                pickCount++;
             }
-            if (surface != nullptr && presentQueue.m_type == QueueType::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
+
+            if (computeQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
             {
-                presentQueue.m_type = QueueType::Transfer;
-                presentQueue.m_index = i;
+                if (pickCount == 0)
+                    computeQueue.m_type = QueueType::Compute;
+                computeQueue.m_index = i;
             }
+
+
 
             if ((int) graphicsQueue.m_type + (int) computeQueue.m_type + (int) presentQueue.m_type + (int) transferQueue.m_type == 0) break;
         }
+        computeQueue.m_type = QueueType::Compute;
 
         std::set<unsigned int> uniqueQueueFamilies;
         if (graphicsQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
@@ -138,6 +152,7 @@ namespace vg
         for (const auto& extension : extensions)extensionsConstChar.push_back(extension.data());
 
         vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
+        features = (*(DeviceFeatures*) &features) & hintedDeviceEnabledFeatures;
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
@@ -220,4 +235,11 @@ namespace vg
         auto properties = m_physicalDevice.getProperties();
         return *(DeviceProperties*) &properties;
     }
+
+    DeviceFeatures Device::GetFeatures() const
+    {
+        auto features = m_physicalDevice.getFeatures();
+        return *(DeviceFeatures*) &features;
+    }
+
 }

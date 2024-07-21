@@ -535,6 +535,14 @@ namespace vg
         CounterClockwise = 0,
         Clockwise = 1
     };
+
+    enum class StencilFace
+    {
+        Front = 0x00000001,
+        Back = 0x00000002,
+        FrontAndBack = 0x00000003,
+    };
+
     enum class ColorComponent
     {
         R = 0x00000001,

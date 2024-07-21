@@ -86,10 +86,8 @@ struct UniformBufferObject
 
 int main()
 {
-    // TO DO: Add A bunch of commands.
-    // TO DO: Clear color format must be same as framebuffer format, enforce it.
+    // TO DO: Clear color format must be same type as iamge format, enforce it.
     // TO DO: BeginRenderpass ClearValue
-    // TO DO: CMake build add folder like resources(things that are to be shipped with application).
 
     // TO DO: Features querry and turn on
 
@@ -148,7 +146,8 @@ int main()
                     Multisampling(),
                     DepthStencil(true,true,CompareOp::Less),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend()}),
-                    { DynamicState::Viewport, DynamicState::Scissor }
+                    { DynamicState::Viewport, DynamicState::Scissor
+                    }
                 ),
                 {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
                 {}, AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
@@ -157,11 +156,8 @@ int main()
         {},
         pipelineCache
     );
-    {
-        std::ofstream cacheFile("pipelineCache.txt", std::ios_base::binary);
-        auto data = pipelineCache.GetData();
-        cacheFile.write(data.data(), data.size());
-    }
+    std::ofstream("pipelineCache.txt", std::ios_base::binary)
+        .write(pipelineCache.GetData().data(), pipelineCache.GetData().size());
 
     Swapchain swapchain(surface, 2, w, h, { Usage::ColorAttachment }, PresentMode::Fifo, CompositeAlpha::PreMultiplied);
 
@@ -213,7 +209,8 @@ int main()
         vg::CmdBuffer(vg::currentDevice.transferQueue).Begin().Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, Dependency::None, { {Access::None, Access::TransferWrite, ImageLayout::TransferDstOptimal, texImage, ImageAspect::Color} }),
             cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { BufferImageCopyRegion(0UL,{ImageAspect::Color}, {texWidth,texHeight}) }),
-            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} })
+            cmd::PipelineBarier(PipelineStage::Transfer, PipelineStage::FragmentShader, Dependency::None, { {Access::TransferWrite, Access::ShaderRead, ImageLayout::TransferDstOptimal, ImageLayout::ShaderReadOnlyOptimal, texImage, ImageAspect::Color} }),
+            cmd::ClearColorImage(texImage, ImageLayout::ShaderReadOnlyOptimal, { ClearColor(1.0f,0.0f,0.0f,1.0f) }, { ImageSubresourceRange(ImageAspect::Color) })
         ).End().Submit().Await();
     }
     ImageView imageView(texImage, { ImageAspect::Color });
@@ -275,16 +272,8 @@ int main()
         ubo.proj[1][1] *= -1;
         memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
-        glm::vec3 pos(0, 0, 0);
-        glm::vec3 pos1(0, 0, 0);
-        if (glfwGetKey(window, GLFW_KEY_S))
-        {
-            pos1 = glm::vec3(-4, -4, -4);
-        }
-        if (glfwGetKey(window, GLFW_KEY_W))
-        {
-            pos = glm::vec3(-4, -4, -4);
-        }
+        glm::vec3 pos(1, 0, 0);
+        glm::vec3 pos1(-1, 0, 0);
 
         commandBuffer.Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { 0,0,0,127 }),

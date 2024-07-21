@@ -28,10 +28,10 @@ namespace vg
         void BeginRenderpass::operator()(CmdBuffer& commandBuffer) const
         {
             std::vector<vk::ClearValue> clearValues = {
-                vk::ClearValue({clearColorR, clearColorG, clearColorB, clearColorA}),
+                vk::ClearValue((vk::ClearColorValue) clearColor),
                 vk::ClearValue{vk::ClearDepthStencilValue(depthClearColor,stencilClearColor)} };
 
-            auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D({ offsetX,offsetY }, { extendX,extendY }), clearValues);
+            auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D(offset, *(vk::Extent2D*) &extend), clearValues);
             CmdBufferHandle(commandBuffer).beginRenderPass(info, vk::SubpassContents::eInline);
         }
 
@@ -84,6 +84,92 @@ namespace vg
         {
             CmdBufferHandle(commandBuffer).pushConstants(layout, (vk::ShaderStageFlags) stages, offset, size, values);
         }
+
+        void SetLineWidth::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setLineWidth(lineWidth);
+        }
+
+        void SetDepthBias::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setDepthBias(bias.constantFactor, bias.clamp, bias.slopeFactor);
+        }
+
+        void SetBlendConstants::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setBlendConstants(blendConstants);
+        }
+
+        void SetDepthBounds::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setDepthBounds(minDepthBounds, maxDepthBounds);
+        }
+
+        void SetStencilCompareMask::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setStencilCompareMask((vk::StencilFaceFlags) faceMask, compareMask);
+        }
+
+        void SetStencilWriteMask::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setStencilWriteMask((vk::StencilFaceFlags) faceMask, writeMask);
+        }
+
+        void SetStencilReference::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).setStencilReference((vk::StencilFaceFlags) faceMask, reference);
+        }
+
+        void DrawIndirect::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).drawIndirect(buffer, offset, drawCount, stride);
+        }
+
+        void DrawIndexedIndirect::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).drawIndexedIndirect(buffer, offset, drawCount, stride);
+        }
+
+        void Dispatch::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).dispatch(groupCountX, groupCountY, groupCountZ);
+        }
+
+        void DispatchIndirect::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).dispatchIndirect(buffer, offset);
+        }
+
+        void CopyImage::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).copyImage(srcImage, (vk::ImageLayout) srcImageLayout, dstImage, (vk::ImageLayout) dstImageLayout, *(std::vector<vk::ImageCopy>*) & regions);
+        }
+
+        void BlitImage::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).blitImage(srcImage, (vk::ImageLayout) srcImageLayout, dstImage, (vk::ImageLayout) dstImageLayout, *(std::vector<vk::ImageBlit>*) & regions, (vk::Filter) filter);
+        }
+
+        void CopyImageToBuffer::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).copyImageToBuffer(srcImage, (vk::ImageLayout) srcImageLayout, dstBuffer, *(std::vector<vk::BufferImageCopy>*) & regions);
+        }
+
+        void UpdateBuffer::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).updateBuffer<char>(dstBuffer, dstOffset, data);
+        }
+
+        void FillBuffer::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).fillBuffer(dstBuffer, dstOffset, size, data);
+        }
+
+        void ClearColorImage::operator ()(CmdBuffer& commandBuffer)const
+        {
+            CmdBufferHandle(commandBuffer).clearColorImage(image, (vk::ImageLayout) imageLayout, color, *(std::vector<vk::ImageSubresourceRange>*) & ranges);
+        }
+
     }
 
     CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived, CmdBufferLevel cmdLevel) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)
@@ -94,6 +180,34 @@ namespace vg
     CmdBuffer::CmdBuffer(const CmdPool& pool, CmdBufferLevel cmdLevel) : m_commandPool(pool), m_queue(pool.GetQueue())
     {
         m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
+    }
+
+    std::vector<CmdBuffer> CmdBuffer::CreateArray(const Queue& queue, bool areShortLived, CmdBufferLevel cmdLevel, uint32_t count)
+    {
+        auto handles = ((DeviceHandle) currentDevice).allocateCommandBuffers({ queue.GetCmdPool(areShortLived), (vk::CommandBufferLevel) cmdLevel, count });
+        std::vector<CmdBuffer> buffers(count);
+        for (int i = 0; i < count; i++)
+        {
+            buffers[i].m_handle = handles[i];
+            buffers[i].m_commandPool = queue.GetCmdPool(areShortLived);
+            buffers[i].m_queue = queue;
+        }
+
+        return buffers;
+    }
+
+    std::vector<CmdBuffer> CmdBuffer::CreateArray(const CmdPool& pool, CmdBufferLevel cmdLevel, uint32_t count)
+    {
+        auto handles = ((DeviceHandle) currentDevice).allocateCommandBuffers({ pool, (vk::CommandBufferLevel) cmdLevel, count });
+        std::vector<CmdBuffer> buffers(count);
+        for (int i = 0; i < count; i++)
+        {
+            buffers[i].m_handle = handles[i];
+            buffers[i].m_commandPool = pool;
+            buffers[i].m_queue = pool.GetQueue();
+        }
+
+        return buffers;
     }
 
     CmdBuffer::CmdBuffer() :m_handle(nullptr), m_commandPool(nullptr) {}

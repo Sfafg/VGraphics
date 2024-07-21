@@ -602,19 +602,6 @@ namespace vg
 
     };
 
-    struct BufferCopyRegion
-    {
-        uint64_t srcOffset;
-        uint64_t dstOffset;
-        uint64_t size;
-
-        BufferCopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
-
-#ifdef VULKAN_HPP
-        VULKAN_NATIVE_CAST_OPERATOR(BufferCopy);
-#endif
-    };
-
     struct ImageSubresourceLayers
     {
         Flags<ImageAspect> aspectMask;
@@ -631,25 +618,194 @@ namespace vg
 #endif
     };
 
+    struct BufferCopyRegion
+    {
+        uint64_t srcOffset;
+        uint64_t dstOffset;
+        uint64_t size;
+
+        BufferCopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(BufferCopy);
+#endif
+    };
+
+    template<typename T = uint32_t>
+    struct Point2D
+    {
+        T x, y;
+        Point2D() :x(0), y(0) {}
+        template<typename OT>
+        Point2D(OT scalar) : x(scalar), y(scalar) {}
+        template<typename OT>
+        Point2D(OT x, OT y) : x(x), y(y) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(Offset2D);
+#endif
+    };
+
+    template<typename T = uint32_t>
+    struct Point3D
+    {
+        T x, y, z;
+        Point3D() :x(0), y(0), z(0) {}
+        template<typename OT>
+        Point3D(OT scalar) : x(scalar), y(scalar), z(scalar) {}
+        template<typename OT>
+        Point3D(OT x, OT y, OT z) : x(x), y(y), z(z) {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(Offset3D);
+#endif
+    };
+
+    union ClearColor
+    {
+        float float32[4];
+        int32_t int32[4];
+        uint32_t Uint32[4];
+
+        ClearColor(float r = 0, float g = 0, float b = 0, float a = 1) :float32{ r,g,b,a } {}
+        ClearColor(int32_t r, int32_t g, int32_t b, int32_t a) : int32{ r,g,b,a } {}
+        ClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) :Uint32{ r,g,b,a } {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ClearColorValue);
+#endif
+    };
+
+    struct ImageCopyRegion
+    {
+        ImageSubresourceLayers srcSubresource;
+        Point3D<uint32_t> srcOffset;
+        ImageSubresourceLayers dstSubresource;
+        Point3D<uint32_t> dstOffset;
+        Point3D<uint32_t> extent;
+
+        ImageCopyRegion(
+            ImageSubresourceLayers srcSubresource,
+            uint32_t srcOffset,
+            ImageSubresourceLayers dstSubresource,
+            uint32_t dstOffset,
+            uint32_t extent)
+            :srcSubresource(srcSubresource),
+            srcOffset{ srcOffset, 0U, 0U },
+            dstSubresource(dstSubresource),
+            dstOffset{ dstOffset, 0U, 0U },
+            extent{ extent, 1U, 1U }
+        {}
+
+        ImageCopyRegion(
+            ImageSubresourceLayers srcSubresource,
+            Point2D<uint32_t> srcOffset,
+            ImageSubresourceLayers dstSubresource,
+            Point2D<uint32_t> dstOffset,
+            Point2D<uint32_t> extent)
+            :srcSubresource(srcSubresource),
+            srcOffset{ srcOffset.x,srcOffset.y, 0U },
+            dstSubresource(dstSubresource),
+            dstOffset{ dstOffset.x,dstOffset.y, 0U },
+            extent{ extent.x, extent.y, 1U }
+        {}
+
+        ImageCopyRegion(
+            ImageSubresourceLayers srcSubresource,
+            Point3D<uint32_t> srcOffset,
+            ImageSubresourceLayers dstSubresource,
+            Point3D<uint32_t> dstOffset,
+            Point3D<uint32_t> extent)
+            :srcSubresource(srcSubresource),
+            srcOffset(srcOffset),
+            dstSubresource(dstSubresource),
+            dstOffset(dstOffset),
+            extent(extent)
+        {}
+
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ImageCopy);
+#endif
+    };
+
+    struct ImageBlitRegion
+    {
+        ImageSubresourceLayers srcSubresource;
+        Point3D<int32_t> srcOffsets[2];
+        ImageSubresourceLayers dstSubresource;
+        Point3D<int32_t> dstOffsets[2];
+
+        ImageBlitRegion(
+            ImageSubresourceLayers srcSubresource,
+            const int32_t(&srcOffsets)[2],
+            ImageSubresourceLayers dstSubresource,
+            const int32_t(&dstOffsets)[2]
+        ) :
+            srcSubresource(srcSubresource),
+            srcOffsets{ {srcOffsets[0], 0, 0},{srcOffsets[1], 0, 0} },
+            dstSubresource(dstSubresource),
+            dstOffsets{ {dstOffsets[0], 0, 0},{dstOffsets[1], 0, 0} }
+        {}
+
+        ImageBlitRegion(
+            ImageSubresourceLayers srcSubresource,
+            const Point2D<int32_t>(&srcOffsets)[2],
+            ImageSubresourceLayers dstSubresource,
+            const Point2D<int32_t>(&dstOffsets)[2]
+        ) :
+            srcSubresource(srcSubresource),
+            srcOffsets{ {srcOffsets[0].x,srcOffsets[0].y,0},{srcOffsets[1].x,srcOffsets[1].y,0} },
+            dstSubresource(dstSubresource),
+            dstOffsets{ {dstOffsets[0].x,dstOffsets[0].y,0},{dstOffsets[1].x,dstOffsets[1].y,0} }
+        {}
+
+        ImageBlitRegion(
+            ImageSubresourceLayers srcSubresource,
+            const Point3D<int32_t>(&srcOffsets)[2],
+            ImageSubresourceLayers dstSubresource,
+            const Point3D<int32_t>(&dstOffsets)[2]
+        ) :
+            srcSubresource(srcSubresource),
+            srcOffsets{ srcOffsets[0],srcOffsets[1] },
+            dstSubresource(dstSubresource),
+            dstOffsets{ dstOffsets[0],dstOffsets[1] }
+        {}
+#ifdef VULKAN_HPP
+        VULKAN_NATIVE_CAST_OPERATOR(ImageBlit);
+#endif
+    };
+
     struct BufferImageCopyRegion
     {
         uint64_t bufferOffset;
         uint32_t bufferRowLength;
         uint32_t bufferImageHeight;
         ImageSubresourceLayers imageSubresource;
-        uint32_t imageOffsetX;
-        uint32_t imageOffsetY;
-        uint32_t imageOffsetZ;
-        uint32_t imageExtendX;
-        uint32_t imageExtendY;
-        uint32_t imageExtendZ;
+        Point3D<uint32_t> imageOffset;
+        Point3D<uint32_t> imageExtend;
 
-        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtendX, uint32_t imageExtendY, uint32_t imageExtendZ, uint32_t imageOffsetX = 0, uint32_t imageOffsetY = 0, uint32_t imageOffsetZ = 0)
-            :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffsetX(imageOffsetX), imageOffsetY(imageOffsetY), imageOffsetZ(imageOffsetZ), imageExtendX(imageExtendX), imageExtendY(imageExtendY), imageExtendZ(imageExtendZ)
+        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
+            :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset{ imageOffset,0U, 0U }, imageExtend{ imageExtend,1U, 1U }
         {}
 
-        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, uint32_t imageExtendX, uint32_t imageExtendY, uint32_t imageExtendZ, uint32_t imageOffsetX = 0, uint32_t imageOffsetY = 0, uint32_t imageOffsetZ = 0)
-            :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffsetX(imageOffsetX), imageOffsetY(imageOffsetY), imageOffsetZ(imageOffsetZ), imageExtendX(imageExtendX), imageExtendY(imageExtendY), imageExtendZ(imageExtendZ)
+        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
+            :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset{ imageOffset,0U, 0U }, imageExtend{ imageExtend,1U, 1U }
+        {}
+
+        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
+            :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset{ imageOffset.x,imageOffset.y, 0U }, imageExtend{ imageExtend.x, imageExtend.y, 1U }
+        {}
+
+        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point2D<uint32_t> imageExtend, Point2D<uint32_t> imageOffset = Point2D<uint32_t>())
+            :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset{ imageOffset.x,imageOffset.y, 0U }, imageExtend{ imageExtend.x, imageExtend.y, 1U }
+        {}
+
+        BufferImageCopyRegion(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
+            :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset(imageOffset), imageExtend(imageExtend)
+        {}
+
+        BufferImageCopyRegion(uint64_t bufferOffset, ImageSubresourceLayers imageSubresource, Point3D<uint32_t> imageExtend, Point3D<uint32_t> imageOffset = Point3D<uint32_t>())
+            :bufferOffset(bufferOffset), bufferRowLength(0), bufferImageHeight(0), imageSubresource(imageSubresource), imageOffset(imageOffset), imageExtend(imageExtend)
         {}
 
 #ifdef VULKAN_HPP

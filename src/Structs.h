@@ -408,8 +408,8 @@ namespace vg
         Flags<FormatFeature> linearTilingFeatures;
         Flags<FormatFeature> optimalTilingFeatures;
         Flags<FormatFeature> bufferFeatures;
-        
-        
+
+
         VULKAN_NATIVE_CAST_OPERATOR(FormatProperties);
     };
 
@@ -743,14 +743,20 @@ namespace vg
         const uint32_t reserved_1 = 24;
         const void* reserved_2 = nullptr;
         const uint32_t reserved_3 = 0;
+
+    public:
         uint32_t rasterizationSamples = 1;
         uint32_t sampleShadingEnable = 0;
         float minSampleShading = 0;
-        const void* pSampleMask = nullptr;
+        const void* sampleMask = nullptr;
         uint32_t alphaToCoverageEnable = 0;
         uint32_t alphaToOneEnable = 0;
 
-    public:
+        Multisampling(uint32_t samples, bool enableSampleShading = false, float minSampleShading = 0, void* sampleMask = nullptr, bool enableAlphaToCoverage = false, bool enableAlphaToOne = false) :
+            rasterizationSamples(samples), sampleShadingEnable(enableSampleShading),
+            minSampleShading(minSampleShading), sampleMask(sampleMask),
+            alphaToCoverageEnable(enableAlphaToCoverage), alphaToOneEnable(enableAlphaToOne)
+        {}
 
         VULKAN_NATIVE_CAST_OPERATOR(PipelineMultisampleStateCreateInfo);
     };

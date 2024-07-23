@@ -86,7 +86,9 @@ struct UniformBufferObject
 
 int main()
 {
+    // TO DO: CmdBeginRenderPass clear values have to match attachment count
     // TO DO: Handle errors when tranfser queue does not have graphics capabilities.
+    // TO DO: Queue creation user defined queues.
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -105,6 +107,7 @@ int main()
     deviceFeatures.wideLines = true;
     deviceFeatures.logicOp = true;
     deviceFeatures.samplerAnisotropy = true;
+    deviceFeatures.sampleRateShading = true;
     vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, deviceFeatures, windowSurface,
         [&deviceFeatures](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits, DeviceFeatures features) {
             return (type == DeviceType::Dedicated) + 1 + (deviceFeatures == features);
@@ -117,7 +120,7 @@ int main()
 
     Swapchain swapchain(surface, 2, w, h);
 
-    Image colorImage(swapchain.GetWidth(), swapchain.GetHeight(), surface.GetFormat(), { ImageUsage::ColorAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+    Image colorImage(swapchain.GetWidth(), swapchain.GetHeight(), surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
     Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
     Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
     ImageView colorImageView(colorImage, { ImageAspect::Color });
@@ -138,7 +141,7 @@ int main()
     Shader fragmentShader(ShaderStage::Fragment, "resources/shaders/shader.frag.spv");
     RenderPass renderPass(
         {
-            Attachment(surface.GetFormat(), ImageLayout::ColorAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
+            Attachment(surface.GetFormat(), ImageLayout::ColorAttachmentOptimal,ImageLayout::Undefined,LoadOp::DontCare,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
             Attachment(depthImage.GetFormat(), ImageLayout::DepthStencilAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
@@ -154,13 +157,14 @@ int main()
                     Tesselation(),
                     ViewportState(Viewport(w, h), Scissor(w, h)),
                     Rasterizer(false, PolygonMode::Fill, CullMode::None),
-                    Multisampling(),
+                    Multisampling(msaaSampleCount,true),
                     DepthStencil(true,true,CompareOp::Less),
                     ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend()}),
                     { DynamicState::Viewport, DynamicState::Scissor}
                 ),
                 {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
-                {}, AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
+                {AttachmentReference(2,ImageLayout::ColorAttachmentOptimal)},
+                 AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
             )
         },
         {
@@ -168,14 +172,13 @@ int main()
         },
         pipelineCache
     );
-
     std::ofstream("pipelineCache.txt", std::ios_base::binary)
         .write(pipelineCache.GetData().data(), pipelineCache.GetData().size());
 
     std::vector<Framebuffer> swapChainFramebuffers;
     swapChainFramebuffers.resize(swapchain.GetImageCount());
     for (int i = 0; i < swapchain.GetImageCount(); i++)
-        swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
+        swapChainFramebuffers[i] = Framebuffer(renderPass, { colorImageView, depthImageView,swapchain.GetImageViews()[i] }, swapchain.GetWidth(), swapchain.GetHeight());
 
     // Allocate buffer in DeviceLocal memory.
     Buffer vertexBuffer(sizeof(vertices[0]) * vertices.size() + sizeof(indices[0]) * indices.size(), { vg::BufferUsage::VertexBuffer,vg::BufferUsage::IndexBuffer, vg::BufferUsage::TransferDst });
@@ -261,11 +264,13 @@ int main()
         {
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
-            depthImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), Format::D32SFLOAT, { ImageUsage::DepthStencilAttachment });
-            Allocate(&depthImage, { MemoryProperty::DeviceLocal });
+            colorImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+            depthImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), depthImage.GetFormat(), { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+            Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
+            colorImageView = ImageView(colorImage, { ImageAspect::Color });
             depthImageView = ImageView(depthImage, { ImageAspect::Depth });
             for (int i = 0; i < swapchain.GetImageCount(); i++)
-                swapChainFramebuffers[i] = Framebuffer(renderPass, { swapchain.GetImageViews()[i],depthImageView }, swapchain.GetWidth(), swapchain.GetHeight());
+                swapChainFramebuffers[i] = Framebuffer(renderPass, { colorImageView,depthImageView,swapchain.GetImageViews()[i] }, swapchain.GetWidth(), swapchain.GetHeight());
         }
 
         uint32_t imageIndex = swapchain.GetNextImageIndex(imageAvailableSemaphore);

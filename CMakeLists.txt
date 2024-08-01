@@ -14,14 +14,6 @@ set(SHADER_ROOT "${SRC_ROOT}/shaders")
 set(SHADER_OUTPUT_DIR "${RESOURCES_OUTPUT_DIR}/shaders")
 set(CMAKE_EXE_LINKER_FLAGS "-static")
  
-set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
-set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
-set(RESOURCES_ROOT "${PROJECT_SOURCE_DIR}/resources")
-set(RESOURCES_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
-set(SHADER_COMPILER_DIR "C:/VulkanSDK/1.3.261.1/Bin/glslc.exe")
-set(SHADER_ROOT "${SRC_ROOT}/shaders")
-set(SHADER_OUTPUT_DIR "${RESOURCES_OUTPUT_DIR}/shaders")
-
 set(SRC
     ${SRC_ROOT}/Instance.cpp
     ${SRC_ROOT}/Device.cpp
@@ -30,6 +22,7 @@ set(SRC
     ${SRC_ROOT}/Swapchain.cpp
     ${SRC_ROOT}/Shader.cpp
     ${SRC_ROOT}/GraphicsPipeline.cpp
+    ${SRC_ROOT}/ComputePipeline.cpp
     ${SRC_ROOT}/Subpass.cpp
     ${SRC_ROOT}/RenderPass.cpp
     ${SRC_ROOT}/Framebuffer.cpp
@@ -50,8 +43,9 @@ set(SRC
 )
 
 set(SHADERS
-    ${SHADER_ROOT}/shader.vert
+    ${SHADER_ROOT}/shader.comp
     ${SHADER_ROOT}/shader.frag
+    ${SHADER_ROOT}/shader.vert
 )
 
 set(RESOURCES
@@ -111,11 +105,20 @@ endforeach()
 add_custom_target(Resources ALL DEPENDS ${RESOURCE_DEPEND})
 
 
-# TEST 
-add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
-target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
-target_link_directories(VGTest PRIVATE 
+# # TEST 
+# add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
+# target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+# target_link_directories(VGTest PRIVATE 
+#     "C:/VulkanSDK/1.3.261.1/lib/"
+#     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
+# )
+# add_dependencies(VGTest Shaders VGraphics Resources)
+
+# COMPUTE SHADER 
+add_executable (ComputeShaderTest ${TESTS_ROOT}/ComputeShader.cpp)
+target_link_libraries(ComputeShaderTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+target_link_directories(ComputeShaderTest PRIVATE 
     "C:/VulkanSDK/1.3.261.1/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
 )
-add_dependencies(VGTest Shaders VGraphics Resources)
+add_dependencies(ComputeShaderTest Shaders VGraphics Resources)

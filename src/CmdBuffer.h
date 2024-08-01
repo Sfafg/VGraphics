@@ -17,9 +17,11 @@ namespace vg
         struct Command {};
         struct BindPipeline : Command
         {
-            BindPipeline(GraphicsPipelineHandle pipeline) : pipeline(pipeline) {}
+            BindPipeline(GraphicsPipelineHandle pipeline) : pipeline(pipeline), bindPoint(PipelineBindPoint::Graphics) {}
+            BindPipeline(ComputePipelineHandle computePipeline) : pipeline(computePipeline), bindPoint(PipelineBindPoint::Compute) {}
 
             GraphicsPipelineHandle pipeline;
+            PipelineBindPoint bindPoint;
 
         private:
             void operator ()(CmdBuffer& commandBuffer) const;
@@ -50,8 +52,9 @@ namespace vg
         };
         struct BindDescriptorSets : Command
         {
-            BindDescriptorSets(PipelineLayoutHandle layout, uint32_t firstSet, std::vector<DescriptorSetHandle> descriptorSets) :layout(layout), firstSet(firstSet), descriptorSets(descriptorSets) {}
+            BindDescriptorSets(PipelineLayoutHandle layout, PipelineBindPoint bindPoint, uint32_t firstSet, std::vector<DescriptorSetHandle> descriptorSets) :layout(layout), bindPoint(bindPoint), firstSet(firstSet), descriptorSets(descriptorSets) {}
 
+            PipelineBindPoint bindPoint;
             PipelineLayoutHandle layout;
             uint32_t firstSet;
             std::vector<DescriptorSetHandle> descriptorSets;

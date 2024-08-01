@@ -24,5 +24,6 @@ namespace vg
         PipelineLayoutHandle m_handle;
         std::vector<DescriptorSetLayoutHandle> m_descriptorSetLayouts;
         friend class RenderPass;
+        friend class ComputePipeline;
     };
 };

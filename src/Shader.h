@@ -42,7 +42,6 @@ namespace vg
 
     private:
         ShaderHandle m_handle;
-
         ShaderStage m_stage;
     };
 }

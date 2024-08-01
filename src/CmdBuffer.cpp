@@ -7,7 +7,7 @@ namespace vg
     {
         void BindPipeline::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+            CmdBufferHandle(commandBuffer).bindPipeline((vk::PipelineBindPoint) bindPoint, pipeline);
         }
 
         void BindVertexBuffer::operator()(CmdBuffer& commandBuffer) const
@@ -22,15 +22,14 @@ namespace vg
 
         void BindDescriptorSets::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, firstSet, descriptorSets.size(), &descriptorSets[0], 0, nullptr);
+            CmdBufferHandle(commandBuffer).bindDescriptorSets((vk::PipelineBindPoint) bindPoint, layout, firstSet, descriptorSets.size(), &descriptorSets[0], 0, nullptr);
         }
 
         void BeginRenderpass::operator()(CmdBuffer& commandBuffer) const
         {
             std::vector<vk::ClearValue> clearValues = {
                 vk::ClearValue((vk::ClearColorValue) clearColor),
-                vk::ClearValue{vk::ClearDepthStencilValue(depthClearColor,stencilClearColor)},
-                {}
+                vk::ClearValue{vk::ClearDepthStencilValue(depthClearColor,stencilClearColor)}
             };
 
             auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D(offset, *(vk::Extent2D*) &extend), clearValues);

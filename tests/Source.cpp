@@ -93,7 +93,7 @@ int main()
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     // glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-    GLFWwindow* window = glfwCreateWindow(300, 300, "Vulkan", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1600, 900, "Vulkan", nullptr, nullptr);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int w, int h) {recreateFramebuffer = true; });
 
     vg::instance = Instance({ "VK_KHR_surface", "VK_KHR_win32_surface" },
@@ -241,8 +241,8 @@ int main()
     uint64_t offsetAlignment = currentDevice.GetProperties().limits.minUniformBufferOffsetAlignment;
     for (size_t i = 0; i < descriptorSets.size(); i++)
     {
-        descriptorSets[i].AttachBuffer(uniformBuffers, (sizeof(UniformBufferObject) * i / offsetAlignment) * offsetAlignment, sizeof(UniformBufferObject), 0, 0);
-        descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
+        descriptorSets[i].AttachBuffer(uniformBuffers, DescriptorType::UniformBuffer, (sizeof(UniformBufferObject) * i / offsetAlignment) * offsetAlignment, sizeof(UniformBufferObject), 0, 0);
+        descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, DescriptorType::CombinedImageSampler, imageView, sampler, 1, 0);
     }
 
     CmdBuffer commandBuffer(currentDevice.graphicsQueue);
@@ -279,15 +279,13 @@ int main()
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(40.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::identity<glm::mat4>();
-        // ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 100.0f);
-        // ubo.proj[1][1] *= -1;
-        ubo.proj = glm::identity<glm::mat4>();
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(40.0f) * time, glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.1f, 100.0f);
+        ubo.proj[1][1] *= -1;
         memcpy(uniformBufferMemory + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
-        glm::vec3 pos(20, 1, 1);
+        glm::vec3 pos(-2, 0, 0);
         glm::vec3 pos1(0, 0, 0);
 
         commandBuffer.Clear().Begin().Append(

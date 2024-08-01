@@ -368,6 +368,14 @@ namespace vg
         VideoEncodeDpb = 0x10000000,
     };
 
+    enum class PipelineBindPoint
+    {
+        Graphics = 0,
+        Compute = 1,
+        RayTracing = 1000165000,
+        SubpassShading = 1000369003,
+    };
+
     enum class ColorSpace
     {
         SRGBNL = 0,

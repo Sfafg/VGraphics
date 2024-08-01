@@ -7,7 +7,7 @@ namespace vg
     {
         return m_handle;
     }
-    void DescriptorSet::AttachBuffer(const Buffer& buffer, int offset, int range, int binding, int arrayElement)
+    void DescriptorSet::AttachBuffer(DescriptorType descriptorType, const Buffer& buffer, int offset, int range, int binding, int arrayElement)
     {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = (BufferHandle) buffer;
@@ -19,12 +19,12 @@ namespace vg
         descriptorWrite.dstSet = m_handle;
         descriptorWrite.dstBinding = binding;
         descriptorWrite.dstArrayElement = arrayElement;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorType = (VkDescriptorType) descriptorType;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pBufferInfo = &bufferInfo;
         ((vk::Device) currentDevice).updateDescriptorSets({ descriptorWrite }, {});
     }
-    void DescriptorSet::AttachImage(ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement)
+    void DescriptorSet::AttachImage(DescriptorType descriptorType, ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement)
     {
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = (VkImageLayout) layout;
@@ -36,7 +36,7 @@ namespace vg
         descriptorWrite.dstSet = m_handle;
         descriptorWrite.dstBinding = binding;
         descriptorWrite.dstArrayElement = arrayElement;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorType = (VkDescriptorType) descriptorType;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo = &imageInfo;
         ((vk::Device) currentDevice).updateDescriptorSets({ descriptorWrite }, {});

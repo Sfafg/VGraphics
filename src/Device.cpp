@@ -98,36 +98,29 @@ namespace vg
 
         for (unsigned int i = 0; i < queueFamilies.size(); i++)
         {
-            int pickCount = 0;
             if (graphicsQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
             {
                 graphicsQueue.m_type = QueueType::Graphics;
                 graphicsQueue.m_index = i;
-                pickCount++;
             }
 
             if (surface != nullptr && presentQueue.m_type == QueueType::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
             {
                 presentQueue.m_type = QueueType::Present;
                 presentQueue.m_index = i;
-                pickCount++;
             }
 
             if (transferQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
             {
                 transferQueue.m_type = QueueType::Transfer;
                 transferQueue.m_index = i;
-                pickCount++;
             }
 
             if (computeQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
             {
-                if (pickCount == 0)
-                    computeQueue.m_type = QueueType::Compute;
+                computeQueue.m_type = QueueType::Compute;
                 computeQueue.m_index = i;
             }
-
-
 
             if ((int) graphicsQueue.m_type + (int) computeQueue.m_type + (int) presentQueue.m_type + (int) transferQueue.m_type == 0) break;
         }

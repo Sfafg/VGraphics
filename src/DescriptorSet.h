@@ -14,8 +14,8 @@ namespace vg
     public:
         operator const DescriptorSetHandle& () const;
 
-        void AttachBuffer(const Buffer& buffer, int offset, int range, int binding, int arrayElement);
-        void AttachImage(ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement);
+        void AttachBuffer(DescriptorType descriptorType, const Buffer& buffer, int offset, int range, int binding, int arrayElement);
+        void AttachImage(DescriptorType descriptorType, ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement);
     private:
         DescriptorSetHandle m_handle;
     };

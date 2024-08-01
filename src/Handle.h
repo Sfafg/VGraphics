@@ -40,6 +40,7 @@ namespace vg
     HANDLE(ShaderHandle, ShaderModule);
     HANDLE(PipelineCacheHandle, PipelineCache);
     HANDLE(GraphicsPipelineHandle, Pipeline);
+    HANDLE(ComputePipelineHandle, Pipeline);
     HANDLE(PipelineLayoutHandle, PipelineLayout);
     HANDLE(RenderPassHandle, RenderPass);
     HANDLE(FramebufferHandle, Framebuffer);

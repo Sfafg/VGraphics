@@ -1,5 +1,6 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <map>
 #include <iostream>
 #include "Device.h"
 
@@ -7,16 +8,15 @@ namespace vg
 {
     Device currentDevice;
     int DefaultScoreFunction(
-        const std::set<QueueType>& queues,
+        const std::vector<Queue*>& queues,
         const std::set<std::string>& extensions,
-        const std::set<QueueType>& supportedQueues,
         const std::set<std::string>& supportedExtensions,
         DeviceType type,
         const DeviceLimits& limits,
         const DeviceFeatures& features)
     {
         for (const auto& queue : queues)
-            if (!supportedQueues.contains(queue)) return -1;
+            if (queue == nullptr) return -1;
 
         for (const auto& extension : extensions)
             if (!supportedExtensions.contains(extension)) return -1;
@@ -25,15 +25,24 @@ namespace vg
     }
 
     Device::Device(
-        const std::set<QueueType>& queues,
+        const std::vector<Queue*>& queues,
         const std::set<std::string>& extensions,
         const DeviceFeatures& hintedDeviceEnabledFeatures,
         SurfaceHandle surface,
-        std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
+        std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
     )
     {
         assert(queues.size() > 0);
-        assert(queues.contains(QueueType::Present) ^ (surface == nullptr));
+        bool hasPresentQueueType = false;
+        for (auto&& queue : queues)
+        {
+            if (queue->GetType().IsSet(QueueType::Present))
+            {
+                hasPresentQueueType = true;
+                break;
+            }
+        }
+        assert(hasPresentQueueType ^ (surface == nullptr));
 
         // Pick physical device.
         int highestScore = -1;
@@ -55,31 +64,59 @@ namespace vg
                 if (formatCount == 0 || presentModeCount == 0) continue;
             }
 
-            // Get Supported Queues.
-            std::set<QueueType> supportedQueues;
+            // Check what queues are supported
+            std::vector<Queue*> supportedQueues = queues;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-            for (unsigned int i = 0; i < queueFamilies.size(); i++)
+            for (unsigned int i = 0; i < supportedQueues.size(); i++)
             {
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)supportedQueues.insert(QueueType::Graphics);
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute) supportedQueues.insert(QueueType::Compute);
-                if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)supportedQueues.insert(QueueType::Transfer);
-                if (surface != nullptr && physicalDevice.getSurfaceSupportKHR(i, surface)) supportedQueues.insert(QueueType::Present);
+                unsigned int minDifference = -1;
+                unsigned int bestIndex = -1;
+                for (unsigned int j = 0; j < queueFamilies.size(); j++)
+                {
+                    // Check if there are any queues available left.
+                    if (queueFamilies[j].queueCount == 0) continue;
 
-                if ((int) supportedQueues.size() == 3 + (surface != nullptr)) break;
+                    // Get the queueFamily type.
+                    Flags<QueueType> type;
+                    if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eGraphics) type.Set(QueueType::Graphics);
+                    if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eCompute) type.Set(QueueType::Compute);
+                    if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eTransfer) type.Set(QueueType::Transfer);
+                    if (physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
+
+                    // Check if family has at least all queue types required by queue.
+                    if ((supportedQueues[i]->m_type & type) != supportedQueues[i]->m_type)
+                        continue;
+
+                    // Count how many queue types are not needed.
+                    type ^= supportedQueues[i]->m_type;
+                    unsigned int difference = type.GetSetCount();
+
+                    // Update best index.
+                    if (difference < minDifference)
+                    {
+                        bestIndex = j;
+                        minDifference = difference;
+                    }
+                }
+
+                if (bestIndex == -1)
+                    supportedQueues[i] = nullptr;
+                else
+                    queueFamilies[bestIndex].queueCount--;
             }
 
-            // Get DeviceType and it's limits.
+            // Get DeviceType, it's limits and features.
             DeviceType type = (DeviceType) physicalDevice.getProperties().deviceType;
             auto limits = physicalDevice.getProperties().limits;
             auto features = physicalDevice.getFeatures();
 
-            // Score the
+            // Score the device.
             int score;
             if (scoreFunction != nullptr)
                 score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
 
             else
-                score = DefaultScoreFunction(queues, extensions, supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
+                score = DefaultScoreFunction(supportedQueues, extensions, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
 
             if (score > highestScore)
             {
@@ -88,84 +125,95 @@ namespace vg
             }
         }
         if (highestScore == -1)
-        {
-            std::cout << "No Physical Device matched the requirments.";
-            return;
-        }
+            std::runtime_error("No Physical Device matched the requirments.");
 
         // Pick queue families.
         std::vector<vk::QueueFamilyProperties> queueFamilies = m_physicalDevice.getQueueFamilyProperties();
-
-        for (unsigned int i = 0; i < queueFamilies.size(); i++)
+        std::map<unsigned int, std::vector<float>> queueFamilyPriorities;
+        for (unsigned int i = 0; i < queues.size(); i++)
         {
-            if (graphicsQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            unsigned int minDifference = -1;
+            unsigned int bestIndex = -1;
+            for (unsigned int j = 0; j < queueFamilies.size(); j++)
             {
-                graphicsQueue.m_type = QueueType::Graphics;
-                graphicsQueue.m_index = i;
+                // Get the queueFamily type.
+                Flags<QueueType> type;
+                if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eGraphics) type.Set(QueueType::Graphics);
+                if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eCompute) type.Set(QueueType::Compute);
+                if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eTransfer) type.Set(QueueType::Transfer);
+                if (m_physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
+
+                // Check if family has at least all queue types required by queue.
+                if ((queues[i]->m_type & type) != queues[i]->m_type)
+                    continue;
+
+                // Count how many queue types are not needed.
+                type ^= queues[i]->m_type;
+                unsigned int difference = type.GetSetCount();
+
+                // Update best index.
+                if (difference < minDifference)
+                {
+                    bestIndex = j;
+                    minDifference = difference;
+                }
             }
 
-            if (surface != nullptr && presentQueue.m_type == QueueType::None && m_physicalDevice.getSurfaceSupportKHR(i, surface))
-            {
-                presentQueue.m_type = QueueType::Present;
-                presentQueue.m_index = i;
-            }
+            queues[i]->m_index = bestIndex;
 
-            if (transferQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eTransfer)
+            if (queues[i]->m_index == -1)
+                queues[i]->m_type = QueueType::None;
+            else
             {
-                transferQueue.m_type = QueueType::Transfer;
-                transferQueue.m_index = i;
+                if (queueFamilyPriorities[queues[i]->GetIndex()].size() < queueFamilies[queues[i]->GetIndex()].queueCount)
+                    queueFamilyPriorities[queues[i]->GetIndex()].push_back(queues[i]->m_priority);
             }
-
-            if (computeQueue.m_type == QueueType::None && queueFamilies[i].queueFlags & vk::QueueFlagBits::eCompute)
-            {
-                computeQueue.m_type = QueueType::Compute;
-                computeQueue.m_index = i;
-            }
-
-            if ((int) graphicsQueue.m_type + (int) computeQueue.m_type + (int) presentQueue.m_type + (int) transferQueue.m_type == 0) break;
         }
-        computeQueue.m_type = QueueType::Compute;
-
-        std::set<unsigned int> uniqueQueueFamilies;
-        if (graphicsQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(graphicsQueue.GetIndex());
-        if (computeQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(computeQueue.GetIndex());
-        if (presentQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(presentQueue.GetIndex());
-        if (transferQueue.m_type != QueueType::None) uniqueQueueFamilies.insert(transferQueue.GetIndex());
 
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-        float priority = 0;
-        for (uint32_t queueFamily : uniqueQueueFamilies)
-        {
-            queueCreateInfos.push_back(vk::DeviceQueueCreateInfo({}, queueFamily, 1, &priority));
-        }
-
-        vk::DeviceQueueCreateInfo();
+        for (auto&& [index, priorities] : queueFamilyPriorities)
+            queueCreateInfos.push_back(vk::DeviceQueueCreateInfo({}, index, priorities.size(), priorities.data()));
 
         std::vector<const char*> extensionsConstChar;
         for (const auto& extension : extensions)extensionsConstChar.push_back(extension.data());
 
         vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
         features = (*(DeviceFeatures*) &features) & hintedDeviceEnabledFeatures;
+
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
         auto prevCurrentHandle = currentDevice.m_handle;
         currentDevice.m_handle = m_handle;
 
-        graphicsQueue.m_handle = graphicsQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(graphicsQueue.GetIndex(), 0);
-        computeQueue.m_handle = computeQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(computeQueue.GetIndex(), 0);
-        transferQueue.m_handle = transferQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(transferQueue.GetIndex(), 0);
-        presentQueue.m_handle = presentQueue.m_type == QueueType::None ? nullptr : m_handle.getQueue(presentQueue.GetIndex(), 0);
+        std::map<unsigned int, unsigned int> queueIndices;
+        std::map<unsigned int, std::vector<Queue*>> queuePointers;
+        for (auto&& queue : queues)
+        {
+            if (queue->GetType() == QueueType::None) continue;
+            if (queueIndices.contains(queue->GetIndex()))
+                queueIndices[queue->GetIndex()]++;
+            else
+                queueIndices[queue->GetIndex()] = 1;
 
-        graphicsQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },graphicsQueue.GetIndex() });
-        computeQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },computeQueue.GetIndex() });
-        transferQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },transferQueue.GetIndex() });
-        presentQueue.m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },presentQueue.GetIndex() });
-
-        graphicsQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },graphicsQueue.GetIndex() });
-        computeQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },computeQueue.GetIndex() });
-        transferQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },transferQueue.GetIndex() });
-        presentQueue.m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },presentQueue.GetIndex() });
+            unsigned int maxIndex = queueFamilies[queue->GetIndex()].queueCount;
+            unsigned int queueIndex = queueIndices[queue->GetIndex()] - 1;
+            if (queueIndex >= maxIndex)
+            {
+                queueIndex = queueIndex % maxIndex;
+                queue->m_type = QueueType::None;
+                queue->m_handle = queuePointers[queue->GetIndex()][queueIndex]->m_handle;
+                queue->m_commandPool = queuePointers[queue->GetIndex()][queueIndex]->m_commandPool;
+                queue->m_transientCommandPool = queuePointers[queue->GetIndex()][queueIndex]->m_transientCommandPool;
+            }
+            else
+            {
+                queue->m_handle = m_handle.getQueue(queue->GetIndex(), queueIndex);
+                queue->m_commandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer },queue->GetIndex() });
+                queue->m_transientCommandPool = m_handle.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient },queue->GetIndex() });
+                queuePointers[queue->GetIndex()].push_back(queue);
+            }
+        }
 
         currentDevice.m_handle = prevCurrentHandle;
     }
@@ -176,19 +224,11 @@ namespace vg
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
-        std::swap(graphicsQueue, other.graphicsQueue);
-        std::swap(computeQueue, other.computeQueue);
-        std::swap(presentQueue, other.presentQueue);
-        std::swap(transferQueue, other.transferQueue);
     }
 
     Device::~Device()
     {
         if (m_handle == nullptr) return;
-        graphicsQueue.~Queue();
-        computeQueue.~Queue();
-        presentQueue.~Queue();
-        transferQueue.~Queue();
 
         vkDestroyDevice(m_handle, nullptr);
         m_handle = nullptr;
@@ -200,10 +240,6 @@ namespace vg
 
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
-        std::swap(graphicsQueue, other.graphicsQueue);
-        std::swap(computeQueue, other.computeQueue);
-        std::swap(presentQueue, other.presentQueue);
-        std::swap(transferQueue, other.transferQueue);
 
         return *this;
     }
@@ -223,6 +259,15 @@ namespace vg
         vkDeviceWaitIdle(m_handle);
     }
 
+    std::set<std::string> Device::GetExtensions() const
+    {
+        std::set<std::string> supportedExtensions;
+        for (const auto& extension : m_physicalDevice.enumerateDeviceExtensionProperties())
+            supportedExtensions.insert(extension.extensionName);
+
+        return supportedExtensions;
+    }
+
     DeviceProperties Device::GetProperties() const
     {
         auto properties = m_physicalDevice.getProperties();
@@ -240,6 +285,4 @@ namespace vg
         auto properties = m_physicalDevice.getFormatProperties((vk::Format) format);
         return *(FormatProperties*) &properties;
     }
-
-
 }

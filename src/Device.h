@@ -25,11 +25,11 @@ namespace vg
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
-            const std::set<QueueType>& queues,
+            const std::vector<Queue*>& queues,
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
             SurfaceHandle surface = {},
-            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
+            std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
         /**
          *@brief Construct a new Device object
          *
@@ -39,10 +39,10 @@ namespace vg
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
-            const std::set<QueueType>& queues,
+            const std::vector<Queue*>& queues,
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
-            std::function<int(const std::set<QueueType>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
+            std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
             :Device::Device(queues, extensions, hintedDeviceEnabledFeatures, {}, scoreFunction) {}
 
         Device();
@@ -63,6 +63,7 @@ namespace vg
          */
         void WaitUntilIdle();
 
+        std::set<std::string> GetExtensions() const;
         DeviceProperties GetProperties() const;
         DeviceFeatures GetFeatures() const;
         FormatProperties GetFormatProperties(Format format) const;
@@ -71,12 +72,6 @@ namespace vg
     private:
         DeviceHandle m_handle;
         PhysicalDeviceHandle m_physicalDevice;
-
-    public:
-        Queue graphicsQueue;
-        Queue computeQueue;
-        Queue presentQueue;
-        Queue transferQueue;
     };
 
     extern Device currentDevice;

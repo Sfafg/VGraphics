@@ -18,12 +18,6 @@ namespace vg
     {
         // Get the sharing mode, needed if queues are in different families.
         vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
-        std::vector<unsigned int> indices;
-        if (currentDevice.graphicsQueue.GetIndex() != currentDevice.presentQueue.GetIndex())
-        {
-            indices.assign({ currentDevice.graphicsQueue.GetIndex(), currentDevice.presentQueue.GetIndex() });
-            sharingMode = vk::SharingMode::eConcurrent;
-        }
 
         // Check if parameters for Swapchain creation are valid and change them if not.
         SwapChainSupportDetails supportDetails((PhysicalDeviceHandle) currentDevice, surface);
@@ -55,7 +49,7 @@ namespace vg
         // Create Swapchain and get its Images and ImageViews.
         vk::SwapchainCreateInfoKHR createInfo(
             {}, surface, imageCount, (vk::Format) surface.GetFormat(), (vk::ColorSpaceKHR) surface.GetColorSpace(), { m_width, m_height }, 1, (vk::ImageUsageFlagBits) (Flags<Usage>::TMask) usage,
-            sharingMode, indices, supportDetails.capabilities.currentTransform, (vk::CompositeAlphaFlagBitsKHR) alpha, (vk::PresentModeKHR) presentMode, 1,
+            sharingMode, {}, supportDetails.capabilities.currentTransform, (vk::CompositeAlphaFlagBitsKHR) alpha, (vk::PresentModeKHR) presentMode, 1,
             oldSwapchain
         );
 

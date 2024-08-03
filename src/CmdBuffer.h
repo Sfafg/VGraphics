@@ -65,17 +65,15 @@ namespace vg
         };
         struct BeginRenderpass : Command
         {
-            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, Point2D<int32_t> offset, Point2D<uint32_t> extend, ClearColor clearColor = ClearColor(), float depthClearColor = 1, float stencilClearColor = 0)
-                : renderpass(renderpass), framebuffer(framebuffer), offset(offset), extend(extend), clearColor(clearColor), depthClearColor(depthClearColor), stencilClearColor(stencilClearColor)
+            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, Point2D<int32_t> offset, Point2D<uint32_t> extend, const std::vector<ClearValue>& clearValues)
+                : renderpass(renderpass), framebuffer(framebuffer), offset(offset), extend(extend), clearValues(clearValues)
             {}
 
             RenderPassHandle renderpass;
             FramebufferHandle framebuffer;
             Point2D<int32_t> offset;
             Point2D<uint32_t> extend;
-            ClearColor clearColor;
-            float depthClearColor;
-            float stencilClearColor;
+            std::vector<ClearValue> clearValues;
 
         private:
             void operator ()(CmdBuffer& commandBuffer) const;
@@ -464,13 +462,13 @@ namespace vg
         };
         struct ClearColorImage : Command
         {
-            ClearColorImage(ImageHandle image, ImageLayout imageLayout, ClearColor color, const std::vector<ImageSubresource>& ranges)
+            ClearColorImage(ImageHandle image, ImageLayout imageLayout, ClearValue color, const std::vector<ImageSubresource>& ranges)
                 :image(image), imageLayout(imageLayout), color(color), ranges(ranges)
             {}
 
             ImageHandle image;
             ImageLayout imageLayout;
-            ClearColor color;
+            ClearValue color;
             std::vector<ImageSubresource> ranges;
 
         private:

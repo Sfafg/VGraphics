@@ -86,9 +86,8 @@ struct UniformBufferObject
 
 int main()
 {
-    // TO DO: CmdBeginRenderPass clear values have to match attachment count
-    // TO DO: Handle errors when tranfser queue does not have graphics capabilities.
-    // TO DO: Queue creation user defined queues.
+    // TO DO: Queue sharing mode in Swapchain
+    // TO DO: Optymize amount of code written
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -103,12 +102,17 @@ int main()
         });
 
     SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
+
     DeviceFeatures deviceFeatures;
     deviceFeatures.wideLines = true;
     deviceFeatures.logicOp = true;
     deviceFeatures.samplerAnisotropy = true;
     deviceFeatures.sampleRateShading = true;
-    vg::currentDevice = Device({ QueueType::Graphics, QueueType::Present, QueueType::Transfer }, { "VK_KHR_swapchain" }, deviceFeatures, windowSurface,
+
+    Queue generalQueue({ QueueType::General }, 1.0f);
+    Queue generalQueue1({ QueueType::General }, 1.0f);
+
+    vg::currentDevice = Device({ &generalQueue,&generalQueue1 }, { "VK_KHR_swapchain" }, deviceFeatures, windowSurface,
         [&deviceFeatures](auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits, DeviceFeatures features) {
             return (type == DeviceType::Dedicated) + 1 + (deviceFeatures == features);
         });
@@ -141,7 +145,7 @@ int main()
     Shader fragmentShader(ShaderStage::Fragment, "resources/shaders/shader.frag.spv");
     RenderPass renderPass(
         {
-            Attachment(surface.GetFormat(), ImageLayout::ColorAttachmentOptimal,ImageLayout::Undefined,LoadOp::DontCare,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
+            Attachment(surface.GetFormat(), ImageLayout::ColorAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
             Attachment(depthImage.GetFormat(), ImageLayout::DepthStencilAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
@@ -193,7 +197,7 @@ int main()
         stagingBuffer.UnmapMemory();
 
         // Copy staging data to vertex buffer
-        vg::CmdBuffer(currentDevice.transferQueue).Begin().Append(
+        vg::CmdBuffer(generalQueue).Begin().Append(
             cmd::CopyBuffer(stagingBuffer, vertexBuffer, { BufferCopyRegion {vertexBuffer.GetSize() } })
         ).End().Submit().Await();
     }
@@ -215,7 +219,7 @@ int main()
         memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
-        vg::CmdBuffer imageCommandBuffer(vg::currentDevice.transferQueue);
+        vg::CmdBuffer imageCommandBuffer(generalQueue);
         imageCommandBuffer.Begin().Append(
             cmd::PipelineBarier(PipelineStage::TopOfPipe, PipelineStage::Transfer, { {texImage, ImageLayout::TransferDstOptimal, Access::None, Access::TransferWrite, {ImageAspect::Color,0,texImage.GetMipLevels()}} }),
             cmd::CopyBufferToImage(texStagingBuffer, texImage, ImageLayout::TransferDstOptimal, { {0UL,{ImageAspect::Color,0}, {texWidth,texHeight} } })
@@ -241,11 +245,11 @@ int main()
     uint64_t offsetAlignment = currentDevice.GetProperties().limits.minUniformBufferOffsetAlignment;
     for (size_t i = 0; i < descriptorSets.size(); i++)
     {
-        descriptorSets[i].AttachBuffer(uniformBuffers, DescriptorType::UniformBuffer, (sizeof(UniformBufferObject) * i / offsetAlignment) * offsetAlignment, sizeof(UniformBufferObject), 0, 0);
-        descriptorSets[i].AttachImage(ImageLayout::ShaderReadOnlyOptimal, DescriptorType::CombinedImageSampler, imageView, sampler, 1, 0);
+        descriptorSets[i].AttachBuffer(DescriptorType::UniformBuffer, uniformBuffers, (sizeof(UniformBufferObject) * i / offsetAlignment) * offsetAlignment, sizeof(UniformBufferObject), 0, 0);
+        descriptorSets[i].AttachImage(DescriptorType::CombinedImageSampler, ImageLayout::ShaderReadOnlyOptimal, imageView, sampler, 1, 0);
     }
 
-    CmdBuffer commandBuffer(currentDevice.graphicsQueue);
+    CmdBuffer commandBuffer(generalQueue);
     Semaphore renderFinishedSemaphore;
     Semaphore imageAvailableSemaphore;
     Fence inFlightFence(true);
@@ -289,9 +293,9 @@ int main()
         glm::vec3 pos1(0, 0, 0);
 
         commandBuffer.Clear().Begin().Append(
-            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { 0,0,0,255 }),
+            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { ClearColor{ 0,0,0,255 },ClearDepthStencil{1.0f,0U},ClearColor{ 0,0,0,255 } }),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
-            cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], 0, { descriptorSets[imageIndex] }),
+            cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], PipelineBindPoint::Graphics, 0, { descriptorSets[imageIndex] }),
             cmd::BindVertexBuffer(vertexBuffer, 0),
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), IndexType::Uint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
@@ -302,7 +306,7 @@ int main()
             cmd::DrawIndexed(indices.size()),
             cmd::EndRenderpass()
         ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);
-        currentDevice.presentQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
+        generalQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
     }
     Fence::AwaitAll({ inFlightFence });
     glfwTerminate();

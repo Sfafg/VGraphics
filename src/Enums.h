@@ -14,10 +14,11 @@ namespace vg
     enum class QueueType
     {
         None = 0,
-        Graphics,
-        Compute,
-        Present,
-        Transfer
+        Graphics = 1,
+        Compute = 2,
+        Present = 4,
+        Transfer = 8,
+        General = Graphics | Compute | Present | Transfer,
     };
 
     enum class CmdBufferUsage

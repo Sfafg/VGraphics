@@ -9,6 +9,8 @@ namespace vg
     class Queue
     {
     public:
+        Queue(Flags<QueueType> type, float priority);
+
         Queue();
         Queue(Queue&& other) noexcept;
         Queue(const Queue& other) = delete;
@@ -19,11 +21,11 @@ namespace vg
         operator const QueueHandle& () const;
 
         /**
-         *@brief Get the QueueType object
+         *@brief Get the type flags of queue
          *
-         * @return QueueType
+         * @return Flags<QueueType>
          */
-        QueueType GetType() const;
+        Flags<QueueType> GetType() const;
         /**
          *@brief Get the Index object
          *
@@ -55,7 +57,8 @@ namespace vg
         QueueHandle m_handle;
         CmdPoolHandle m_commandPool;
         CmdPoolHandle m_transientCommandPool;
-        QueueType m_type;
+        Flags<QueueType> m_type;
+        float m_priority;
         unsigned int m_index;
 
         friend class Device;

@@ -40,7 +40,20 @@ namespace vg
             return (flags & (TMask) flag) == (TMask) flag;
         }
 
-        Flags<T>& operator=(T flag) { flags = (TMask) flag; }
+        unsigned int GetSetCount() const
+        {
+            int count = 0;
+            auto n = flags;
+            while (n != 0)
+            {
+                n = n & (n - 1);
+                count++;
+            }
+
+            return count;
+        }
+
+        Flags<T>& operator=(T flag) { flags = (TMask) flag; return *this; }
 
         Flags<T> operator &(T flag) { return flags & (TMask) flag; }
         Flags<T> operator ^(T flag) { return flags ^ (TMask) flag; }
@@ -53,7 +66,22 @@ namespace vg
         Flags<T>& operator |=(T flag) { flags |= (TMask) flag; return *this; }
         Flags<T>& operator <<=(unsigned int shift) { flags <<= shift; return *this; }
         Flags<T>& operator >>=(unsigned int shift) { flags >>= shift; return *this; }
+        bool operator ==(T flag) { return flags == (TMask) flag; }
+        bool operator !=(T flag) { return flags != (TMask) flag; }
 
+        Flags<T>& operator=(const Flags<T>& flag) { flags = (TMask) flag; return *this; }
+
+        Flags<T> operator &(const Flags<T>& flag) { return flags & (TMask) flag; }
+        Flags<T> operator ^(const Flags<T>& flag) { return flags ^ (TMask) flag; }
+        Flags<T> operator |(const Flags<T>& flag) { return flags | (TMask) flag; }
+
+        Flags<T>& operator &=(const Flags<T>& flag) { flags &= (TMask) flag; return *this; }
+        Flags<T>& operator ^=(const Flags<T>& flag) { flags ^= (TMask) flag; return *this; }
+        Flags<T>& operator |=(const Flags<T>& flag) { flags |= (TMask) flag; return *this; }
+        bool operator ==(const Flags<T>& flag) { return flags == (TMask) flag; }
+        bool operator !=(const Flags<T>& flag) { return flags != (TMask) flag; }
+
+        explicit operator bool() const { return flags != 0; }
         operator TMask() const { return flags; }
         operator std::vector<T>() const
         {

@@ -105,20 +105,20 @@ endforeach()
 add_custom_target(Resources ALL DEPENDS ${RESOURCE_DEPEND})
 
 
-# # TEST 
-# add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
-# target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
-# target_link_directories(VGTest PRIVATE 
-#     "C:/VulkanSDK/1.3.261.1/lib/"
-#     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
-# )
-# add_dependencies(VGTest Shaders VGraphics Resources)
-
-# COMPUTE SHADER 
-add_executable (ComputeShaderTest ${TESTS_ROOT}/ComputeShader.cpp)
-target_link_libraries(ComputeShaderTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
-target_link_directories(ComputeShaderTest PRIVATE 
+# TEST 
+add_executable (VGTest ${TESTS_ROOT}/Source.cpp)
+target_link_libraries(VGTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+target_link_directories(VGTest PRIVATE 
     "C:/VulkanSDK/1.3.261.1/lib/"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
 )
-add_dependencies(ComputeShaderTest Shaders VGraphics Resources)
+add_dependencies(VGTest Shaders VGraphics Resources)
+
+# # COMPUTE SHADER 
+# add_executable (ComputeShaderTest ${TESTS_ROOT}/ComputeShader.cpp)
+# target_link_libraries(ComputeShaderTest PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+# target_link_directories(ComputeShaderTest PRIVATE 
+#     "C:/VulkanSDK/1.3.261.1/lib/"
+#     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
+# )
+# add_dependencies(ComputeShaderTest Shaders VGraphics Resources)

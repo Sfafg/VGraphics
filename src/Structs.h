@@ -926,24 +926,62 @@ namespace vg
 
         VULKAN_NATIVE_CAST_OPERATOR(Offset3D);
     };
-
-    // Make Sure to use data format that matches format of the image.
+    union ClearValue;
     union ClearColor
     {
         float float32[4];
         int32_t int32[4];
         uint32_t Uint32[4];
 
-        // Make Sure to use data format that matches format of the image.
+        /// @brief Create a clear structure for color attachments or images. Make sure that the type matches the format of the image.
+        /// @param r Red
+        /// @param g Green 
+        /// @param b Blue
+        /// @param a Alpha
         ClearColor(float r = 0, float g = 0, float b = 0, float a = 1) :float32{ r,g,b,a } {}
-        // Make Sure to use data format that matches format of the image.
-        ClearColor(int32_t r, int32_t g, int32_t b, int32_t a) : int32{ r,g,b,a } {}
-        // Make Sure to use data format that matches format of the image.
-        ClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) :Uint32{ r,g,b,a } {}
 
+        /// @brief Create a clear structure for color attachments or images. Make sure that the type matches the format of the image.
+        /// @param r Red
+        /// @param g Green 
+        /// @param b Blue
+        /// @param a Alpha
+        ClearColor(int32_t r, int32_t g, int32_t b, int32_t a) : int32{ r,g,b,a } {}
+
+        /// @brief Create a clear structure for color attachments or images. Make sure that the type matches the format of the image.
+        /// @param r Red
+        /// @param g Green 
+        /// @param b Blue
+        /// @param a Alpha
+        ClearColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) :Uint32{ r,g,b,a } {}
+        operator ClearValue();
+    };
+    struct ClearDepthStencil
+    {
+
+        float depthClearValue;
+        uint32_t stencilClearValue;
+
+        /// @brief Create a clear structure for depth and/or stencil attachments or images.
+        /// @param depthClearValue Depth Clear Value
+        /// @param stencilClearValue Stencil Clear Value 
+        ClearDepthStencil(float depthClearValue, uint32_t stencilClearValue) :depthClearValue(depthClearValue), stencilClearValue(stencilClearValue) {}
+        operator ClearValue();
+    };
+    union ClearValue
+    {
+        ClearColor color;
+        ClearDepthStencil depthStencil;
+
+        ClearValue() {}
+        explicit ClearValue(ClearColor color) :color(color) {}
+        explicit ClearValue(ClearDepthStencil depthStencil) : depthStencil(depthStencil) {}
 
         VULKAN_NATIVE_CAST_OPERATOR(ClearColorValue);
     };
+
+    inline ClearColor::operator vg::ClearValue() { return *(ClearValue*) this; }
+
+    inline ClearDepthStencil::operator vg::ClearValue() { return *(ClearValue*) this; }
 
     struct ImageCopy
     {

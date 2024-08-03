@@ -5,7 +5,9 @@
 
 namespace vg
 {
-    Queue::Queue() :m_handle(nullptr), m_type(QueueType::None), m_index(0) {}
+    Queue::Queue(Flags<QueueType> type, float priority) :m_handle(nullptr), m_type(type), m_priority(priority), m_index(0) {}
+
+    Queue::Queue() :m_handle(nullptr), m_type(0), m_priority(0), m_index(0) {}
 
     Queue::Queue(Queue&& other) noexcept
     {
@@ -13,12 +15,13 @@ namespace vg
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_transientCommandPool, other.m_transientCommandPool);
         std::swap(m_type, other.m_type);
+        std::swap(m_priority, other.m_priority);
         std::swap(m_index, other.m_index);
     }
 
     Queue::~Queue()
     {
-        if (m_handle == nullptr)
+        if (m_handle == nullptr || !(bool) m_type)
             return;
 
         ((DeviceHandle) currentDevice).destroyCommandPool(m_commandPool);
@@ -34,6 +37,7 @@ namespace vg
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_transientCommandPool, other.m_transientCommandPool);
         std::swap(m_type, other.m_type);
+        std::swap(m_priority, other.m_priority);
         std::swap(m_index, other.m_index);
 
         return *this;
@@ -44,7 +48,7 @@ namespace vg
         return m_handle;
     }
 
-    QueueType Queue::GetType() const
+    Flags<QueueType> Queue::GetType() const
     {
         return m_type;
     }

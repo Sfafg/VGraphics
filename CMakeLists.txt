@@ -1,5 +1,4 @@
 cmake_minimum_required (VERSION 3.30.1)
-cmake_minimum_required (VERSION 3.30.1)
 project (VGraphics)
 set(CMAKE_CXX_STANDARD 23)
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
@@ -73,7 +72,7 @@ target_include_directories(VGraphics PUBLIC
     "C:/VulkanSDK/1.3.261.1/include/")
 target_link_libraries(VGraphics INTERFACE vulkan-1)
 add_custom_command(TARGET VGraphics POST_BUILD
-    COMMAND  lib.exe ARGS "/OUT:${CMAKE_CURRENT_BINARY_DIR}/VGraphics.lib $<TARGET_FILE:VGraphics> ${CMAKE_CURRENT_BINARY_DIR}/libVGraphics.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/vulkan-1.lib"
+    COMMAND  lib.exe "/OUT:${CMAKE_CURRENT_BINARY_DIR}/VGraphics.lib" "${CMAKE_CURRENT_BINARY_DIR}/libVGraphics.a" "${CMAKE_CURRENT_SOURCE_DIR}/lib/vulkan-1.lib"
     COMMENT "Joining libraries: libVGraphics.a and vulkan-1.lib"
 )
 

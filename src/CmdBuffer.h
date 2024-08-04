@@ -18,7 +18,7 @@ namespace vg
         struct BindPipeline : Command
         {
             BindPipeline(GraphicsPipelineHandle pipeline) : pipeline(pipeline), bindPoint(PipelineBindPoint::Graphics) {}
-            BindPipeline(ComputePipelineHandle computePipeline) : pipeline(computePipeline), bindPoint(PipelineBindPoint::Compute) {}
+            BindPipeline(ComputePipelineHandle computePipeline) : pipeline(*(GraphicsPipelineHandle*) &computePipeline), bindPoint(PipelineBindPoint::Compute) {}
 
             GraphicsPipelineHandle pipeline;
             PipelineBindPoint bindPoint;

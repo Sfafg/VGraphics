@@ -1,6 +1,5 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <filesystem>
@@ -88,6 +87,7 @@ int main()
 {
     // TO DO: Queue sharing mode in Swapchain
     // TO DO: Optymize amount of code written
+    // TO DO: Memory binding offset must be multiple of alignment
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

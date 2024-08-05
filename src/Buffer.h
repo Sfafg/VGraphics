@@ -22,7 +22,7 @@ namespace vg
         uint64_t GetOffset() const;
         class MemoryBlock* GetMemory() const;
 
-        void* MapMemory();
+        void* GetMappedMemory();
         void UnmapMemory();
 
     private:
@@ -33,5 +33,7 @@ namespace vg
         class MemoryBlock* m_memory;
 
         friend class MemoryBlock;
+        friend void Allocate(std::vector<Buffer>&, Flags<MemoryProperty>);
+        friend void Allocate(std::initializer_list<Buffer*>, Flags<MemoryProperty>);
     };
 }

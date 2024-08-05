@@ -4,7 +4,7 @@ namespace vg
 {
     Fence::Fence(bool createSignalled)
     {
-        m_handle = ((DeviceHandle) currentDevice).createFence({ createSignalled ? vk::FenceCreateFlagBits::eSignaled : (vk::FenceCreateFlagBits) 0U });
+        m_handle = ((DeviceHandle) *currentDevice).createFence({ createSignalled ? vk::FenceCreateFlagBits::eSignaled : (vk::FenceCreateFlagBits) 0U });
     }
 
     Fence::Fence(void* ptr) : m_handle(nullptr) { assert(ptr == nullptr); }
@@ -16,7 +16,7 @@ namespace vg
     Fence::~Fence()
     {
         if (m_handle == nullptr) return;
-        ((DeviceHandle) currentDevice).destroyFence(m_handle);
+        ((DeviceHandle) *currentDevice).destroyFence(m_handle);
     }
 
     Fence& Fence::operator=(Fence&& other) noexcept
@@ -35,7 +35,7 @@ namespace vg
 
     bool Fence::IsSignaled() const
     {
-        return ((DeviceHandle) currentDevice).getFenceStatus(m_handle) == vk::Result::eSuccess;
+        return ((DeviceHandle) *currentDevice).getFenceStatus(m_handle) == vk::Result::eSuccess;
     }
 
     void Fence::Await(bool reset, uint64_t timeout)
@@ -53,7 +53,7 @@ namespace vg
         std::vector<FenceHandle> fenceHandles;
         fenceHandles.reserve(fences.size());
         for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
-        auto result = ((DeviceHandle) currentDevice).waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, true, timeout);
+        auto result = ((DeviceHandle) *currentDevice).waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, true, timeout);
         if (reset)
         {
             Fence::ResetAll(fences);
@@ -65,7 +65,7 @@ namespace vg
         std::vector<FenceHandle> fenceHandles;
         fenceHandles.reserve(fences.size());
         for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
-        auto result = ((DeviceHandle) currentDevice).waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, false, timeout);
+        auto result = ((DeviceHandle) *currentDevice).waitForFences(*(std::vector<vk::Fence>*) & fenceHandles, false, timeout);
     }
 
     void Fence::ResetAll(const std::vector<std::reference_wrapper<Fence>>& fences)
@@ -73,12 +73,12 @@ namespace vg
         std::vector<FenceHandle> fenceHandles;
         fenceHandles.reserve(fences.size());
         for (int i = 0; i < fences.size(); i++) fenceHandles.push_back(fences[i].get());
-        ((DeviceHandle) currentDevice).resetFences(*(std::vector<vk::Fence>*) & fenceHandles);
+        ((DeviceHandle) *currentDevice).resetFences(*(std::vector<vk::Fence>*) & fenceHandles);
     }
 
     Semaphore::Semaphore()
     {
-        m_handle = ((DeviceHandle) currentDevice).createSemaphore({});
+        m_handle = ((DeviceHandle) *currentDevice).createSemaphore({});
     }
 
     Semaphore::Semaphore(void* ptr) : m_handle(nullptr) { assert(ptr == nullptr); }
@@ -91,7 +91,7 @@ namespace vg
     Semaphore::~Semaphore()
     {
         if (m_handle == nullptr) return;
-        vkDestroySemaphore((DeviceHandle) currentDevice, m_handle, nullptr);
+        vkDestroySemaphore((DeviceHandle) *currentDevice, m_handle, nullptr);
     }
 
     Semaphore& Semaphore::operator=(Semaphore&& other) noexcept

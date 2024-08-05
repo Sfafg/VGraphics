@@ -229,8 +229,17 @@ namespace vg
 
             template <typename T>
             PushConstants(PipelineLayoutHandle layout, Flags<ShaderStage> stages, uint32_t offset, const std::vector<T>& data)
-                : layout(layout), stages(stages), offset(offset), data(data)
-            {}
+                : layout(layout), stages(stages), offset(offset)
+            {
+                this->data.assign((char*) data.data(), (char*) (data.begin() + data.size()));
+            }
+
+            template <typename T>
+            PushConstants(PipelineLayoutHandle layout, Flags<ShaderStage> stages, uint32_t offset, const T& data)
+                : layout(layout), stages(stages), offset(offset)
+            {
+                this->data.assign((char*) &data, (char*) (&data + 1));
+            }
 
             PipelineLayoutHandle layout;
             Flags<ShaderStage> stages;
@@ -601,14 +610,13 @@ namespace vg
         //     void operator()(CmdBuffer& commandBuffer) const;
         //     friend CmdBuffer;
         // };
-        // struct NextSubpass : Command
-        // {
-        //     NextSubpass() {}
-        // private:
-        //     VkSubpassContents contents;
-        //     void operator()(CmdBuffer& commandBuffer) const;
-        //     friend CmdBuffer;
-        // };
+        struct NextSubpass : Command
+        {
+            NextSubpass() {}
+        private:
+            void operator()(CmdBuffer& commandBuffer) const;
+            friend CmdBuffer;
+        };
     }
 
     template<class T>

@@ -25,7 +25,7 @@ namespace vg
             m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
             (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
-        m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
+        m_handle = ((DeviceHandle) *currentDevice).createImage(imageInfo);
     }
 
     Image::Image(
@@ -48,7 +48,7 @@ namespace vg
             m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
             (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
-        m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
+        m_handle = ((DeviceHandle) *currentDevice).createImage(imageInfo);
     }
 
     Image::Image(
@@ -72,7 +72,7 @@ namespace vg
             m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
             (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
-        m_handle = ((DeviceHandle) currentDevice).createImage(imageInfo);
+        m_handle = ((DeviceHandle) *currentDevice).createImage(imageInfo);
     }
 
     Image::Image(
@@ -136,7 +136,7 @@ namespace vg
     Image::~Image()
     {
         if (!m_handle) return;
-        ((DeviceHandle) currentDevice).destroyImage(m_handle);
+        ((DeviceHandle) *currentDevice).destroyImage(m_handle);
         if (m_memory) m_memory->Dereferance();
     }
 
@@ -240,7 +240,7 @@ namespace vg
         for (Format format : candidates)
         {
             VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties((PhysicalDeviceHandle) currentDevice, (VkFormat) format, &props);
+            vkGetPhysicalDeviceFormatProperties((PhysicalDeviceHandle) *currentDevice, (VkFormat) format, &props);
             if (tiling == ImageTiling::Linear && (props.linearTilingFeatures & features) == features)
                 return format;
             else if (tiling == ImageTiling::Optimal && (props.optimalTilingFeatures & features) == features)

@@ -5,19 +5,22 @@
 namespace vg
 {
     Surface::Surface() :m_handle(nullptr) {}
-    Surface::Surface(SurfaceHandle windowSurfaceHandle, Format hintedFormat, ColorSpace hintedColorSpace) : m_handle(windowSurfaceHandle)
+    Surface::Surface(SurfaceHandle windowSurfaceHandle, std::vector<SurfaceFormat> candidates) : m_handle(windowSurfaceHandle)
     {
-        auto supportedFormats = ((PhysicalDeviceHandle) currentDevice).getSurfaceFormatsKHR(m_handle);
+        auto supportedFormats = ((PhysicalDeviceHandle) *currentDevice).getSurfaceFormatsKHR(m_handle);
         m_format = (Format) supportedFormats[0].format;
         m_colorSpace = (ColorSpace) supportedFormats[0].colorSpace;
 
-        for (int i = 0; i < supportedFormats.size(); i++)
+        for (auto&& format : candidates)
         {
-            if (supportedFormats[i].format == (vk::Format) hintedFormat && supportedFormats[i].colorSpace == (vk::ColorSpaceKHR) hintedColorSpace)
+            for (int i = 0; i < supportedFormats.size(); i++)
             {
-                m_format = hintedFormat;
-                m_colorSpace = hintedColorSpace;
-                break;
+                if (supportedFormats[i].format == (vk::Format) format.format && supportedFormats[i].colorSpace == (vk::ColorSpaceKHR) format.colorSpace)
+                {
+                    m_format = format.format;
+                    m_colorSpace = format.colorSpace;
+                    return;
+                }
             }
         }
     }

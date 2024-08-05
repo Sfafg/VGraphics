@@ -38,7 +38,7 @@ namespace vg
 
         // RenderPass.
         vk::RenderPassCreateInfo renderPassInfo({}, colorAttachments, subpassDescriptions, *(std::vector<vk::SubpassDependency>*) & dependencies);
-        m_handle = ((DeviceHandle) currentDevice).createRenderPass(renderPassInfo);
+        m_handle = ((DeviceHandle) *currentDevice).createRenderPass(renderPassInfo);
 
         // Graphics pipelines.
         std::vector<vk::GraphicsPipelineCreateInfo> graphicPipelineCreateInfos;
@@ -75,9 +75,9 @@ namespace vg
 
             std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
             descriptorSetLayouts.resize(1);
-            descriptorSetLayouts[0] = (((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) createInfo.GetSetLayoutBindings() }));
+            descriptorSetLayouts[0] = (((DeviceHandle) *currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) createInfo.GetSetLayoutBindings() }));
 
-            PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts, *(std::vector<vk::PushConstantRange>*)createInfo.GetPushConstantRanges()));
+            PipelineLayoutHandle layout = ((DeviceHandle) *currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts, *(std::vector<vk::PushConstantRange>*)createInfo.GetPushConstantRanges()));
             m_pipelineLayouts[i].m_handle = layout;
             m_pipelineLayouts[i].m_descriptorSetLayouts = descriptorSetLayouts;
 
@@ -101,7 +101,7 @@ namespace vg
             std::swap(m_graphicsPipelines[i], *subpasses.begin()[i].graphicsPipeline);
         }
 
-        std::vector<vk::Pipeline> ptr = ((DeviceHandle) currentDevice).createGraphicsPipelines(cache, graphicPipelineCreateInfos).value;
+        std::vector<vk::Pipeline> ptr = ((DeviceHandle) *currentDevice).createGraphicsPipelines(cache, graphicPipelineCreateInfos).value;
 
         for (int i = 0; i < m_graphicsPipelines.size(); i++)
         {
@@ -134,11 +134,11 @@ namespace vg
         for (const auto& layout : m_pipelineLayouts)
         {
             for (const auto& descriptor : layout.GetDescriptorSets())
-                ((DeviceHandle) currentDevice).destroyDescriptorSetLayout(descriptor);
-            ((DeviceHandle) currentDevice).destroyPipelineLayout(layout);
+                ((DeviceHandle) *currentDevice).destroyDescriptorSetLayout(descriptor);
+            ((DeviceHandle) *currentDevice).destroyPipelineLayout(layout);
         }
 
-        ((DeviceHandle) currentDevice).destroyRenderPass(m_handle);
+        ((DeviceHandle) *currentDevice).destroyRenderPass(m_handle);
     }
 
     RenderPass& RenderPass::operator=(RenderPass&& other) noexcept

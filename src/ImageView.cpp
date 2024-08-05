@@ -11,7 +11,7 @@ namespace vg
     {
         vk::ImageViewCreateInfo createInfo({}, (ImageHandle) image, (vk::ImageViewType) type, (vk::Format) format, vk::ComponentMapping(), subresourceRange);
 
-        m_handle = ((DeviceHandle) currentDevice).createImageView(createInfo);
+        m_handle = ((DeviceHandle) *currentDevice).createImageView(createInfo);
     }
 
     ImageView::ImageView() : m_handle(nullptr) {}
@@ -25,7 +25,7 @@ namespace vg
     ImageView::~ImageView()
     {
         if (!m_handle) return;
-        ((DeviceHandle) currentDevice).destroyImageView(m_handle);
+        ((DeviceHandle) *currentDevice).destroyImageView(m_handle);
     }
 
     ImageView& ImageView::operator=(ImageView&& other) noexcept

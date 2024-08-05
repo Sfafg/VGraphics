@@ -7,7 +7,7 @@ namespace vg
     Buffer::Buffer() : m_handle(nullptr), m_offset(0), m_size(0), m_memory(0) {}
     Buffer::Buffer(uint64_t byteSize, Flags<BufferUsage> usage, SharingMode sharing) : m_memory(nullptr), m_size(byteSize), m_offset(0)
     {
-        m_handle = ((DeviceHandle) currentDevice).createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
+        m_handle = ((DeviceHandle) *currentDevice).createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
     }
     Buffer::Buffer(Buffer&& other) noexcept
     {
@@ -20,7 +20,7 @@ namespace vg
     Buffer::~Buffer()
     {
         if (!m_handle) return;
-        ((DeviceHandle) currentDevice).destroyBuffer(m_handle);
+        ((DeviceHandle) *currentDevice).destroyBuffer(m_handle);
         if (m_memory) m_memory->Dereferance();
     }
 
@@ -53,15 +53,13 @@ namespace vg
         return m_memory;
     }
 
-    void* Buffer::MapMemory()
+    void* Buffer::GetMappedMemory()
     {
-        void* data;
-        auto result = ((DeviceHandle) currentDevice).mapMemory(*GetMemory(), 0, m_size, {}, &data);
-        return data;
+        return GetMemory()->GetMappedMemory() + m_offset;
     }
 
     void Buffer::UnmapMemory()
     {
-        ((DeviceHandle) currentDevice).unmapMemory(*GetMemory());
+        GetMemory()->UnmapMemory();
     }
 }

@@ -272,6 +272,64 @@ namespace vg
             variableMultisampleRate(false),
             inheritedQueries(false)
         {}
+        DeviceFeatures(Flags<Feature> features)
+            :
+            robustBufferAccess(features.IsSet(Feature::RobustBufferAccess)),
+            fullDrawIndexUint32(features.IsSet(Feature::FullDrawIndexUint32)),
+            imageCubeArray(features.IsSet(Feature::ImageCubeArray)),
+            independentBlend(features.IsSet(Feature::IndependentBlend)),
+            geometryShader(features.IsSet(Feature::GeometryShader)),
+            tessellationShader(features.IsSet(Feature::TessellationShader)),
+            sampleRateShading(features.IsSet(Feature::SampleRateShading)),
+            dualSrcBlend(features.IsSet(Feature::DualSrcBlend)),
+            logicOp(features.IsSet(Feature::LogicOp)),
+            multiDrawIndirect(features.IsSet(Feature::MultiDrawIndirect)),
+            drawIndirectFirstInstance(features.IsSet(Feature::DrawIndirectFirstInstance)),
+            depthClamp(features.IsSet(Feature::DepthClamp)),
+            depthBiasClamp(features.IsSet(Feature::DepthBiasClamp)),
+            fillModeNonSolid(features.IsSet(Feature::FillModeNonSolid)),
+            depthBounds(features.IsSet(Feature::DepthBounds)),
+            wideLines(features.IsSet(Feature::WideLines)),
+            largePoints(features.IsSet(Feature::LargePoints)),
+            alphaToOne(features.IsSet(Feature::AlphaToOne)),
+            multiViewport(features.IsSet(Feature::MultiViewport)),
+            samplerAnisotropy(features.IsSet(Feature::SamplerAnisotropy)),
+            textureCompressionETC2(features.IsSet(Feature::TextureCompressionETC2)),
+            textureCompressionASTC_LDR(features.IsSet(Feature::TextureCompressionASTC_LDR)),
+            textureCompressionBC(features.IsSet(Feature::TextureCompressionBC)),
+            occlusionQueryPrecise(features.IsSet(Feature::OcclusionQueryPrecise)),
+            pipelineStatisticsQuery(features.IsSet(Feature::PipelineStatisticsQuery)),
+            vertexPipelineStoresAndAtomics(features.IsSet(Feature::VertexPipelineStoresAndAtomics)),
+            fragmentStoresAndAtomics(features.IsSet(Feature::FragmentStoresAndAtomics)),
+            shaderTessellationAndGeometryPointSize(features.IsSet(Feature::ShaderTessellationAndGeometryPointSize)),
+            shaderImageGatherExtended(features.IsSet(Feature::ShaderImageGatherExtended)),
+            shaderStorageImageExtendedFormats(features.IsSet(Feature::ShaderStorageImageExtendedFormats)),
+            shaderStorageImageMultisample(features.IsSet(Feature::ShaderStorageImageMultisample)),
+            shaderStorageImageReadWithoutFormat(features.IsSet(Feature::ShaderStorageImageReadWithoutFormat)),
+            shaderStorageImageWriteWithoutFormat(features.IsSet(Feature::ShaderStorageImageWriteWithoutFormat)),
+            shaderUniformBufferArrayDynamicIndexing(features.IsSet(Feature::ShaderUniformBufferArrayDynamicIndexing)),
+            shaderSampledImageArrayDynamicIndexing(features.IsSet(Feature::ShaderSampledImageArrayDynamicIndexing)),
+            shaderStorageBufferArrayDynamicIndexing(features.IsSet(Feature::ShaderStorageBufferArrayDynamicIndexing)),
+            shaderStorageImageArrayDynamicIndexing(features.IsSet(Feature::ShaderStorageImageArrayDynamicIndexing)),
+            shaderClipDistance(features.IsSet(Feature::ShaderClipDistance)),
+            shaderCullDistance(features.IsSet(Feature::ShaderCullDistance)),
+            shaderFloat64(features.IsSet(Feature::ShaderFloat64)),
+            shaderInt64(features.IsSet(Feature::ShaderInt64)),
+            shaderInt16(features.IsSet(Feature::ShaderInt16)),
+            shaderResourceResidency(features.IsSet(Feature::ShaderResourceResidency)),
+            shaderResourceMinLod(features.IsSet(Feature::ShaderResourceMinLod)),
+            sparseBinding(features.IsSet(Feature::SparseBinding)),
+            sparseResidencyBuffer(features.IsSet(Feature::SparseResidencyBuffer)),
+            sparseResidencyImage2D(features.IsSet(Feature::SparseResidencyImage2D)),
+            sparseResidencyImage3D(features.IsSet(Feature::SparseResidencyImage3D)),
+            sparseResidency2Samples(features.IsSet(Feature::SparseResidency2Samples)),
+            sparseResidency4Samples(features.IsSet(Feature::SparseResidency4Samples)),
+            sparseResidency8Samples(features.IsSet(Feature::SparseResidency8Samples)),
+            sparseResidency16Samples(features.IsSet(Feature::SparseResidency16Samples)),
+            sparseResidencyAliased(features.IsSet(Feature::SparseResidencyAliased)),
+            variableMultisampleRate(features.IsSet(Feature::VariableMultisampleRate)),
+            inheritedQueries(features.IsSet(Feature::InheritedQueries))
+        {}
 
         DeviceFeatures& operator&=(const DeviceFeatures& rhs)
         {
@@ -401,6 +459,14 @@ namespace vg
         }
 
         VULKAN_NATIVE_CAST_OPERATOR(PhysicalDeviceFeatures);
+    };
+
+    struct SurfaceFormat
+    {
+        Format format;
+        ColorSpace colorSpace;
+
+        SurfaceFormat(Format format, ColorSpace colorSpace) : format(format), colorSpace(colorSpace) {}
     };
 
     struct FormatProperties
@@ -590,8 +656,22 @@ namespace vg
             memcpy((void*) this->vertexAttributes, &vertexAttributes[0], sizeof(VertexAttribute) * vertexAttributesCount);
         }
 
-        VertexLayout(VertexLayout&& rhs) = default;
-        VertexLayout& operator=(VertexLayout&& rhs) = default;
+        VertexLayout(VertexLayout&& rhs)
+        {
+            std::swap(vertexDescriptionCount, rhs.vertexDescriptionCount);
+            std::swap(vertexDescritpions, rhs.vertexDescritpions);
+            std::swap(vertexAttributesCount, rhs.vertexAttributesCount);
+            std::swap(vertexAttributes, rhs.vertexAttributes);
+        }
+        VertexLayout& operator=(VertexLayout&& rhs)
+        {
+            if (&rhs == this) return *this;
+            std::swap(vertexDescriptionCount, rhs.vertexDescriptionCount);
+            std::swap(vertexDescritpions, rhs.vertexDescritpions);
+            std::swap(vertexAttributesCount, rhs.vertexAttributesCount);
+            std::swap(vertexAttributes, rhs.vertexAttributes);
+            return *this;
+        }
 
         VertexLayout(const VertexLayout& rhs)
         {
@@ -670,8 +750,23 @@ namespace vg
             memcpy((void*) this->scissors, &scissors[0], sizeof(Scissor) * scissorCount);
         }
 
-        ViewportState(ViewportState&& rhs) = default;
-        ViewportState& operator=(ViewportState&& rhs) = default;
+        ViewportState(ViewportState&& rhs)
+        {
+            std::swap(viewportCount, rhs.viewportCount);
+            std::swap(viewports, rhs.viewports);
+            std::swap(scissorCount, rhs.scissorCount);
+            std::swap(scissors, rhs.scissors);
+        }
+
+        ViewportState& operator=(ViewportState&& rhs)
+        {
+            if (&rhs == this) return *this;
+            std::swap(viewportCount, rhs.viewportCount);
+            std::swap(viewports, rhs.viewports);
+            std::swap(scissorCount, rhs.scissorCount);
+            std::swap(scissors, rhs.scissors);
+            return *this;
+        }
 
         ViewportState(const ViewportState& rhs)
         {
@@ -823,8 +918,25 @@ namespace vg
             memcpy((void*) this->attachments, &attachments[0], sizeof(ColorBlend) * attachmentCount);
         }
 
-        ColorBlending(ColorBlending&& rhs) = default;
-        ColorBlending& operator=(ColorBlending&& rhs) = default;
+        ColorBlending(ColorBlending&& rhs)
+        {
+            std::swap(enableLogicOp, rhs.enableLogicOp);
+            std::swap(logicOp, rhs.logicOp);
+            std::swap(attachmentCount, rhs.attachmentCount);
+            std::swap(attachments, rhs.attachments);
+            std::swap(blendConsts, rhs.blendConsts);
+        }
+
+        ColorBlending& operator=(ColorBlending&& rhs)
+        {
+            if (&rhs == this) return *this;
+            std::swap(enableLogicOp, rhs.enableLogicOp);
+            std::swap(logicOp, rhs.logicOp);
+            std::swap(attachmentCount, rhs.attachmentCount);
+            std::swap(attachments, rhs.attachments);
+            std::swap(blendConsts, rhs.blendConsts);
+            return *this;
+        }
 
         ColorBlending(const ColorBlending& rhs)
         {
@@ -1257,8 +1369,29 @@ namespace vg
             memcpy((void*) this->signalSemaphores, &signalSemaphores[0], sizeof(SemaphoreHandle) * signalSemaphoreCount);
         }
 
-        SubmitInfo(SubmitInfo&& rhs) = default;
-        SubmitInfo& operator=(SubmitInfo&& rhs) = default;
+        SubmitInfo(SubmitInfo&& rhs)
+        {
+            std::swap(waitSemaphoreCount, rhs.waitSemaphoreCount);
+            std::swap(waitSemaphores, rhs.waitSemaphores);
+            std::swap(waitDstStageMask, rhs.waitDstStageMask);
+            std::swap(cmdBufferCount, rhs.cmdBufferCount);
+            std::swap(cmdBuffers, rhs.cmdBuffers);
+            std::swap(signalSemaphoreCount, rhs.signalSemaphoreCount);
+            std::swap(signalSemaphores, rhs.signalSemaphores);
+        }
+
+        SubmitInfo& operator=(SubmitInfo&& rhs)
+        {
+            if (&rhs == this) return *this;
+            std::swap(waitSemaphoreCount, rhs.waitSemaphoreCount);
+            std::swap(waitSemaphores, rhs.waitSemaphores);
+            std::swap(waitDstStageMask, rhs.waitDstStageMask);
+            std::swap(cmdBufferCount, rhs.cmdBufferCount);
+            std::swap(cmdBuffers, rhs.cmdBuffers);
+            std::swap(signalSemaphoreCount, rhs.signalSemaphoreCount);
+            std::swap(signalSemaphores, rhs.signalSemaphores);
+            return *this;
+        }
 
         SubmitInfo(const SubmitInfo& rhs)
         {

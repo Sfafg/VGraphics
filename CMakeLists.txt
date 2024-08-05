@@ -45,6 +45,8 @@ set(SHADERS
     ${SHADER_ROOT}/shader.comp
     ${SHADER_ROOT}/shader.frag
     ${SHADER_ROOT}/shader.vert
+    ${SHADER_ROOT}/particle.frag
+    ${SHADER_ROOT}/particle.vert
 )
 
 set(RESOURCES

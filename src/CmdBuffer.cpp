@@ -165,22 +165,26 @@ namespace vg
         {
             CmdBufferHandle(commandBuffer).clearColorImage(image, (vk::ImageLayout) imageLayout, color, *(std::vector<vk::ImageSubresourceRange>*) & ranges);
         }
+        void NextSubpass::operator()(CmdBuffer& commandBuffer) const
+        {
+            CmdBufferHandle(commandBuffer).nextSubpass({ vk::SubpassContents::eInline });
+        }
 
     }
 
     CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived, CmdBufferLevel cmdLevel) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)
     {
-        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
+        m_handle = ((DeviceHandle) *currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
     }
 
     CmdBuffer::CmdBuffer(const CmdPool& pool, CmdBufferLevel cmdLevel) : m_commandPool(pool), m_queue(pool.GetQueue())
     {
-        m_handle = ((DeviceHandle) currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
+        m_handle = ((DeviceHandle) *currentDevice).allocateCommandBuffers({ m_commandPool, (vk::CommandBufferLevel) cmdLevel, 1 })[0];
     }
 
     std::vector<CmdBuffer> CmdBuffer::CreateArray(const Queue& queue, bool areShortLived, CmdBufferLevel cmdLevel, uint32_t count)
     {
-        auto handles = ((DeviceHandle) currentDevice).allocateCommandBuffers({ queue.GetCmdPool(areShortLived), (vk::CommandBufferLevel) cmdLevel, count });
+        auto handles = ((DeviceHandle) *currentDevice).allocateCommandBuffers({ queue.GetCmdPool(areShortLived), (vk::CommandBufferLevel) cmdLevel, count });
         std::vector<CmdBuffer> buffers(count);
         for (int i = 0; i < count; i++)
         {
@@ -194,7 +198,7 @@ namespace vg
 
     std::vector<CmdBuffer> CmdBuffer::CreateArray(const CmdPool& pool, CmdBufferLevel cmdLevel, uint32_t count)
     {
-        auto handles = ((DeviceHandle) currentDevice).allocateCommandBuffers({ pool, (vk::CommandBufferLevel) cmdLevel, count });
+        auto handles = ((DeviceHandle) *currentDevice).allocateCommandBuffers({ pool, (vk::CommandBufferLevel) cmdLevel, count });
         std::vector<CmdBuffer> buffers(count);
         for (int i = 0; i < count; i++)
         {
@@ -218,7 +222,7 @@ namespace vg
     CmdBuffer::~CmdBuffer()
     {
         if (m_handle == nullptr) return;
-        ((DeviceHandle) currentDevice).freeCommandBuffers(m_commandPool, 1, (vk::CommandBuffer*) &m_handle);
+        ((DeviceHandle) *currentDevice).freeCommandBuffers(m_commandPool, 1, (vk::CommandBuffer*) &m_handle);
     }
 
     CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) noexcept

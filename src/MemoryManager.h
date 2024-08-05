@@ -24,17 +24,21 @@ namespace vg
     class MemoryBlock
     {
     public:
-        MemoryBlock(DeviceMemoryHandle memory) : m_handle(memory), m_referanceCount(0) {}
+        MemoryBlock(DeviceMemoryHandle memory, uint64_t totalSize) : m_handle(memory), m_referanceCount(0), m_totalSize(totalSize), m_mappedMemory(nullptr) {}
 
         operator DeviceMemoryHandle() const;
 
-        void Bind(Buffer* buffer, uint64_t offset);
-        void Bind(Image* buffer, uint64_t offset);
+        void Bind(Buffer* buffer);
+        void Bind(Image* buffer);
 
     private:
         void Dereferance();
+        void* GetMappedMemory();
+        void UnmapMemory();
         int m_referanceCount;
         DeviceMemoryHandle m_handle;
+        uint64_t m_totalSize;
+        void* m_mappedMemory;
 
         friend class vg::Buffer;
         friend class vg::Image;

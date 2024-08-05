@@ -8,13 +8,13 @@ namespace vg
     {
         std::vector<DescriptorSetLayoutHandle> descriptorSetLayouts;
         descriptorSetLayouts.resize(1);
-        descriptorSetLayouts[0] = (((DeviceHandle) currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & setLayoutBindings }));
+        descriptorSetLayouts[0] = (((DeviceHandle) *currentDevice).createDescriptorSetLayout({ {}, *(std::vector<vk::DescriptorSetLayoutBinding>*) & setLayoutBindings }));
 
-        PipelineLayoutHandle layout = ((DeviceHandle) currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts, *(std::vector<vk::PushConstantRange>*) & pushConstantRanges));
+        PipelineLayoutHandle layout = ((DeviceHandle) *currentDevice).createPipelineLayout(vk::PipelineLayoutCreateInfo({}, descriptorSetLayouts, *(std::vector<vk::PushConstantRange>*) & pushConstantRanges));
         m_pipelineLayout.m_handle = layout;
         m_pipelineLayout.m_descriptorSetLayouts = descriptorSetLayouts;
 
-        m_handle = ((DeviceHandle) currentDevice).createComputePipeline(cache, vk::ComputePipelineCreateInfo({}, shader, layout)).value;
+        m_handle = ((DeviceHandle) *currentDevice).createComputePipeline(cache, vk::ComputePipelineCreateInfo({}, shader, layout)).value;
     }
 
     ComputePipeline::ComputePipeline() :m_handle(nullptr) {}
@@ -31,10 +31,10 @@ namespace vg
 
 
         for (const auto& descriptor : m_pipelineLayout.GetDescriptorSets())
-            ((DeviceHandle) currentDevice).destroyDescriptorSetLayout(descriptor);
-        ((DeviceHandle) currentDevice).destroyPipelineLayout(m_pipelineLayout);
+            ((DeviceHandle) *currentDevice).destroyDescriptorSetLayout(descriptor);
+        ((DeviceHandle) *currentDevice).destroyPipelineLayout(m_pipelineLayout);
 
-        ((DeviceHandle) currentDevice).destroyPipeline(m_handle);
+        ((DeviceHandle) *currentDevice).destroyPipeline(m_handle);
         m_handle = nullptr;
     }
 

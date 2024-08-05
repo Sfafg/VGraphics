@@ -273,7 +273,7 @@ int main()
         [](PhysicalDeviceHandle id, auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits, DeviceFeatures features) {
             return id != currentDevice;
         });
-    ScopedDeviceChange aslkdja(&computeDevice);
+    SCOPED_DEVICE_CHANGE(&computeDevice);
 
     // Initialize Buffers.
     const int particleCount = 1024 * 32;
@@ -320,7 +320,7 @@ int main()
         descriptorSets1[i].AttachBuffer(DescriptorType::StorageBuffer, shaderStorageBuffers[i], 0, shaderStorageBuffers[i].GetSize(), 1, 0);
     }
     CmdBuffer computeCmdBuffer(computeQueue);
-    ScopedDeviceChange aslkdja1(&rendererDevice);
+    SCOPED_DEVICE_CHANGE(&rendererDevice);
     Buffer particleBuffer(sizeof(Particle) * particleCount, { BufferUsage::VertexBuffer });
     vg::Allocate(&particleBuffer, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
 

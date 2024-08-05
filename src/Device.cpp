@@ -183,7 +183,7 @@ namespace vg
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
-        ScopedDeviceChange(this);
+        SCOPED_DEVICE_CHANGE(this);
 
         std::map<unsigned int, unsigned int> queueIndices;
         std::map<unsigned int, std::vector<Queue*>> queuePointers;
@@ -228,7 +228,7 @@ namespace vg
     {
         if (m_handle == nullptr) return;
 
-        ScopedDeviceChange asdasd(this);
+        SCOPED_DEVICE_CHANGE(this);
         for (auto&& queue : m_queues)
             queue->~Queue();
 

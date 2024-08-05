@@ -95,4 +95,7 @@ namespace vg
     private:
         Device* oldDevice;
     };
+#define CONCAT_IMPL( x, y ) x##y
+#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
+#define SCOPED_DEVICE_CHANGE(newDevice) ScopedDeviceChange MACRO_CONCAT(___DEVICE_CHANGE_OBJECT___, __COUNTER__)(newDevice)
 }

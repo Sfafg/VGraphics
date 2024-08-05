@@ -6,7 +6,7 @@ namespace vg
 {
     Framebuffer::Framebuffer(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& attachments, unsigned int width, unsigned int height, unsigned int layers)
     {
-        m_handle = ((DeviceHandle) currentDevice).createFramebuffer({ {}, renderPass, *(std::vector<vk::ImageView>*) & attachments, width, height, layers });
+        m_handle = ((DeviceHandle) *currentDevice).createFramebuffer({ {}, renderPass, *(std::vector<vk::ImageView>*) & attachments, width, height, layers });
     }
 
     Framebuffer::Framebuffer() :m_handle(nullptr) {}
@@ -19,7 +19,7 @@ namespace vg
     Framebuffer::~Framebuffer()
     {
         if (m_handle == nullptr) return;
-        ((DeviceHandle) currentDevice).destroyFramebuffer(m_handle);
+        ((DeviceHandle) *currentDevice).destroyFramebuffer(m_handle);
     }
 
     Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept

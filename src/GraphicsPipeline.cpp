@@ -87,7 +87,7 @@ namespace vg
         if (m_handle == nullptr)
             return;
 
-        ((DeviceHandle) currentDevice).destroyPipeline(m_handle);
+        ((DeviceHandle) *currentDevice).destroyPipeline(m_handle);
         m_handle = nullptr;
 
 #ifdef VG_DEBUG

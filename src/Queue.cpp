@@ -24,8 +24,8 @@ namespace vg
         if (m_handle == nullptr || !(bool) m_type)
             return;
 
-        ((DeviceHandle) currentDevice).destroyCommandPool(m_commandPool);
-        ((DeviceHandle) currentDevice).destroyCommandPool(m_transientCommandPool);
+        ((DeviceHandle) *currentDevice).destroyCommandPool(m_commandPool);
+        ((DeviceHandle) *currentDevice).destroyCommandPool(m_transientCommandPool);
 
         m_handle = nullptr;
     }

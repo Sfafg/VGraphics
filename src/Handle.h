@@ -22,6 +22,7 @@ public:\
     name() :m_handle(nullptr) {}\
     name& operator=(void*& rhs) { m_handle = rhs; return *this; }\
     bool operator==(const void* rhs) const { return  m_handle == rhs; }\
+    bool operator==(name rhs) const { return  m_handle == rhs; }\
 };
 #endif
 

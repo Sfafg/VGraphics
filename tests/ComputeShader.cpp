@@ -64,14 +64,9 @@ struct Particle
 
 int main()
 {
-    // TO DO: CmdBeginRenderPass clear values have to match attachment count
-    // TO DO: Handle errors when tranfser queue does not have graphics capabilities.
-    // TO DO: Queue creation user defined queues.
-
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    // glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow(1920, 1080, "Vulkan", nullptr, nullptr);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int w, int h) {recreateFramebuffer = true; });
 

@@ -29,7 +29,7 @@ namespace vg
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
             SurfaceHandle surface = {},
-            std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
+            std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
         /**
          *@brief Construct a new Device object
          *
@@ -42,7 +42,7 @@ namespace vg
             const std::vector<Queue*>& queues,
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
-            std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
+            std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
             :Device::Device(queues, extensions, hintedDeviceEnabledFeatures, {}, scoreFunction) {}
 
         Device();
@@ -64,6 +64,7 @@ namespace vg
         void WaitUntilIdle();
 
         std::set<std::string> GetExtensions() const;
+        DeviceLimits GetLimits() const;
         DeviceProperties GetProperties() const;
         DeviceFeatures GetFeatures() const;
         FormatProperties GetFormatProperties(Format format) const;
@@ -72,7 +73,29 @@ namespace vg
     private:
         DeviceHandle m_handle;
         PhysicalDeviceHandle m_physicalDevice;
+        std::vector<Queue*> m_queues;
     };
 
-    extern Device currentDevice;
+    extern Device* currentDevice;
+
+    class ScopedDeviceChange
+    {
+    public:
+        ScopedDeviceChange(Device* newDevice)
+        {
+            oldDevice = currentDevice;
+            currentDevice = newDevice;
+        }
+
+        ~ScopedDeviceChange()
+        {
+            currentDevice = oldDevice;
+        }
+
+    private:
+        Device* oldDevice;
+    };
+#define CONCAT_IMPL( x, y ) x##y
+#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
+#define SCOPED_DEVICE_CHANGE(newDevice) ScopedDeviceChange MACRO_CONCAT(___DEVICE_CHANGE_OBJECT___, __COUNTER__)(newDevice)
 }

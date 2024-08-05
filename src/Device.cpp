@@ -6,7 +6,7 @@
 
 namespace vg
 {
-    Device currentDevice;
+    Device* currentDevice;
     int DefaultScoreFunction(
         const std::vector<Queue*>& queues,
         const std::set<std::string>& extensions,
@@ -29,8 +29,8 @@ namespace vg
         const std::set<std::string>& extensions,
         const DeviceFeatures& hintedDeviceEnabledFeatures,
         SurfaceHandle surface,
-        std::function<int(const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
-    )
+        std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
+    ) :m_queues(queues)
     {
         assert(queues.size() > 0);
         bool hasPresentQueueType = false;
@@ -81,7 +81,7 @@ namespace vg
                     if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eGraphics) type.Set(QueueType::Graphics);
                     if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eCompute) type.Set(QueueType::Compute);
                     if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eTransfer) type.Set(QueueType::Transfer);
-                    if (physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
+                    if (surface != nullptr && physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
 
                     // Check if family has at least all queue types required by queue.
                     if ((supportedQueues[i]->m_type & type) != supportedQueues[i]->m_type)
@@ -113,7 +113,7 @@ namespace vg
             // Score the device.
             int score;
             if (scoreFunction != nullptr)
-                score = scoreFunction(supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
+                score = scoreFunction(physicalDevice, supportedQueues, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
 
             else
                 score = DefaultScoreFunction(supportedQueues, extensions, supportedExtensions, type, *(DeviceLimits*) &limits, *(DeviceFeatures*) &features);
@@ -141,7 +141,7 @@ namespace vg
                 if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eGraphics) type.Set(QueueType::Graphics);
                 if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eCompute) type.Set(QueueType::Compute);
                 if (queueFamilies[j].queueFlags & vk::QueueFlagBits::eTransfer) type.Set(QueueType::Transfer);
-                if (m_physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
+                if (surface != nullptr && m_physicalDevice.getSurfaceSupportKHR(j, surface)) type.Set(QueueType::Present);
 
                 // Check if family has at least all queue types required by queue.
                 if ((queues[i]->m_type & type) != queues[i]->m_type)
@@ -183,8 +183,7 @@ namespace vg
         vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
-        auto prevCurrentHandle = currentDevice.m_handle;
-        currentDevice.m_handle = m_handle;
+        SCOPED_DEVICE_CHANGE(this);
 
         std::map<unsigned int, unsigned int> queueIndices;
         std::map<unsigned int, std::vector<Queue*>> queuePointers;
@@ -214,21 +213,24 @@ namespace vg
                 queuePointers[queue->GetIndex()].push_back(queue);
             }
         }
-
-        currentDevice.m_handle = prevCurrentHandle;
     }
 
-    Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr) {}
+    Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr), m_queues{} {}
 
     Device::Device(Device&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
+        std::swap(m_queues, other.m_queues);
     }
 
     Device::~Device()
     {
         if (m_handle == nullptr) return;
+
+        SCOPED_DEVICE_CHANGE(this);
+        for (auto&& queue : m_queues)
+            queue->~Queue();
 
         vkDestroyDevice(m_handle, nullptr);
         m_handle = nullptr;
@@ -240,6 +242,7 @@ namespace vg
 
         std::swap(m_handle, other.m_handle);
         std::swap(m_physicalDevice, other.m_physicalDevice);
+        std::swap(m_queues, other.m_queues);
 
         return *this;
     }
@@ -266,6 +269,11 @@ namespace vg
             supportedExtensions.insert(extension.extensionName);
 
         return supportedExtensions;
+    }
+
+    DeviceLimits Device::GetLimits() const
+    {
+        return GetProperties().limits;
     }
 
     DeviceProperties Device::GetProperties() const

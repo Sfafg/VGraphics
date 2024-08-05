@@ -16,7 +16,7 @@ namespace vg
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
-        m_handle = ((DeviceHandle) currentDevice).createSampler({
+        m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
             (vk::Filter) minFilter,
@@ -50,7 +50,7 @@ namespace vg
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
-        m_handle = ((DeviceHandle) currentDevice).createSampler({
+        m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
             (vk::Filter) minFilter,
@@ -84,7 +84,7 @@ namespace vg
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
-        m_handle = ((DeviceHandle) currentDevice).createSampler({
+        m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
             (vk::Filter) minFilter,
@@ -119,7 +119,7 @@ namespace vg
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
-        m_handle = ((DeviceHandle) currentDevice).createSampler({
+        m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
             (vk::Filter) minFilter,
@@ -145,7 +145,7 @@ namespace vg
     }
     Sampler::~Sampler()
     {
-        ((DeviceHandle) currentDevice).destroySampler(m_handle);
+        ((DeviceHandle) *currentDevice).destroySampler(m_handle);
     }
 
     Sampler& Sampler::operator=(Sampler&& other) noexcept

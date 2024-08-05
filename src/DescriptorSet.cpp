@@ -22,7 +22,7 @@ namespace vg
         descriptorWrite.descriptorType = (VkDescriptorType) descriptorType;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pBufferInfo = &bufferInfo;
-        ((vk::Device) currentDevice).updateDescriptorSets({ descriptorWrite }, {});
+        ((DeviceHandle) *currentDevice).updateDescriptorSets({ descriptorWrite }, {});
     }
     void DescriptorSet::AttachImage(DescriptorType descriptorType, ImageLayout layout, const ImageView& imageView, const Sampler& sampler, int binding, int arrayElement)
     {
@@ -39,6 +39,6 @@ namespace vg
         descriptorWrite.descriptorType = (VkDescriptorType) descriptorType;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo = &imageInfo;
-        ((vk::Device) currentDevice).updateDescriptorSets({ descriptorWrite }, {});
+        ((DeviceHandle) *currentDevice).updateDescriptorSets({ descriptorWrite }, {});
     }
 }

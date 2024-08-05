@@ -6,7 +6,7 @@ namespace vg
 {
     CmdPool::CmdPool(const class Queue& queue, Flags<CmdPoolUsage> usage) : m_queue(queue)
     {
-        m_handle = ((DeviceHandle) currentDevice).createCommandPool({ (vk::CommandPoolCreateFlags) usage, queue.GetIndex() });
+        m_handle = ((DeviceHandle) *currentDevice).createCommandPool({ (vk::CommandPoolCreateFlags) usage, queue.GetIndex() });
     }
 
     CmdPool::CmdPool() :m_handle(nullptr), m_queue(nullptr)
@@ -17,7 +17,7 @@ namespace vg
         if (m_handle == nullptr)
             return;
 
-        ((DeviceHandle) currentDevice).destroyCommandPool(m_handle);
+        ((DeviceHandle) *currentDevice).destroyCommandPool(m_handle);
         m_handle = nullptr;
     }
 
@@ -50,11 +50,11 @@ namespace vg
 
     void CmdPool::Trim()
     {
-        ((DeviceHandle) currentDevice).trimCommandPool(m_handle, (vk::CommandPoolTrimFlags) 0);
+        ((DeviceHandle) *currentDevice).trimCommandPool(m_handle, (vk::CommandPoolTrimFlags) 0);
     }
 
     void CmdPool::Reset(bool releaseResources)
     {
-        ((DeviceHandle) currentDevice).resetCommandPool(m_handle, (vk::CommandPoolResetFlags) (releaseResources ? (int) vk::CommandPoolResetFlagBits::eReleaseResources : 0));
+        ((DeviceHandle) *currentDevice).resetCommandPool(m_handle, (vk::CommandPoolResetFlags) (releaseResources ? (int) vk::CommandPoolResetFlagBits::eReleaseResources : 0));
     }
 }

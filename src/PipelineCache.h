@@ -9,6 +9,7 @@ namespace vg
     {
     public:
         PipelineCache(const void* initialData, uint32_t initialDataSize = 0, bool isExternallySynchronized = false);
+        PipelineCache(const char* filePath, bool isExternallySynchronized = false);
 
         template<typename T>
         PipelineCache(const std::vector<T>& initialData, bool isExternallySynchronized = false) :

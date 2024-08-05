@@ -33,6 +33,9 @@ namespace vg
          * @param oldSwapchain Optional old swapchain handle used when recreating swapchain when resizing window. Do not destroy old handle until it's presenting is done
          */
         Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle(), const std::vector<unsigned int>& queueIndices = {});
+        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, SwapchainHandle oldSwapchain, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, const std::vector<unsigned int>& queueIndices = {})
+            :Swapchain(surface, imageCount, width, height, usage, presentMode, alpha, oldSwapchain, queueIndices)
+        {}
 
         Swapchain();
         Swapchain(Swapchain&& other) noexcept;

@@ -22,7 +22,7 @@ namespace vg
         uint64_t GetOffset() const;
         class MemoryBlock* GetMemory() const;
 
-        void* GetMappedMemory();
+        void* MapMemory();
         void UnmapMemory();
 
     private:

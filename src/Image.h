@@ -10,10 +10,10 @@ namespace vg
     {
     public:
         Image(
-            uint32_t width,
+            std::vector<uint32_t> extend,
             Format format,
             Flags<ImageUsage> usage,
-            int mipLevels = 1,
+            uint32_t mipLevels = 1,
             int arrayLevels = 1,
             ImageTiling tiling = ImageTiling::Optimal,
             ImageLayout initialLayout = ImageLayout::Undefined,
@@ -21,36 +21,24 @@ namespace vg
             SharingMode sharingMode = SharingMode::Exclusive);
 
         Image(
-            uint32_t width,
-            uint32_t height,
+            std::vector<uint32_t> extend,
             Format format,
             Flags<ImageUsage> usage,
-            int mipLevels = 1,
-            int arrayLevels = 1,
+            uint32_t mipLevels,
+            int arrayLevels,
+            int samples,
             ImageTiling tiling = ImageTiling::Optimal,
             ImageLayout initialLayout = ImageLayout::Undefined,
-            int samples = 1,
-            SharingMode sharingMode = SharingMode::Exclusive);
+            SharingMode sharingMode = SharingMode::Exclusive)
+            :Image(extend, format, usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
+        {}
 
         Image(
-            uint32_t width,
-            uint32_t height,
-            uint32_t depth,
-            Format format,
-            Flags<ImageUsage> usage,
-            int mipLevels = 1,
-            int arrayLevels = 1,
-            ImageTiling tiling = ImageTiling::Optimal,
-            ImageLayout initialLayout = ImageLayout::Undefined,
-            int samples = 1,
-            SharingMode sharingMode = SharingMode::Exclusive);
-
-        Image(
-            uint32_t width,
+            std::vector<uint32_t> extend,
             std::vector<Format> formatCandidates,
             Flags<FormatFeature> features,
             Flags<ImageUsage> usage,
-            int mipLevels = 1,
+            uint32_t mipLevels = 1,
             int arrayLevels = 1,
             ImageTiling tiling = ImageTiling::Optimal,
             ImageLayout initialLayout = ImageLayout::Undefined,
@@ -58,31 +46,18 @@ namespace vg
             SharingMode sharingMode = SharingMode::Exclusive);
 
         Image(
-            uint32_t width,
-            uint32_t height,
+            std::vector<uint32_t> extend,
             std::vector<Format> formatCandidates,
             Flags<FormatFeature> features,
             Flags<ImageUsage> usage,
-            int mipLevels = 1,
-            int arrayLevels = 1,
+            uint32_t mipLevels,
+            int arrayLevels,
+            int samples,
             ImageTiling tiling = ImageTiling::Optimal,
             ImageLayout initialLayout = ImageLayout::Undefined,
-            int samples = 1,
-            SharingMode sharingMode = SharingMode::Exclusive);
-
-        Image(
-            uint32_t width,
-            uint32_t height,
-            uint32_t depth,
-            std::vector<Format> formatCandidates,
-            Flags<FormatFeature> features,
-            Flags<ImageUsage> usage,
-            int mipLevels = 1,
-            int arrayLevels = 1,
-            ImageTiling tiling = ImageTiling::Optimal,
-            ImageLayout initialLayout = ImageLayout::Undefined,
-            int samples = 1,
-            SharingMode sharingMode = SharingMode::Exclusive);
+            SharingMode sharingMode = SharingMode::Exclusive)
+            :Image(extend, formatCandidates, features, usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
+        {}
 
         Image();
         Image(Image&& other) noexcept;

@@ -26,6 +26,7 @@
 #include "Window.h"
 #include "DescriptorPool.h"
 #include "ImageView.h"
+#include "FormatInfo.h"
 #include "Sampler.h"
 #include "CmdPool.h"
 #include "ComputePipeline.h"
@@ -104,12 +105,6 @@ struct UniformBufferObject
 
 int main()
 {
-    // Note: Swapchain constructor options.
-    // Note: Better image and attachment constructor with msaaSamples.
-    // Note: Better staging buffer uploading.
-    // Note: Better image uploading.
-    // Note: Maybe resize images when swapchain resizes.
-
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Vulkan", nullptr, nullptr);
@@ -137,8 +132,8 @@ int main()
     Surface surface(windowSurface, { Format::BGRA8SRGB, ColorSpace::SRGBNL });
     Swapchain swapchain(surface, 2, w, h);
 
-    Image colorImage(swapchain.GetWidth(), swapchain.GetHeight(), surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
-    Image depthImage(swapchain.GetWidth(), swapchain.GetHeight(), { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+    Image colorImage({ swapchain.GetWidth(), swapchain.GetHeight() }, surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, msaaSampleCount);
+    Image depthImage({ swapchain.GetWidth(), swapchain.GetHeight() }, { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment }, 1, 1, msaaSampleCount);
     Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
     ImageView colorImageView(colorImage, { ImageAspect::Color });
     ImageView depthImageView(depthImage, { ImageAspect::Depth });
@@ -150,8 +145,8 @@ int main()
     Shader fragmentParticle(ShaderStage::Fragment, "resources/shaders/particle.frag.spv");
     RenderPass renderPass(
         {
-            Attachment(surface.GetFormat(), ImageLayout::ColorAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
-            Attachment(depthImage.GetFormat(), ImageLayout::DepthStencilAttachmentOptimal,ImageLayout::Undefined,LoadOp::Clear,StoreOp::Store,LoadOp::DontCare,StoreOp::DontCare,msaaSampleCount),
+            Attachment(surface.GetFormat(), msaaSampleCount,ImageLayout::ColorAttachmentOptimal),
+            Attachment(depthImage.GetFormat(), msaaSampleCount,ImageLayout::DepthStencilAttachmentOptimal),
             Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
         {
@@ -210,10 +205,8 @@ int main()
         // Allocate staging buffer in HostVisible memory.
         Buffer stagingBuffer(vertexBuffer.GetSize(), vg::BufferUsage::TransferSrc);
         vg::Allocate({ &stagingBuffer }, { MemoryProperty::HostVisible });
-        char* data = (char*) stagingBuffer.GetMappedMemory();
-        memcpy(data, vertices.data(), sizeof(vertices[0]) * vertices.size());
-        memcpy(data + sizeof(vertices[0]) * vertices.size(), indices.data(), sizeof(indices[0]) * indices.size());
-        stagingBuffer.UnmapMemory();
+        memcpy(stagingBuffer.MapMemory(), vertices.data(), sizeof(vertices[0]) * vertices.size());
+        memcpy(stagingBuffer.MapMemory() + sizeof(vertices[0]) * vertices.size(), indices.data(), sizeof(indices[0]) * indices.size());
 
         // Copy staging data to vertex buffer
         vg::CmdBuffer(generalQueue).Begin().Append(
@@ -228,13 +221,13 @@ int main()
     int texWidth, texHeight, texChannels;
     unsigned char* pixels = stbi_load("resources/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-    Image texImage(texWidth, texHeight, Format::RGBA8SRGB, { ImageUsage::TransferDst,ImageUsage::TransferSrc , ImageUsage::Sampled }, -1);
+    Image texImage({ (uint32_t) texWidth, (uint32_t) texHeight }, Format::RGBA8SRGB, { ImageUsage::TransferDst,ImageUsage::TransferSrc , ImageUsage::Sampled }, -1);
     vg::Allocate(&texImage, { MemoryProperty::DeviceLocal });
     {
         // Upload data to GPU memory
-        Buffer texStagingBuffer(texWidth * texHeight * 4, { BufferUsage::TransferSrc });
+        Buffer texStagingBuffer(texWidth * texHeight * GetFormatResolutions(texImage.GetFormat()) / 8, { BufferUsage::TransferSrc });
         vg::Allocate(&texStagingBuffer, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
-        memcpy(texStagingBuffer.GetMappedMemory(), pixels, texStagingBuffer.GetSize());
+        memcpy(texStagingBuffer.MapMemory(), pixels, texStagingBuffer.GetSize());
         stbi_image_free(pixels);
 
         vg::CmdBuffer imageCommandBuffer(generalQueue);
@@ -299,7 +292,7 @@ int main()
             shaderStorageBuffers[i] = Buffer(sizeof(Particle) * particleCount, { BufferUsage::StorageBuffer, BufferUsage::VertexBuffer, BufferUsage::TransferDst });
         vg::Allocate(shaderStorageBuffers, { MemoryProperty::HostVisible ,MemoryProperty::HostCoherent });
         for (size_t i = 0; i < swapchain.GetImageCount(); i++)
-            memcpy(shaderStorageBuffers[i].GetMappedMemory(), particles.data(), sizeof(Particle) * particleCount);
+            memcpy(shaderStorageBuffers[i].MapMemory(), particles.data(), sizeof(Particle) * particleCount);
     }
 
     Shader computeShader(ShaderStage::Compute, "resources/shaders/shader.comp.spv");
@@ -340,9 +333,9 @@ int main()
         if (recreateFramebuffer)
         {
             std::swap(oldSwapchain, swapchain);
-            swapchain = Swapchain(surface, 2, w, h, Usage::ColorAttachment, PresentMode::Fifo, CompositeAlpha::Opaque, oldSwapchain);
-            colorImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
-            depthImage = Image(swapchain.GetWidth(), swapchain.GetHeight(), depthImage.GetFormat(), { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+            swapchain = Swapchain(surface, 2, w, h, oldSwapchain);
+            colorImage = Image({ swapchain.GetWidth(), swapchain.GetHeight() }, surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
+            depthImage = Image({ swapchain.GetWidth(), swapchain.GetHeight() }, depthImage.GetFormat(), { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
             Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
             colorImageView = ImageView(colorImage, { ImageAspect::Color });
             depthImageView = ImageView(depthImage, { ImageAspect::Depth });
@@ -359,12 +352,12 @@ int main()
             cmd::Dispatch(particleCount / 256, 1, 1)
         ).End().Submit().Await();
         currentDevice = &rendererDevice;
-        memcpy(particleBuffer.GetMappedMemory(), shaderStorageBuffers[imageIndex].GetMappedMemory(), particleBuffer.GetSize());
+        memcpy(particleBuffer.MapMemory(), shaderStorageBuffers[imageIndex].MapMemory(), particleBuffer.GetSize());
 
         ubo.model = glm::rotate(ubo.model, glm::radians(0.3f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.01f, 100.0f); ubo.proj[1][1] *= -1;
-        memcpy(uniformBuffers.GetMappedMemory() + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
+        memcpy(uniformBuffers.MapMemory() + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
         commandBuffer.Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { ClearColor{ 0,0,0,255 },ClearDepthStencil{1.0f,0U},ClearColor{ 0,0,0,255 } }),

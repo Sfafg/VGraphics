@@ -568,6 +568,18 @@ namespace vg
             format(format), samples(samples), loadOp(loadOp), storeOp(storeOp), stencilLoadOp(stencilLoadOp), stencilStoreOp(stencilStoreOp), initialLayout(initialLayout), finalLayout(finalLayout)
         {}
 
+        Attachment(
+            Format format,
+            unsigned int samples,
+            ImageLayout finalLayout,
+            ImageLayout initialLayout = ImageLayout::Undefined,
+            LoadOp loadOp = LoadOp::Clear,
+            StoreOp storeOp = StoreOp::Store,
+            LoadOp stencilLoadOp = LoadOp::DontCare,
+            StoreOp stencilStoreOp = StoreOp::DontCare) :
+            format(format), samples(samples), loadOp(loadOp), storeOp(storeOp), stencilLoadOp(stencilLoadOp), stencilStoreOp(stencilStoreOp), initialLayout(initialLayout), finalLayout(finalLayout)
+        {}
+
 
         VULKAN_NATIVE_CAST_OPERATOR(AttachmentDescription);
     };

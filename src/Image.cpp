@@ -7,21 +7,22 @@
 namespace vg
 {
     Image::Image(
-        uint32_t width,
+        std::vector<uint32_t> extend,
         Format format,
         Flags<ImageUsage> usage,
-        int mipLevels,
+        uint32_t mipLevels,
         int arrayLevels,
         ImageTiling tiling,
         ImageLayout initialLayout,
         int samples,
-        SharingMode sharingMode) : m_format(format), m_tiling(tiling), m_dimensionCount(1), m_dimensions{ width,1,1 }, m_mipLevels(mipLevels)
+        SharingMode sharingMode) : m_format(format), m_tiling(tiling), m_dimensionCount(extend.size()), m_dimensions{ extend[0],(extend.size() < 2 ? 1 : extend[1]), (extend.size() < 3 ? 1 : extend[2]) }, m_mipLevels(mipLevels)
     {
-        if (mipLevels == -1)
-            m_mipLevels = (uint32_t) std::floor(std::log2(width)) + 1;
+        assert(0 < extend.size() && extend.size() < 4);
 
-        vk::ImageCreateInfo imageInfo({}, vk::ImageType::e1D,
-            (vk::Format) format, { width,1,1 },
+        m_mipLevels = std::min(mipLevels, (uint32_t) std::floor(std::log2(std::min({ m_dimensions[0], m_dimensions[1], m_dimensions[2] }))) + 1);
+
+        vk::ImageCreateInfo imageInfo({}, (vk::ImageType) (m_dimensionCount - 1),
+            (vk::Format) format, { m_dimensions[0],m_dimensions[1],m_dimensions[2] },
             m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
             (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
 
@@ -29,95 +30,17 @@ namespace vg
     }
 
     Image::Image(
-        uint32_t width,
-        uint32_t height,
-        Format format,
-        Flags<ImageUsage> usage,
-        int mipLevels,
-        int arrayLevels,
-        ImageTiling tiling,
-        ImageLayout initialLayout,
-        int samples,
-        SharingMode sharingMode) : m_format(format), m_tiling(tiling), m_dimensionCount(2), m_dimensions{ width,height,1 }, m_mipLevels(mipLevels)
-    {
-        if (mipLevels == -1)
-            m_mipLevels = (uint32_t) std::floor(std::log2(width)) + 1;
-
-        vk::ImageCreateInfo imageInfo({}, vk::ImageType::e2D,
-            (vk::Format) format, { width,height,1 },
-            m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
-            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
-
-        m_handle = ((DeviceHandle) *currentDevice).createImage(imageInfo);
-    }
-
-    Image::Image(
-        uint32_t width,
-        uint32_t height,
-        uint32_t depth,
-        Format format,
-        Flags<ImageUsage> usage,
-        int mipLevels,
-        int arrayLevels,
-        ImageTiling tiling,
-        ImageLayout initialLayout,
-        int samples,
-        SharingMode sharingMode) : m_format(format), m_tiling(tiling), m_dimensionCount(3), m_dimensions{ width,height,depth }, m_mipLevels(mipLevels)
-    {
-        if (mipLevels == -1)
-            m_mipLevels = (uint32_t) std::floor(std::log2(width)) + 1;
-
-        vk::ImageCreateInfo imageInfo({}, vk::ImageType::e3D,
-            (vk::Format) format, { width,height,depth },
-            m_mipLevels, arrayLevels, (vk::SampleCountFlagBits) samples,
-            (vk::ImageTiling) tiling, (vk::ImageUsageFlags) usage, (vk::SharingMode) sharingMode, {}, (vk::ImageLayout) initialLayout);
-
-        m_handle = ((DeviceHandle) *currentDevice).createImage(imageInfo);
-    }
-
-    Image::Image(
-        uint32_t width,
+        std::vector<uint32_t> extend,
         std::vector<Format> formatCandidates,
         Flags<FormatFeature> features,
         Flags<ImageUsage> usage,
-        int mipLevels,
+        uint32_t mipLevels,
         int arrayLevels,
         ImageTiling tiling,
         ImageLayout initialLayout,
         int samples,
         SharingMode sharingMode)
-        : Image(width, FindSupportedFormat(formatCandidates, tiling, features), usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
-    {}
-
-    Image::Image(
-        uint32_t width,
-        uint32_t height,
-        std::vector<Format> formatCandidates,
-        Flags<FormatFeature> features,
-        Flags<ImageUsage> usage,
-        int mipLevels,
-        int arrayLevels,
-        ImageTiling tiling,
-        ImageLayout initialLayout,
-        int samples,
-        SharingMode sharingMode)
-        : Image(width, height, FindSupportedFormat(formatCandidates, tiling, features), usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
-    {}
-
-    Image::Image(
-        uint32_t width,
-        uint32_t height,
-        uint32_t depth,
-        std::vector<Format> formatCandidates,
-        Flags<FormatFeature> features,
-        Flags<ImageUsage> usage,
-        int mipLevels,
-        int arrayLevels,
-        ImageTiling tiling,
-        ImageLayout initialLayout,
-        int samples,
-        SharingMode sharingMode)
-        : Image(width, height, depth, FindSupportedFormat(formatCandidates, tiling, features), usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
+        : Image(extend, FindSupportedFormat(formatCandidates, tiling, features), usage, mipLevels, arrayLevels, tiling, initialLayout, samples, sharingMode)
     {}
 
     Image::Image() :m_handle(nullptr), m_format(Format::Undefined), m_tiling(ImageTiling::Linear), m_dimensionCount(0), m_dimensions{ 0,0,0 }, m_offset(0), m_size(0), m_memory(nullptr) {}

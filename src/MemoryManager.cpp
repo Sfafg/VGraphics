@@ -127,6 +127,9 @@ namespace vg
         m_referanceCount--;
         if (m_referanceCount <= 0)
         {
+            if (m_mappedMemory != nullptr)
+                UnmapMemory();
+
             ((DeviceHandle) *currentDevice).freeMemory(m_handle);
             delete this;
         }

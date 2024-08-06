@@ -135,13 +135,13 @@ namespace vg
         }
     }
 
-    void* MemoryBlock::GetMappedMemory()
+    char* MemoryBlock::GetMappedMemory()
     {
         if (m_mappedMemory != nullptr)
-            return m_mappedMemory;
+            return (char*) m_mappedMemory;
 
         auto result = ((DeviceHandle) *currentDevice).mapMemory(m_handle, 0, m_totalSize, {}, &m_mappedMemory);
-        return m_mappedMemory;
+        return (char*) m_mappedMemory;
     }
 
     void MemoryBlock::UnmapMemory()

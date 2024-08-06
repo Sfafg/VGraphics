@@ -53,7 +53,7 @@ namespace vg
         return m_memory;
     }
 
-    void* Buffer::MapMemory()
+    char* Buffer::MapMemory()
     {
         return GetMemory()->GetMappedMemory() + m_offset;
     }

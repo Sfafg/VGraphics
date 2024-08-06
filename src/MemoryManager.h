@@ -33,7 +33,7 @@ namespace vg
 
     private:
         void Dereferance();
-        void* GetMappedMemory();
+        char* GetMappedMemory();
         void UnmapMemory();
         int m_referanceCount;
         DeviceMemoryHandle m_handle;

@@ -69,7 +69,7 @@ void main()
 
     vec2 grad = Grad(particleIn.position*10);
 
-    particlesOut[index].velocity = particleIn.velocity * 0.999 + grad * 0.0001;
+    particlesOut[index].velocity = normalize(mix(particleIn.velocity, grad,0.001)) * 0.001;
     particlesOut[index].color = vec4(1);
 
     if(particlesOut[index].position.x < -1)

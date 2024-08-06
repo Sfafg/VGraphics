@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.hpp>
+#include <iostream>
 #include "Swapchain.h"
 namespace vg
 {
@@ -88,7 +89,8 @@ namespace vg
         {
             ((DeviceHandle) *currentDevice).destroyImageView(imageView);
         }
-        ((DeviceHandle) *currentDevice).destroySwapchainKHR(m_handle);
+        vkDestroySwapchainKHR((DeviceHandle) *currentDevice, m_handle, nullptr);
+        // ((DeviceHandle) *currentDevice).destroySwapchainKHR(m_handle);
         m_handle = nullptr;
     }
 
@@ -129,11 +131,11 @@ namespace vg
         return m_imageViews;
     }
 
-    uint32_t Swapchain::GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence, uint64_t timeout)
+    std::tuple<uint32_t, Result> Swapchain::GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence, uint64_t timeout)
     {
         uint32_t index;
-        auto result = ((DeviceHandle) *currentDevice).acquireNextImageKHR(vk::SwapchainKHR((SwapchainHandle) m_handle), timeout, (SemaphoreHandle) semaphore, (FenceHandle) fence, &index);
+        vk::Result result = ((DeviceHandle) *currentDevice).acquireNextImageKHR(vk::SwapchainKHR((SwapchainHandle) m_handle), timeout, (SemaphoreHandle) semaphore, (FenceHandle) fence, &index);
 
-        return index;
-    }
+        return { index, (Result) result };
+    };
 }

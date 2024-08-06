@@ -77,9 +77,9 @@ namespace vg
          * @param timeout in nanoseconds
          * @param semaphore to be signalled
          * @param fence to be signalled
-         * @return uint32_t
+         * @return tuple of uint32_t index and Result
          */
-        uint32_t GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(nullptr), uint64_t timeout = UINT64_MAX);
+        std::tuple<uint32_t, Result> GetNextImageIndex(const Semaphore& semaphore, const  Fence& fence = Fence(nullptr), uint64_t timeout = UINT64_MAX);
 
     private:
         SwapchainHandle m_handle;

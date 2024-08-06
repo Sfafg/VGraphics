@@ -34,7 +34,6 @@
 
 using namespace std::chrono_literals;
 using namespace vg;
-bool recreateFramebuffer = false;
 
 struct Vertex
 {
@@ -102,6 +101,8 @@ struct UniformBufferObject
     glm::mat4 view;
     glm::mat4 proj;
 };
+
+bool recreateFramebuffer = false;
 
 int main()
 {
@@ -275,7 +276,7 @@ int main()
     {
         // Initialize particles
         std::default_random_engine rndEngine((unsigned) time(nullptr));
-        std::uniform_real_distribution<float> rndDist(-0.2f, 0.2f);
+        std::uniform_real_distribution<float> rndDist(-1.0f, 1.0f);
 
         // Initial particle positions on a circle
         std::vector<Particle> particles(particleCount);
@@ -317,21 +318,33 @@ int main()
     Buffer particleBuffer(sizeof(Particle) * particleCount, { BufferUsage::VertexBuffer });
     vg::Allocate(&particleBuffer, { MemoryProperty::HostVisible, MemoryProperty::HostCoherent });
 
-    CmdBuffer commandBuffer(generalQueue);
-    Semaphore renderFinishedSemaphore, imageAvailableSemaphore;
-    Fence inFlightFence(true);
+    std::vector<CmdBuffer> commandBuffer(swapchain.GetImageCount());
+    std::vector<Semaphore> renderFinishedSemaphore(swapchain.GetImageCount()), imageAvailableSemaphore(swapchain.GetImageCount());
+    std::vector<Fence> inFlightFence(swapchain.GetImageCount());
+    for (int i = 0; i < swapchain.GetImageCount(); i++)
+    {
+        commandBuffer[i] = CmdBuffer(generalQueue);
+        renderFinishedSemaphore[i] = Semaphore();
+        imageAvailableSemaphore[i] = Semaphore();
+        inFlightFence[i] = Fence(true);
+    }
+
     UniformBufferObject ubo{ glm::mat4(1.0f) };
+    uint32_t currentFrame = 0;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
         if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
 
-        Fence::AwaitAll({ inFlightFence }, true);
+        inFlightFence[currentFrame].Await(true);
 
         // Swapchain resize.
         Swapchain oldSwapchain;
         if (recreateFramebuffer)
         {
+            currentDevice->WaitUntilIdle();
+            recreateFramebuffer = false;
+            glfwGetFramebufferSize(window, &w, &h);
             std::swap(oldSwapchain, swapchain);
             swapchain = Swapchain(surface, 2, w, h, oldSwapchain);
             colorImage = Image({ swapchain.GetWidth(), swapchain.GetHeight() }, surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
@@ -343,7 +356,7 @@ int main()
                 swapChainFramebuffers[i] = Framebuffer(renderPass, { colorImageView,depthImageView,swapchain.GetImageViews()[i] }, swapchain.GetWidth(), swapchain.GetHeight());
         }
 
-        uint32_t imageIndex = swapchain.GetNextImageIndex(imageAvailableSemaphore);
+        auto [imageIndex, result] = swapchain.GetNextImageIndex(imageAvailableSemaphore[currentFrame]);
 
         currentDevice = &computeDevice;
         computeCmdBuffer.Begin({}).Append(
@@ -359,7 +372,7 @@ int main()
         ubo.proj = glm::perspective(glm::radians(45.0f), swapchain.GetWidth() / (float) swapchain.GetHeight(), 0.01f, 100.0f); ubo.proj[1][1] *= -1;
         memcpy(uniformBuffers.MapMemory() + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
-        commandBuffer.Clear().Begin().Append(
+        commandBuffer[currentFrame].Clear().Begin().Append(
             cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { ClearColor{ 0,0,0,255 },ClearDepthStencil{1.0f,0U},ClearColor{ 0,0,0,255 } }),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], PipelineBindPoint::Graphics, 0, { descriptorSets[imageIndex] }),
@@ -376,9 +389,11 @@ int main()
             cmd::BindVertexBuffer(particleBuffer, 0),
             cmd::Draw(particleCount),
             cmd::EndRenderpass()
-        ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore} }, { renderFinishedSemaphore }, inFlightFence);
-        generalQueue.Present({ renderFinishedSemaphore }, { swapchain }, { imageIndex });
+        ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore[currentFrame]} }, { renderFinishedSemaphore[currentFrame] }, inFlightFence[currentFrame]);
+        generalQueue.Present({ renderFinishedSemaphore[currentFrame] }, { swapchain }, { imageIndex });
+
+        currentFrame = (currentFrame + 1) % swapchain.GetImageCount();
     }
-    Fence::AwaitAll({ inFlightFence });
+    Fence::AwaitAll(inFlightFence);
     glfwTerminate();
 }

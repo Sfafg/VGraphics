@@ -45,9 +45,9 @@ namespace vg
          * @param waitSemaphores Semaphores to await before presenting
          * @param swapchains array of Swapchains used for rendering
          * @param imageIndices indices of images from Swapchains
-         *
+         * @return Result
          */
-        void Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices);
+        Result Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices);
 
         void Submit(const std::vector<class SubmitInfo>& submits, const class Fence& fence);
 

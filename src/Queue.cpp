@@ -65,9 +65,10 @@ namespace vg
         return m_commandPool;
     }
 
-    void Queue::Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices)
+    Result Queue::Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices)
     {
-        auto result = m_handle.presentKHR({ *(std::vector<vk::Semaphore>*) & waitSemaphores,*(std::vector<vk::SwapchainKHR>*) & swapchains,imageIndices });
+        vk::PresentInfoKHR info(*(std::vector<vk::Semaphore>*) & waitSemaphores, *(std::vector<vk::SwapchainKHR>*) & swapchains, imageIndices);
+        return (Result) vkQueuePresentKHR(m_handle, (VkPresentInfoKHR*) &info);
     }
 
     void Queue::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)

@@ -392,7 +392,7 @@ namespace vg
             return *this;
         }
 
-        DeviceFeatures& operator&(const DeviceFeatures& rhs) const
+        DeviceFeatures operator&(const DeviceFeatures& rhs) const
         {
             DeviceFeatures features(*this);
             return features.operator&=(rhs);
@@ -466,6 +466,7 @@ namespace vg
         Format format;
         ColorSpace colorSpace;
 
+        SurfaceFormat() :format(Format::Undefined), colorSpace(ColorSpace::SRGBNL) {}
         SurfaceFormat(Format format, ColorSpace colorSpace) : format(format), colorSpace(colorSpace) {}
     };
 
@@ -534,6 +535,8 @@ namespace vg
         Flags<Access> dstAccessMask;
         Flags<Dependency> dependencyFlags;
 
+        SubpassDependency() {}
+
         SubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass, Flags<PipelineStage> srcStageMask, Flags<PipelineStage> dstStageMask, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, Flags<Dependency> dependencyFlags) :
             srcSubpass(srcSubpass), dstSubpass(dstSubpass), srcStageMask(srcStageMask), dstStageMask(dstStageMask), srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), dependencyFlags(dependencyFlags)
         {}
@@ -555,6 +558,17 @@ namespace vg
         StoreOp stencilStoreOp;
         ImageLayout initialLayout;
         ImageLayout finalLayout;
+
+        Attachment()
+            :format(Format::Undefined),
+            samples(1),
+            loadOp(LoadOp::DontCare),
+            storeOp(StoreOp::DontCare),
+            stencilLoadOp(LoadOp::DontCare),
+            stencilStoreOp(StoreOp::DontCare),
+            initialLayout(ImageLayout::Undefined),
+            finalLayout(ImageLayout::Undefined)
+        {}
 
         Attachment(
             Format format,
@@ -661,6 +675,8 @@ namespace vg
         uint32_t vertexAttributesCount = 0;
         const VertexAttribute* vertexAttributes = nullptr;
 
+        VertexLayout() {}
+
         VertexLayout(const std::vector<VertexBinding>& vertexDescriptions, const std::vector<VertexAttribute>& vertexAttributes)
             : vertexDescriptionCount(vertexDescriptions.size()), vertexDescritpions(new VertexBinding[vertexDescriptionCount]), vertexAttributesCount(vertexAttributes.size()), vertexAttributes(new VertexAttribute[vertexAttributesCount])
         {
@@ -668,12 +684,10 @@ namespace vg
             memcpy((void*) this->vertexAttributes, &vertexAttributes[0], sizeof(VertexAttribute) * vertexAttributesCount);
         }
 
-        VertexLayout(VertexLayout&& rhs)
+        VertexLayout(VertexLayout&& rhs) noexcept
+            :VertexLayout()
         {
-            std::swap(vertexDescriptionCount, rhs.vertexDescriptionCount);
-            std::swap(vertexDescritpions, rhs.vertexDescritpions);
-            std::swap(vertexAttributesCount, rhs.vertexAttributesCount);
-            std::swap(vertexAttributes, rhs.vertexAttributes);
+            *this = std::move(rhs);
         }
         VertexLayout& operator=(VertexLayout&& rhs)
         {
@@ -725,6 +739,9 @@ namespace vg
     public:
         Primitive primitive = Primitive::Points;
         uint32_t primitiveRestart = 0;
+
+        InputAssembly() {}
+
         InputAssembly(Primitive primitive, bool primitiveRestart = false) :primitive(primitive), primitiveRestart(primitiveRestart) {}
 
 
@@ -754,20 +771,21 @@ namespace vg
         Viewport* viewports = nullptr;
         uint32_t scissorCount = 0;
         Scissor* scissors = nullptr;
+
         ViewportState() :viewportCount(0), viewports(nullptr), scissorCount(0), scissors(nullptr) {}
+
         ViewportState(Viewport viewport, Scissor scissor) :viewportCount(1), viewports(new Viewport(viewport)), scissorCount(1), scissors(new Scissor(scissor)) {}
-        ViewportState(std::vector<Viewport> viewports, std::vector<Scissor> scissors) :viewportCount(viewports.size()), viewports(new Viewport[viewportCount]), scissorCount(scissors.size()), scissors(new Scissor[scissorCount])
+
+        ViewportState(const std::vector<Viewport>& viewports, const std::vector<Scissor>& scissors) :viewportCount(viewports.size()), viewports(new Viewport[viewportCount]), scissorCount(scissors.size()), scissors(new Scissor[scissorCount])
         {
             memcpy((void*) this->viewports, &viewports[0], sizeof(Viewport) * viewportCount);
             memcpy((void*) this->scissors, &scissors[0], sizeof(Scissor) * scissorCount);
         }
 
         ViewportState(ViewportState&& rhs)
+            :ViewportState()
         {
-            std::swap(viewportCount, rhs.viewportCount);
-            std::swap(viewports, rhs.viewports);
-            std::swap(scissorCount, rhs.scissorCount);
-            std::swap(scissors, rhs.scissors);
+            *this = std::move(rhs);
         }
 
         ViewportState& operator=(ViewportState&& rhs)
@@ -815,6 +833,7 @@ namespace vg
         float constantFactor = 0;
         float clamp = 0;
         float slopeFactor = 0;
+
         DepthBias(bool enable = false, float constantFactor = 0, float clamp = 0, float slopeFactor = 0) :enable(enable), constantFactor(constantFactor), clamp(clamp), slopeFactor(slopeFactor) {}
     };
     struct Rasterizer
@@ -859,6 +878,8 @@ namespace vg
         uint32_t alphaToCoverageEnable = 0;
         uint32_t alphaToOneEnable = 0;
 
+        Multisampling() {}
+
         Multisampling(uint32_t samples, bool enableSampleShading = false, float minSampleShading = 0, void* sampleMask = nullptr, bool enableAlphaToCoverage = false, bool enableAlphaToOne = false) :
             rasterizationSamples(samples), sampleShadingEnable(enableSampleShading),
             minSampleShading(minSampleShading), sampleMask(sampleMask),
@@ -879,6 +900,7 @@ namespace vg
         uint32_t reference = 0;
 
         StencilOpState() {}
+
         StencilOpState(StencilOp failOp, StencilOp passOp, StencilOp depthFailOp, CompareOp compareOp, uint32_t compareMask, uint32_t writeMask, uint32_t reference)
             : failOp(failOp), passOp(passOp), depthFailOp(depthFailOp), compareOp(compareOp), compareMask(compareMask), writeMask(writeMask), reference(reference)
         {}
@@ -918,26 +940,25 @@ namespace vg
         const uint32_t reserved_3 = 0;
 
     public:
-        uint32_t enableLogicOp = 0;
-        LogicOp logicOp = LogicOp::Clear;
-        uint32_t attachmentCount = 0;
+        uint32_t enableLogicOp;
+        LogicOp logicOp;
+        uint32_t attachmentCount;
         ColorBlend* attachments = nullptr;
         float blendConsts[4];
+
+        ColorBlending()
+            :enableLogicOp(0), logicOp(LogicOp::Clear), blendConsts{ 0,0,0,0 }, attachmentCount(0), attachments(nullptr)
+        {}
 
         ColorBlending(bool enableLogicOp, LogicOp logicOp, const float(&blendConstants)[4], const std::vector<ColorBlend>& colorBlending = {})
             :enableLogicOp(enableLogicOp), logicOp(logicOp), blendConsts{ blendConstants[0],blendConstants[1],blendConstants[2],blendConstants[3] }, attachmentCount(colorBlending.size()), attachments(new ColorBlend[attachmentCount])
         {
-            memcpy((void*) this->attachments, &attachments[0], sizeof(ColorBlend) * attachmentCount);
+            memcpy((void*) this->attachments, &colorBlending[0], sizeof(ColorBlend) * attachmentCount);
         }
 
         ColorBlending(ColorBlending&& rhs)
-        {
-            std::swap(enableLogicOp, rhs.enableLogicOp);
-            std::swap(logicOp, rhs.logicOp);
-            std::swap(attachmentCount, rhs.attachmentCount);
-            std::swap(attachments, rhs.attachments);
-            std::swap(blendConsts, rhs.blendConsts);
-        }
+            :ColorBlending()
+        {}
 
         ColorBlending& operator=(ColorBlending&& rhs)
         {
@@ -988,6 +1009,10 @@ namespace vg
         Flags<ShaderStage> stageFlags;
         const void* pImmutableSamplers = nullptr;
 
+        DescriptorSetLayoutBinding()
+            :binding(0), descriptorType(DescriptorType::UniformBuffer), stageFlags()
+        {}
+
         DescriptorSetLayoutBinding(uint32_t binding, DescriptorType descriptorType, uint32_t descriptorCount, Flags<ShaderStage> stageFlags) :binding(binding), descriptorType(descriptorType), descriptorCount(descriptorCount), stageFlags(stageFlags)
         {}
 
@@ -1003,6 +1028,8 @@ namespace vg
         uint32_t baseArrayLayer;
         uint32_t layerCount;
 
+        ImageSubresourceLayers() :aspectMask(), mipLevel(0), baseArrayLayer(0), layerCount(0) {}
+
         ImageSubresourceLayers(Flags<ImageAspect> aspectMask, uint32_t mipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
             :aspectMask(aspectMask), mipLevel(mipLevel), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
         {}
@@ -1016,6 +1043,8 @@ namespace vg
         uint64_t srcOffset;
         uint64_t dstOffset;
         uint64_t size;
+
+        BufferCopyRegion() :srcOffset(0), dstOffset(0), size(0) {}
 
         BufferCopyRegion(uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0) :srcOffset(srcOffset), dstOffset(dstOffset), size(size) {}
 
@@ -1081,14 +1110,17 @@ namespace vg
     };
     struct ClearDepthStencil
     {
-
         float depthClearValue;
         uint32_t stencilClearValue;
+
+        ClearDepthStencil() :depthClearValue(0), stencilClearValue(0) {}
+
 
         /// @brief Create a clear structure for depth and/or stencil attachments or images.
         /// @param depthClearValue Depth Clear Value
         /// @param stencilClearValue Stencil Clear Value 
         ClearDepthStencil(float depthClearValue, uint32_t stencilClearValue) :depthClearValue(depthClearValue), stencilClearValue(stencilClearValue) {}
+
         operator ClearValue();
     };
     union ClearValue
@@ -1114,6 +1146,9 @@ namespace vg
         ImageSubresourceLayers dstSubresource;
         Point3D<uint32_t> dstOffset;
         Point3D<uint32_t> extent;
+
+        ImageCopy()
+        {}
 
         ImageCopy(
             ImageSubresourceLayers srcSubresource,
@@ -1165,6 +1200,8 @@ namespace vg
         ImageSubresourceLayers dstSubresource;
         Point3D<int32_t> dstOffsets[2];
 
+        ImageBlit() :srcOffsets{ Point3D<int32_t>(), Point3D<int32_t>() }, dstOffsets{ Point3D<int32_t>(),Point3D<int32_t>() } {}
+
         ImageBlit(
             ImageSubresourceLayers srcSubresource,
             const int32_t(&srcOffsets)[2],
@@ -1213,6 +1250,9 @@ namespace vg
         Point3D<uint32_t> imageOffset;
         Point3D<uint32_t> imageExtend;
 
+        BufferImageCopy() :bufferOffset(0), bufferRowLength(0), bufferImageHeight(0)
+        {}
+
         BufferImageCopy(uint64_t bufferOffset, uint32_t bufferRowLength, uint32_t bufferImageHeight, ImageSubresourceLayers imageSubresource, uint32_t imageExtend, uint32_t imageOffset = 0U)
             :bufferOffset(bufferOffset), bufferRowLength(bufferRowLength), bufferImageHeight(bufferImageHeight), imageSubresource(imageSubresource), imageOffset{ imageOffset,0U, 0U }, imageExtend{ imageExtend,1U, 1U }
         {}
@@ -1246,6 +1286,8 @@ namespace vg
         DescriptorType descriptorType;
         uint32_t descriptorCount;
 
+        DescriptorPoolSize() :descriptorType(DescriptorType::UniformBuffer), descriptorCount(0) {}
+
         DescriptorPoolSize(DescriptorType descriptorType, uint32_t descriptorCount) :descriptorType(descriptorType), descriptorCount(descriptorCount) {}
 
 
@@ -1259,6 +1301,10 @@ namespace vg
         uint32_t levelCount;
         uint32_t baseArrayLayer;
         uint32_t layerCount;
+
+        ImageSubresource()
+            : aspectMask(ImageAspect::None), baseMipLevel(0), levelCount(0), baseArrayLayer(0), layerCount(0)
+        {}
 
         ImageSubresource(ImageAspect aspectMask, uint32_t baseMipLevel = 0, uint32_t levelCount = 1, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1)
             : aspectMask(aspectMask), baseMipLevel(baseMipLevel), levelCount(levelCount), baseArrayLayer(baseArrayLayer), layerCount(layerCount)
@@ -1282,6 +1328,10 @@ namespace vg
         BufferHandle buffer;
         uint64_t offset;
         uint64_t size;
+
+        BufferMemoryBarrier()
+            :srcQueueFamilyIndex(0), dstQueueFamilyIndex(0), offset(0), size(0)
+        {}
 
         BufferMemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, BufferHandle buffer, uint64_t offset, uint64_t size)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), buffer(buffer), offset(offset), size(size)
@@ -1312,6 +1362,10 @@ namespace vg
         uint32_t dstQueueFamilyIndex;
         ImageHandle image;
         ImageSubresource subresourceRange;
+
+        ImageMemoryBarrier()
+            :oldLayout(ImageLayout::Undefined), newLayout(ImageLayout::Undefined), srcQueueFamilyIndex(0), dstQueueFamilyIndex(0)
+        {}
 
         ImageMemoryBarrier(ImageHandle image, ImageLayout oldLayout, ImageLayout newLayout, Flags<Access> srcAccessMask, Flags<Access> dstAccessMask, const Queue& srcQueue, const Queue& dstQueue, ImageSubresource subresourceRange)
             :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask), oldLayout(oldLayout), newLayout(newLayout), srcQueueFamilyIndex(srcQueue.GetIndex()), dstQueueFamilyIndex(dstQueue.GetIndex()), image(image), subresourceRange(subresourceRange)
@@ -1347,6 +1401,7 @@ namespace vg
         Flags<Access> srcAccessMask;
         Flags<Access> dstAccessMask;
 
+        MemoryBarrier() {}
         MemoryBarrier(Flags<Access> srcAccessMask, Flags<Access> dstAccessMask) :srcAccessMask(srcAccessMask), dstAccessMask(dstAccessMask) {}
 
 
@@ -1381,15 +1436,10 @@ namespace vg
             memcpy((void*) this->signalSemaphores, &signalSemaphores[0], sizeof(SemaphoreHandle) * signalSemaphoreCount);
         }
 
-        SubmitInfo(SubmitInfo&& rhs)
+        SubmitInfo(SubmitInfo&& rhs) noexcept
+            :SubmitInfo()
         {
-            std::swap(waitSemaphoreCount, rhs.waitSemaphoreCount);
-            std::swap(waitSemaphores, rhs.waitSemaphores);
-            std::swap(waitDstStageMask, rhs.waitDstStageMask);
-            std::swap(cmdBufferCount, rhs.cmdBufferCount);
-            std::swap(cmdBuffers, rhs.cmdBuffers);
-            std::swap(signalSemaphoreCount, rhs.signalSemaphoreCount);
-            std::swap(signalSemaphores, rhs.signalSemaphores);
+            *this = std::move(rhs);
         }
 
         SubmitInfo& operator=(SubmitInfo&& rhs)

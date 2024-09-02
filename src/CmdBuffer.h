@@ -27,12 +27,28 @@ namespace vg
             void operator ()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
         };
-        struct BindVertexBuffer : Command
+        struct BindVertexBuffers : Command
         {
-            BindVertexBuffer(BufferHandle buffers, uint64_t offset) :buffers(buffers), offset(offset) {}
+            BindVertexBuffers(const std::vector<Buffer>& buffers, std::vector<uint64_t> offset = {}, uint32_t firstBinding = 0) :buffers(buffers.size()), offset(offset), firstBinding(firstBinding)
+            {
+                for (int i = 0; i < buffers.size(); i++)
+                {
+                    this->buffers[i] = buffers[i];
+                    if (offset.size() == 0)
+                        this->offset.push_back(0);
+                }
+            }
+            BindVertexBuffers(const std::vector<BufferHandle>& buffers, std::vector<uint64_t> offset = {}, uint32_t firstBinding = 0) :buffers(buffers), offset(offset), firstBinding(firstBinding)
+            {
+                if (offset.size() == 0)
+                    for (int i = 0; i < buffers.size(); i++)
+                        this->offset.push_back(0);
+            }
+            BindVertexBuffers(BufferHandle buffers, uint64_t offset, uint32_t firstBinding = 0) :buffers{ buffers }, offset{ offset }, firstBinding(firstBinding) {}
 
-            BufferHandle buffers;
-            uint64_t offset;
+            std::vector<BufferHandle> buffers;
+            std::vector<uint64_t> offset;
+            uint32_t firstBinding;
 
         private:
             void operator ()(CmdBuffer& commandBuffer) const;
@@ -65,8 +81,8 @@ namespace vg
         };
         struct BeginRenderpass : Command
         {
-            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, Point2D<int32_t> offset, Point2D<uint32_t> extend, const std::vector<ClearValue>& clearValues)
-                : renderpass(renderpass), framebuffer(framebuffer), offset(offset), extend(extend), clearValues(clearValues)
+            BeginRenderpass(const RenderPass& renderpass, const Framebuffer& framebuffer, Point2D<int32_t> offset, Point2D<uint32_t> extend, const std::vector<ClearValue>& clearValues, SubpassContents subpassContents)
+                : renderpass(renderpass), framebuffer(framebuffer), offset(offset), extend(extend), clearValues(clearValues), subpassContents(subpassContents)
             {}
 
             RenderPassHandle renderpass;
@@ -74,6 +90,7 @@ namespace vg
             Point2D<int32_t> offset;
             Point2D<uint32_t> extend;
             std::vector<ClearValue> clearValues;
+            SubpassContents subpassContents;
 
         private:
             void operator ()(CmdBuffer& commandBuffer) const;
@@ -612,10 +629,11 @@ namespace vg
         // };
         struct NextSubpass : Command
         {
-            NextSubpass() {}
+            NextSubpass(SubpassContents subpassContents) :subpassContents(subpassContents) {}
         private:
             void operator()(CmdBuffer& commandBuffer) const;
             friend CmdBuffer;
+            SubpassContents subpassContents;
         };
     }
 
@@ -673,7 +691,7 @@ namespace vg
          * @param commands Array of commands from cmd:: namespace
          */
         template<Commands... T>
-        CmdBuffer& Append(const T... commands) { (..., _Append(commands)); return *this; }
+        CmdBuffer& Append(const T&... commands) { (..., _Append(std::move(commands))); return *this; }
 
         /**
          *@brief End appending to command buffer
@@ -687,7 +705,7 @@ namespace vg
         * @param submits Synchronization info
         * @param fence Fence to be signaled upon all submits finish
         */
-        CmdBuffer& Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores, const Fence& fence);
+        CmdBuffer& Submit(Span<const std::tuple<Flags<PipelineStage>, SemaphoreHandle>> waitStages, Span<const SemaphoreHandle> signalSemaphores, const Fence& fence);
         /**
          *@brief Submit command buffer and all relevant data
          *
@@ -695,7 +713,7 @@ namespace vg
          *@return Fence to be signaled upon all submits finish
          */
 
-        Fence Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages = {}, const std::vector<SemaphoreHandle>& signalSemaphores = {})
+        Fence Submit(Span<const std::tuple<Flags<PipelineStage>, SemaphoreHandle>> waitStages = {}, Span<const SemaphoreHandle> signalSemaphores = {})
         {
             Fence fence;
             Submit(waitStages, signalSemaphores, fence);

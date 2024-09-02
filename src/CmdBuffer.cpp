@@ -10,9 +10,9 @@ namespace vg
             CmdBufferHandle(commandBuffer).bindPipeline((vk::PipelineBindPoint) bindPoint, pipeline);
         }
 
-        void BindVertexBuffer::operator()(CmdBuffer& commandBuffer) const
+        void BindVertexBuffers::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).bindVertexBuffers(0, 1, &buffers, &offset);
+            CmdBufferHandle(commandBuffer).bindVertexBuffers(firstBinding, buffers, offset);
         }
 
         void BindIndexBuffer::operator()(CmdBuffer& commandBuffer) const
@@ -28,7 +28,7 @@ namespace vg
         void BeginRenderpass::operator()(CmdBuffer& commandBuffer) const
         {
             auto info = vk::RenderPassBeginInfo(renderpass, framebuffer, vk::Rect2D(offset, *(vk::Extent2D*) &extend), *(std::vector<vk::ClearValue>*) & clearValues);
-            CmdBufferHandle(commandBuffer).beginRenderPass(info, vk::SubpassContents::eInline);
+            CmdBufferHandle(commandBuffer).beginRenderPass(info, (vk::SubpassContents) subpassContents);
         }
 
         void SetViewport::operator()(CmdBuffer& commandBuffer) const
@@ -167,7 +167,7 @@ namespace vg
         }
         void NextSubpass::operator()(CmdBuffer& commandBuffer) const
         {
-            CmdBufferHandle(commandBuffer).nextSubpass({ vk::SubpassContents::eInline });
+            CmdBufferHandle(commandBuffer).nextSubpass((vk::SubpassContents) subpassContents);
         }
 
     }
@@ -213,21 +213,22 @@ namespace vg
     CmdBuffer::CmdBuffer() :m_handle(nullptr), m_commandPool(nullptr) {}
 
     CmdBuffer::CmdBuffer(CmdBuffer&& other) noexcept
+        : CmdBuffer()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_commandPool, other.m_commandPool);
-        std::swap(m_queue, other.m_queue);
+        *this = std::move(other);
     }
 
     CmdBuffer::~CmdBuffer()
     {
         if (m_handle == nullptr) return;
         ((DeviceHandle) *currentDevice).freeCommandBuffers(m_commandPool, 1, (vk::CommandBuffer*) &m_handle);
+        m_handle = nullptr;
     }
 
     CmdBuffer& CmdBuffer::operator=(CmdBuffer&& other) noexcept
     {
         if (this == &other) return *this;
+
         std::swap(m_handle, other.m_handle);
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_queue, other.m_queue);
@@ -273,7 +274,7 @@ namespace vg
         return *this;
     }
 
-    CmdBuffer& CmdBuffer::Submit(const std::vector<std::tuple<Flags<PipelineStage>, SemaphoreHandle>>& waitStages, const std::vector<SemaphoreHandle>& signalSemaphores, const Fence& fence)
+    CmdBuffer& CmdBuffer::Submit(Span<const std::tuple<Flags<PipelineStage>, SemaphoreHandle>> waitStages, Span<const SemaphoreHandle> signalSemaphores, const Fence& fence)
     {
         std::vector<vk::Semaphore> semaphores(waitStages.size());
         std::vector<vk::PipelineStageFlags> stages(waitStages.size());
@@ -282,9 +283,8 @@ namespace vg
             semaphores[i] = std::get<1>(waitStages[i]);
             stages[i] = (vk::PipelineStageFlags) std::get<0>(waitStages[i]);
         }
-        std::vector<vk::CommandBuffer> buffers;
-        buffers.push_back(m_handle);
-        m_queue.submit({ vk::SubmitInfo(semaphores,stages,buffers, *(std::vector<vk::Semaphore>*) & signalSemaphores) }, (FenceHandle) fence);
+        vk::CommandBuffer b[1] = { m_handle };
+        m_queue.submit({ vk::SubmitInfo(semaphores,stages,b, *(Span<const vk::Semaphore>*) & signalSemaphores) }, (FenceHandle) fence);
 
         return *this;
     }

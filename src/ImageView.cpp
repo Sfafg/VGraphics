@@ -17,8 +17,9 @@ namespace vg
     ImageView::ImageView() : m_handle(nullptr) {}
 
     ImageView::ImageView(ImageView&& other) noexcept
+        :ImageView()
     {
-        std::swap(m_handle, other.m_handle);
+        *this = std::move(other);
     }
 
 
@@ -26,6 +27,7 @@ namespace vg
     {
         if (!m_handle) return;
         ((DeviceHandle) *currentDevice).destroyImageView(m_handle);
+        m_handle = nullptr;
     }
 
     ImageView& ImageView::operator=(ImageView&& other) noexcept

@@ -3,14 +3,14 @@
 #include "PipelineLayout.h"
 #include "PipelineCache.h"
 #include "Shader.h"
-#include <vector>
+#include "Span.h"
 
 namespace vg
 {
     class ComputePipeline
     {
     public:
-        ComputePipeline(const Shader& shader, const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings, const std::vector<PushConstantRange>& pushConstantRanges, PipelineCacheHandle cache = PipelineCacheHandle());
+        ComputePipeline(const Shader& shader, Span<const Span<const DescriptorSetLayoutBinding>> setLayoutBindings, Span<const PushConstantRange> pushConstantRanges, PipelineCacheHandle cache = PipelineCacheHandle());
 
         ComputePipeline();
         ComputePipeline(ComputePipeline&& other) noexcept;

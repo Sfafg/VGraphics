@@ -2,6 +2,7 @@
 #include "Handle.h"
 #include "Flags.h"
 #include "Enums.h"
+#include "Span.h"
 
 namespace vg
 {
@@ -10,7 +11,7 @@ namespace vg
     {
     public:
         Image(
-            std::vector<uint32_t> extend,
+            Span<const uint32_t> extend,
             Format format,
             Flags<ImageUsage> usage,
             uint32_t mipLevels = 1,
@@ -21,7 +22,7 @@ namespace vg
             SharingMode sharingMode = SharingMode::Exclusive);
 
         Image(
-            std::vector<uint32_t> extend,
+            Span<const uint32_t> extend,
             Format format,
             Flags<ImageUsage> usage,
             uint32_t mipLevels,
@@ -34,8 +35,8 @@ namespace vg
         {}
 
         Image(
-            std::vector<uint32_t> extend,
-            std::vector<Format> formatCandidates,
+            Span<const uint32_t> extend,
+            Span<const Format> formatCandidates,
             Flags<FormatFeature> features,
             Flags<ImageUsage> usage,
             uint32_t mipLevels = 1,
@@ -46,8 +47,8 @@ namespace vg
             SharingMode sharingMode = SharingMode::Exclusive);
 
         Image(
-            std::vector<uint32_t> extend,
-            std::vector<Format> formatCandidates,
+            Span<const uint32_t> extend,
+            Span<const Format> formatCandidates,
             Flags<FormatFeature> features,
             Flags<ImageUsage> usage,
             uint32_t mipLevels,
@@ -76,7 +77,7 @@ namespace vg
         Format GetFormat() const;
         unsigned int GetDimensionCount() const;
         void GetDimensions(uint32_t* width, uint32_t* height, uint32_t* depth) const;
-        std::vector<uint32_t> GetDimensions() const;
+        Span<const uint32_t> GetDimensions() const;
         uint64_t GetSize() const;
         uint64_t GetOffset() const;
         uint32_t GetMipLevels() const;
@@ -87,7 +88,7 @@ namespace vg
         /// @param tiling ImageTiling needed for the image
         /// @param features Needed features
         /// @return one of the formats that are supported or Format::Undefined
-        static Format FindSupportedFormat(const std::vector<Format>& candidates, ImageTiling tiling, Flags<FormatFeature> features);
+        static Format FindSupportedFormat(Span<const Format> candidates, ImageTiling tiling, Flags<FormatFeature> features);
 
     private:
         ImageHandle m_handle;
@@ -102,7 +103,7 @@ namespace vg
         class MemoryBlock* m_memory;
 
         friend class MemoryBlock;
-        friend void Allocate(std::vector<Image>&, Flags<MemoryProperty>);
-        friend void Allocate(std::initializer_list<Image*>, Flags<MemoryProperty>);
+        friend void Allocate(Span<Image>, Flags<MemoryProperty>);
+        friend void Allocate(Span<Image* const>, Flags<MemoryProperty>);
     };
 }

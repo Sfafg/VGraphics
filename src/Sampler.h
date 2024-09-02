@@ -7,7 +7,6 @@ namespace vg
     class Sampler
     {
     public:
-
         Sampler(
             Filter magFilter,
             Filter minFilter = Filter::Nearest,
@@ -64,6 +63,7 @@ namespace vg
             BorderColor borderColor = BorderColor::FloatTransparentBlack,
             bool unnormalizedCoordinates = false);
 
+        Sampler();
         Sampler(Sampler&& other) noexcept;
         Sampler(const Sampler& other) = delete;
         ~Sampler();

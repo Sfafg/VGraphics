@@ -2,7 +2,7 @@
 #include "Handle.h"
 #include "Enums.h"
 #include "Device.h"
-#include <vector>
+#include "Span.h"
 
 namespace vg
 {
@@ -20,9 +20,9 @@ namespace vg
          * @param windowSurfaceHandle Surface handle from windowing library
          * @param candidates Surface Format candidates ranked from best to worse
          */
-        Surface(SurfaceHandle windowSurfaceHandle, std::vector<SurfaceFormat> candidates);
+        Surface(SurfaceHandle windowSurfaceHandle, Span<const SurfaceFormat> candidates);
 
-        Surface(SurfaceHandle windowSurfaceHandle, SurfaceFormat candidate) :Surface(windowSurfaceHandle, std::vector<SurfaceFormat>{ candidate }) {}
+        Surface(SurfaceHandle windowSurfaceHandle, SurfaceFormat candidate) :Surface(windowSurfaceHandle, Span<const SurfaceFormat>{ candidate }) {}
 
         Surface();
         Surface(Surface&& other) noexcept;

@@ -15,7 +15,7 @@ namespace vg
         }
     };
 
-    Swapchain::Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain, const std::vector<unsigned int>& queueIndices)
+    Swapchain::Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage, PresentMode presentMode, CompositeAlpha alpha, SwapchainHandle oldSwapchain, Span<const unsigned int> queueIndices)
     {
         // Get the sharing mode, needed if queues are in different families.
         vk::SharingMode sharingMode = vk::SharingMode::eExclusive;
@@ -73,13 +73,9 @@ namespace vg
     Swapchain::Swapchain() : m_handle(nullptr) {}
 
     Swapchain::Swapchain(Swapchain&& other) noexcept
+        :Swapchain()
     {
-        std::swap(m_handle, other.m_handle);
-
-        std::swap(m_images, other.m_images);
-        std::swap(m_imageViews, other.m_imageViews);
-        std::swap(m_width, other.m_width);
-        std::swap(m_height, other.m_height);
+        *this = std::move(other);
     }
 
     Swapchain::~Swapchain()
@@ -89,8 +85,12 @@ namespace vg
         {
             ((DeviceHandle) *currentDevice).destroyImageView(imageView);
         }
+        m_images.clear();
+        m_images.shrink_to_fit();
+        m_imageViews.clear();
+        m_imageViews.shrink_to_fit();
+
         vkDestroySwapchainKHR((DeviceHandle) *currentDevice, m_handle, nullptr);
-        // ((DeviceHandle) *currentDevice).destroySwapchainKHR(m_handle);
         m_handle = nullptr;
     }
 
@@ -126,7 +126,7 @@ namespace vg
         return m_height;
     }
 
-    const std::vector<ImageViewHandle>& Swapchain::GetImageViews() const
+    Span<const ImageViewHandle> Swapchain::GetImageViews() const
     {
         return m_imageViews;
     }

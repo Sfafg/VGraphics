@@ -6,7 +6,7 @@
 namespace vg
 {
     GraphicsPipeline::GraphicsPipeline(
-        const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
+        const std::vector<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
         const std::vector<PushConstantRange>& pushConstantRanges,
         const std::vector<Shader*>& shaders,
         const VertexLayout& vertexInput,
@@ -27,10 +27,9 @@ namespace vg
         )), m_handle(nullptr)
     {}
 
-
     GraphicsPipeline::GraphicsPipeline(
         uint32_t parentIndex,
-        const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
+        const std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>>& setLayoutBindings,
         const std::optional<std::vector<PushConstantRange>>& pushConstantRanges,
         const std::optional<std::vector<Shader*>>& shaders,
         const std::optional<VertexLayout>& vertexInput,
@@ -53,7 +52,7 @@ namespace vg
 
     GraphicsPipeline::GraphicsPipeline(
         GraphicsPipeline* parent,
-        const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
+        const std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>>& setLayoutBindings,
         const std::optional<std::vector<PushConstantRange>>& pushConstantRanges,
         const std::optional<std::vector<Shader*>>& shaders,
         const std::optional<VertexLayout>& vertexInput,
@@ -77,19 +76,18 @@ namespace vg
     GraphicsPipeline::GraphicsPipeline() :m_handle(nullptr), m_createInfo(nullptr) {}
 
     GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
+        : GraphicsPipeline()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_createInfo, other.m_createInfo);
+        *this = std::move(other);
     }
 
     GraphicsPipeline::~GraphicsPipeline()
     {
-        if (m_handle == nullptr)
-            return;
-
-        ((DeviceHandle) *currentDevice).destroyPipeline(m_handle);
-        m_handle = nullptr;
-
+        if (m_createInfo)
+        {
+            delete m_createInfo;
+            m_createInfo = nullptr;
+        }
 #ifdef VG_DEBUG
         if (m_createInfo && m_createInfo->inheritanceCount > 0)
         {
@@ -121,144 +119,145 @@ namespace vg
         return m_handle;
     }
 
-    std::vector<PushConstantRange>* GraphicsPipeline::CreateInfo::GetPushConstantRanges()
+    const std::vector<PushConstantRange>* GraphicsPipeline::CreateInfo::GetPushConstantRanges(const GraphicsPipeline* parent) const
     {
         if (pushConstantRanges)
             return &*pushConstantRanges;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetPushConstantRanges();
+            return parent->m_createInfo->GetPushConstantRanges(parent);
 
         return nullptr;
     }
 
-    std::vector<DescriptorSetLayoutBinding>* GraphicsPipeline::CreateInfo::GetSetLayoutBindings()
+    const std::vector<std::vector<DescriptorSetLayoutBinding>>* GraphicsPipeline::CreateInfo::GetSetLayoutBindings(const GraphicsPipeline* parent) const
     {
         if (setLayoutBindings)
             return &*setLayoutBindings;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetSetLayoutBindings();
+            return parent->m_createInfo->GetSetLayoutBindings(parent);
 
         return nullptr;
     }
 
-    std::vector<Shader*>* GraphicsPipeline::CreateInfo::GetShaders()
+    const std::vector<Shader*>* GraphicsPipeline::CreateInfo::GetShaders(const GraphicsPipeline* parent) const
     {
         if (shaders)
             return &*shaders;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetShaders();
+            return parent->m_createInfo->GetShaders(parent);
 
         return nullptr;
     }
 
-    VertexLayout* GraphicsPipeline::CreateInfo::GetVertexInput()
+    const VertexLayout* GraphicsPipeline::CreateInfo::GetVertexInput(const GraphicsPipeline* parent) const
     {
         if (vertexInput)
             return &*vertexInput;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetVertexInput();
+            return parent->m_createInfo->GetVertexInput(parent);
 
         return nullptr;
     }
 
-    InputAssembly* GraphicsPipeline::CreateInfo::GetInputAssembly()
+    const InputAssembly* GraphicsPipeline::CreateInfo::GetInputAssembly(const GraphicsPipeline* parent) const
     {
         if (inputAssembly)
             return &*inputAssembly;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetInputAssembly();
+            return parent->m_createInfo->GetInputAssembly(parent);
 
         return nullptr;
     }
 
-    Tesselation* GraphicsPipeline::CreateInfo::GetTesselation()
+    const Tesselation* GraphicsPipeline::CreateInfo::GetTesselation(const GraphicsPipeline* parent) const
     {
         if (tesselation)
             return &*tesselation;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetTesselation();
+            return parent->m_createInfo->GetTesselation(parent);
 
         return nullptr;
     }
 
-    ViewportState* GraphicsPipeline::CreateInfo::GetViewportState()
+    const ViewportState* GraphicsPipeline::CreateInfo::GetViewportState(const GraphicsPipeline* parent) const
     {
         if (viewportState)
             return &*viewportState;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetViewportState();
+            return parent->m_createInfo->GetViewportState(parent);
 
         return nullptr;
     }
 
-    Rasterizer* GraphicsPipeline::CreateInfo::GetRasterizer()
+    const Rasterizer* GraphicsPipeline::CreateInfo::GetRasterizer(const GraphicsPipeline* parent) const
     {
         if (rasterizer)
             return &*rasterizer;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetRasterizer();
+            return parent->m_createInfo->GetRasterizer(parent);
 
         return nullptr;
     }
 
-    Multisampling* GraphicsPipeline::CreateInfo::GetMultisampling()
+    const Multisampling* GraphicsPipeline::CreateInfo::GetMultisampling(const GraphicsPipeline* parent) const
     {
         if (multisampling)
             return &*multisampling;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetMultisampling();
+            return parent->m_createInfo->GetMultisampling(parent);
 
         return nullptr;
     }
 
-    DepthStencil* GraphicsPipeline::CreateInfo::GetDepthStencil()
+    const DepthStencil* GraphicsPipeline::CreateInfo::GetDepthStencil(const GraphicsPipeline* parent) const
     {
         if (depthStencil)
             return &*depthStencil;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetDepthStencil();
+            return parent->m_createInfo->GetDepthStencil(parent);
 
         return nullptr;
     }
 
-    ColorBlending* GraphicsPipeline::CreateInfo::GetColorBlending()
+    const ColorBlending* GraphicsPipeline::CreateInfo::GetColorBlending(const GraphicsPipeline* parent) const
     {
         if (colorBlending)
             return &*colorBlending;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetColorBlending();
+            return parent->m_createInfo->GetColorBlending(parent);
 
         return nullptr;
     }
 
-    std::vector<DynamicState>* GraphicsPipeline::CreateInfo::GetDynamicState()
+    const std::vector<DynamicState>* GraphicsPipeline::CreateInfo::GetDynamicState(const GraphicsPipeline* parent) const
     {
         if (dynamicState)
             return &*dynamicState;
 
         if (parent && parent->m_createInfo)
-            return parent->m_createInfo->GetDynamicState();
+            return parent->m_createInfo->GetDynamicState(parent);
 
         return nullptr;
     }
 
-    GraphicsPipelineHandle GraphicsPipeline::CreateInfo::GetParentHandle()
+    GraphicsPipelineHandle GraphicsPipeline::CreateInfo::GetParentHandle(const GraphicsPipeline* parent) const
     {
         if (parent)
             return parent->m_handle;
 
         return GraphicsPipelineHandle(nullptr);
+        parent;
     }
 
     void GraphicsPipeline::CreateInfo::DecrementParentInheritance()

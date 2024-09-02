@@ -25,12 +25,12 @@ namespace vg
     }
 
     Device::Device(
-        const std::vector<Queue*>& queues,
+        Span<Queue* const> queues,
         const std::set<std::string>& extensions,
         const DeviceFeatures& hintedDeviceEnabledFeatures,
         SurfaceHandle surface,
-        std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
-    ) :m_queues(queues)
+        std::function<int(PhysicalDeviceHandle id, Span<Queue* const> supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction
+    ) :m_queues(queues.begin(), queues.end())
     {
         assert(queues.size() > 0);
         bool hasPresentQueueType = false;
@@ -65,7 +65,7 @@ namespace vg
             }
 
             // Check what queues are supported
-            std::vector<Queue*> supportedQueues = queues;
+            std::vector<Queue*> supportedQueues(queues.begin(), queues.end());
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
             for (unsigned int i = 0; i < supportedQueues.size(); i++)
             {
@@ -177,10 +177,11 @@ namespace vg
         std::vector<const char*> extensionsConstChar;
         for (const auto& extension : extensions)extensionsConstChar.push_back(extension.data());
 
-        vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
-        features = (*(DeviceFeatures*) &features) & hintedDeviceEnabledFeatures;
+        auto features_ = m_physicalDevice.getFeatures();
+        DeviceFeatures features = *(DeviceFeatures*) &features_;
+        features &= hintedDeviceEnabledFeatures;
 
-        vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, &features);
+        vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos, nullptr, extensionsConstChar, (vk::PhysicalDeviceFeatures*) &features);
         m_handle = m_physicalDevice.createDevice(createInfo);
 
         SCOPED_DEVICE_CHANGE(this);
@@ -218,10 +219,9 @@ namespace vg
     Device::Device() : m_handle(nullptr), m_physicalDevice(nullptr), m_queues{} {}
 
     Device::Device(Device&& other) noexcept
+        : Device()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_physicalDevice, other.m_physicalDevice);
-        std::swap(m_queues, other.m_queues);
+        *this = std::move(other);
     }
 
     Device::~Device()
@@ -230,9 +230,14 @@ namespace vg
 
         SCOPED_DEVICE_CHANGE(this);
         for (auto&& queue : m_queues)
-            queue->~Queue();
+        {
+            ((DeviceHandle) *currentDevice).destroyCommandPool(queue->m_commandPool);
+            ((DeviceHandle) *currentDevice).destroyCommandPool(queue->m_transientCommandPool);
+        }
 
         vkDestroyDevice(m_handle, nullptr);
+        m_queues.clear();
+        m_queues.shrink_to_fit();
         m_handle = nullptr;
     }
 

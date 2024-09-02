@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include "Span.h"
 #include "Handle.h"
 #include "Enums.h"
 #include "Flags.h"
@@ -14,7 +14,6 @@ namespace vg
         Queue();
         Queue(Queue&& other) noexcept;
         Queue(const Queue& other) = delete;
-        ~Queue();
 
         Queue& operator=(Queue&& other) noexcept;
         Queue& operator=(const Queue& other) = delete;
@@ -47,11 +46,11 @@ namespace vg
          * @param imageIndices indices of images from Swapchains
          * @return Result
          */
-        Result Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices);
+        Result Present(Span<const SemaphoreHandle> waitSemaphores, Span<const SwapchainHandle> swapchains, Span<const uint32_t> imageIndices);
 
-        void Submit(const std::vector<class SubmitInfo>& submits, const class Fence& fence);
+        void Submit(Span<const class SubmitInfo> submits, const class Fence& fence);
 
-        Fence Submit(const std::vector<class SubmitInfo>& submits);
+        Fence Submit(Span<const class SubmitInfo> submits);
 
     private:
         QueueHandle m_handle;

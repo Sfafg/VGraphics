@@ -4,22 +4,15 @@
 #include "Enums.h"
 #include "Flags.h"
 #include "Device.h"
+#include "Span.h"
 
 namespace vg
 {
-    extern void Allocate(std::initializer_list<Buffer*> buffers, Flags<MemoryProperty> memoryProperty);
-    extern void Allocate(std::vector<Buffer>& buffers, Flags<MemoryProperty> memoryProperty);
-    inline void Allocate(Buffer* buffer, Flags<MemoryProperty> memoryProperty)
-    {
-        Allocate({ buffer }, memoryProperty);
-    }
+    extern void Allocate(Span<Buffer* const> buffers, Flags<MemoryProperty> memoryProperty);
+    extern void Allocate(Span<Buffer> buffers, Flags<MemoryProperty> memoryProperty);
 
-    extern void Allocate(std::initializer_list<Image*> images, Flags<MemoryProperty> memoryProperty);
-    extern void Allocate(std::vector<Image>& images, Flags<MemoryProperty> memoryProperty);
-    inline void Allocate(Image* image, Flags<MemoryProperty> memoryProperty)
-    {
-        Allocate({ image }, memoryProperty);
-    }
+    extern void Allocate(Span<Image* const> images, Flags<MemoryProperty> memoryProperty);
+    extern void Allocate(Span<Image> images, Flags<MemoryProperty> memoryProperty);
 
     class MemoryBlock
     {

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "Span.h"
 #include "Handle.h"
 #include "Device.h"
 #include "Surface.h"
@@ -32,8 +33,8 @@ namespace vg
          * @param alpha Alpha usage
          * @param oldSwapchain Optional old swapchain handle used when recreating swapchain when resizing window. Do not destroy old handle until it's presenting is done
          */
-        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle(), const std::vector<unsigned int>& queueIndices = {});
-        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, SwapchainHandle oldSwapchain, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, const std::vector<unsigned int>& queueIndices = {})
+        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, SwapchainHandle oldSwapchain = SwapchainHandle(), Span<const unsigned int> queueIndices = {});
+        Swapchain(const Surface& surface, unsigned int imageCount, unsigned int width, unsigned int height, SwapchainHandle oldSwapchain, Flags<Usage> usage = Usage::ColorAttachment, PresentMode presentMode = PresentMode::Fifo, CompositeAlpha alpha = CompositeAlpha::Opaque, Span<const unsigned int> queueIndices = {})
             :Swapchain(surface, imageCount, width, height, usage, presentMode, alpha, oldSwapchain, queueIndices)
         {}
 
@@ -70,7 +71,7 @@ namespace vg
          *
          * @return const std::vector<ImageViewHandle>&
          */
-        const std::vector<ImageViewHandle>& GetImageViews() const;
+        Span<const ImageViewHandle> GetImageViews() const;
         /**
          *@brief Get the Next Image Index object
          *

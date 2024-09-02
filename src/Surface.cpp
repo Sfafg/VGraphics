@@ -5,7 +5,7 @@
 namespace vg
 {
     Surface::Surface() :m_handle(nullptr) {}
-    Surface::Surface(SurfaceHandle windowSurfaceHandle, std::vector<SurfaceFormat> candidates) : m_handle(windowSurfaceHandle)
+    Surface::Surface(SurfaceHandle windowSurfaceHandle, Span<const SurfaceFormat> candidates) : m_handle(windowSurfaceHandle)
     {
         auto supportedFormats = ((PhysicalDeviceHandle) *currentDevice).getSurfaceFormatsKHR(m_handle);
         m_format = (Format) supportedFormats[0].format;
@@ -26,16 +26,16 @@ namespace vg
     }
 
     Surface::Surface(Surface&& other) noexcept
+        :Surface()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_format, other.m_format);
-        std::swap(m_colorSpace, other.m_colorSpace);
+        *this = std::move(other);
     }
 
     Surface::~Surface()
     {
         if (m_handle == nullptr) return;
         InstanceHandle(vg::instance).destroySurfaceKHR(m_handle);
+        m_handle = nullptr;
     }
 
     Surface& Surface::operator=(Surface&& other) noexcept

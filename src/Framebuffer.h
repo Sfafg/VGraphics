@@ -1,6 +1,6 @@
 #pragma once
 #include "Handle.h"
-#include <vector>
+#include "Span.h"
 
 namespace vg
 {
@@ -21,7 +21,7 @@ namespace vg
          * @param height Height
          * @param layers Amount of layers, used for anaglif rendering
          */
-        Framebuffer(RenderPassHandle renderPass, const std::vector<ImageViewHandle>& attachments, unsigned int width, unsigned int height, unsigned int layers = 1);
+        Framebuffer(RenderPassHandle renderPass, Span<const ImageViewHandle> attachments, unsigned int width, unsigned int height, unsigned int layers = 1);
 
         Framebuffer();
         Framebuffer(Framebuffer&& other) noexcept;

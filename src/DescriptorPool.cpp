@@ -3,23 +3,25 @@
 
 namespace vg
 {
-    DescriptorPool::DescriptorPool(unsigned int maxSets, std::initializer_list<DescriptorPoolSize> sizes)
+    DescriptorPool::DescriptorPool(unsigned int maxSets, Span<const DescriptorPoolSize> sizes)
     {
-        vk::DescriptorPoolCreateInfo info({}, maxSets);
+        vk::DescriptorPoolCreateInfo info({ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet }, maxSets);
         info.setPoolSizeCount(sizes.size());
-        info.setPPoolSizes((vk::DescriptorPoolSize*) sizes.begin());
+        info.setPPoolSizes((vk::DescriptorPoolSize*) sizes.data());
         m_handle = ((DeviceHandle) *currentDevice).createDescriptorPool(info);
     }
 
-    DescriptorPool::DescriptorPool() {}
+    DescriptorPool::DescriptorPool() : m_handle(nullptr) {}
     DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept
+        :DescriptorPool()
     {
-        std::swap(m_handle, other.m_handle);
-
+        *this = std::move(other);
     }
     DescriptorPool::~DescriptorPool()
     {
+        if (!m_handle)return;
         ((DeviceHandle) *currentDevice).destroyDescriptorPool(m_handle);
+        m_handle = nullptr;
     }
 
     DescriptorPool& DescriptorPool::operator=(DescriptorPool&& other) noexcept
@@ -28,7 +30,6 @@ namespace vg
 
         std::swap(m_handle, other.m_handle);
 
-
         return *this;
     }
     DescriptorPool::operator const DescriptorPoolHandle& () const
@@ -36,9 +37,19 @@ namespace vg
         return m_handle;
     }
 
-    std::vector<DescriptorSet> DescriptorPool::Allocate(const std::vector<DescriptorSetLayoutHandle>& setLayouts)
+    void DescriptorPool::Allocate(Span<const DescriptorSetLayoutHandle> setLayouts, std::vector<DescriptorSet>* descriptors)
     {
         auto sets = ((DeviceHandle) *currentDevice).allocateDescriptorSets({ m_handle, setLayouts });
-        return *(std::vector<DescriptorSet>*) & sets;
+        descriptors->resize(sets.size());
+        for (int i = 0; i < sets.size(); i++)
+            descriptors[0][i] = DescriptorSet(sets[i], m_handle);
+    }
+
+    void DescriptorPool::Allocate(DescriptorSetLayoutHandle setLayout, DescriptorSet* descriptors)
+    {
+        std::vector<DescriptorSetLayoutHandle> setLayouts = { setLayout };
+        auto sets = ((DeviceHandle) *currentDevice).allocateDescriptorSets({ m_handle, setLayouts });
+        for (int i = 0; i < sets.size(); i++)
+            *descriptors = DescriptorSet(sets[i], m_handle);
     }
 }

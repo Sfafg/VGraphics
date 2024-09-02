@@ -53,13 +53,8 @@ namespace vg
          * @param reset If true all fences will be reset
          * @param timeout Timeout in nanoseconds
          */
-        static void AwaitAll(const std::vector<const Fence*>& fences, bool reset = false, uint64_t timeout = UINT64_MAX);
-        static void AwaitAll(const std::vector<Fence>& fences, bool reset = false, uint64_t timeout = UINT64_MAX)
-        {
-            std::vector<const Fence*> fences_(fences.size());
-            for (int i = 0; i < fences.size(); i++) fences_[i] = &fences[i];
-            AwaitAll(fences, reset, timeout);
-        }
+        static void AwaitAll(std::span<Fence> fences, bool reset = false, uint64_t timeout = UINT64_MAX);
+        static void AwaitAll(Span<Fence* const> fences, bool reset = false, uint64_t timeout = UINT64_MAX);
 
         /**
          *@brief Returns when at least one fence is signalled
@@ -67,25 +62,16 @@ namespace vg
          * @param fences Array of fences
          * @param timeout Timeout in nanoseconds
          */
-        static void AwaitAny(const std::vector<const Fence*>& fences, uint64_t timeout = UINT64_MAX);
-        static void AwaitAny(const std::vector<Fence>& fences, uint64_t timeout = UINT64_MAX)
-        {
-            std::vector<const Fence*> fences_(fences.size());
-            for (int i = 0; i < fences.size(); i++) fences_[i] = &fences[i];
-            AwaitAny(fences_, timeout);
-        }
+        static void AwaitAny(std::span<Fence> fences, uint64_t timeout = UINT64_MAX);
+        static void AwaitAny(Span<Fence* const> fences, uint64_t timeout = UINT64_MAX);
+
         /**
          *@brief Reset all fences unsignalling them
          *
          * @param fences Array of Fences
          */
-        static void ResetAll(const std::vector<const Fence*>& fences);
-        static void ResetAll(const std::vector<Fence>& fences)
-        {
-            std::vector<const Fence*> fences_(fences.size());
-            for (int i = 0; i < fences.size(); i++) fences_[i] = &fences[i];
-            ResetAll(fences);
-        }
+        static void ResetAll(std::span<Fence> fences);
+        static void ResetAll(Span<Fence* const> fences);
 
     private:
         FenceHandle m_handle;

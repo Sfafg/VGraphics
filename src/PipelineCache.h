@@ -1,7 +1,9 @@
 #pragma once
 #include "Handle.h"
+#include "Span.h"
 #include <stdint.h>
 #include <vector>
+#include <math.h>
 
 namespace vg
 {
@@ -10,6 +12,11 @@ namespace vg
     public:
         PipelineCache(const void* initialData, uint32_t initialDataSize = 0, bool isExternallySynchronized = false);
         PipelineCache(const char* filePath, bool isExternallySynchronized = false);
+
+        template<typename T>
+        PipelineCache(Span<const T> initialData, bool isExternallySynchronized = false) :
+            PipelineCache(initialData.data(), initialData.size() * sizeof(T), isExternallySynchronized)
+        {}
 
         template<typename T>
         PipelineCache(const std::vector<T>& initialData, bool isExternallySynchronized = false) :
@@ -34,14 +41,14 @@ namespace vg
             uint32_t size;
 
             T* data = (T*) GetData(&size);
-            size = size / (float) sizeof(T) > size / sizeof(T) ? size / sizeof(T) + 1 : size / sizeof(T);
+            size = ceil(size / (float) sizeof(T));
             vec.assign(data, data + size);
 
             delete[] data;
             return vec;
 
         }
-        void MergeCaches(const std::vector<PipelineCacheHandle>& caches);
+        void MergeCaches(Span<const PipelineCacheHandle> caches);
 
     private:
         PipelineCacheHandle m_handle;

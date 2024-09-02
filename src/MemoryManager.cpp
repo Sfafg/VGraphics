@@ -17,7 +17,7 @@ uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties memProperties, uint32
 }
 namespace vg
 {
-    void Allocate(std::initializer_list<Buffer*> buffers, Flags<MemoryProperty> memoryProperty)
+    void Allocate(Span<Buffer* const> buffers, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t currentSize = 0;
         uint32_t memoryTypeBits = ~0;
@@ -38,7 +38,7 @@ namespace vg
             block->Bind(buffers.begin()[i]);
     }
 
-    void Allocate(std::vector<Buffer>& buffers, Flags<MemoryProperty> memoryProperty)
+    void Allocate(Span<Buffer> buffers, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t currentSize = 0;
         uint32_t memoryTypeBits = ~0;
@@ -60,7 +60,7 @@ namespace vg
     }
 
 
-    void Allocate(std::initializer_list<Image*> images, Flags<MemoryProperty> memoryProperty)
+    void Allocate(Span<Image* const> images, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t currentSize = 0;
         uint32_t memoryTypeBits = ~0;
@@ -81,7 +81,7 @@ namespace vg
         for (int i = 0; i < images.size(); i++)
             block->Bind(images.begin()[i]);
     }
-    void Allocate(std::vector<Image>& images, Flags<MemoryProperty> memoryProperty)
+    void Allocate(Span<Image> images, Flags<MemoryProperty> memoryProperty)
     {
         uint64_t currentSize = 0;
         uint32_t memoryTypeBits = ~0;

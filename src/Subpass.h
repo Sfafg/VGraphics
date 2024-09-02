@@ -1,7 +1,10 @@
+#pragma once
 #include "Handle.h"
 #include "GraphicsPipeline.h"
+#include "Span.h"
 #include <vector>
 #include <optional>
+#include <memory>
 
 namespace vg
 {
@@ -11,7 +14,7 @@ namespace vg
      */
     struct Subpass
     {
-        GraphicsPipeline* graphicsPipeline;
+        GraphicsPipeline graphicsPipeline;
         std::vector<AttachmentReference> inputAttachments;
         std::vector<AttachmentReference> colorAttachments;
         std::vector<AttachmentReference> resolveAttachments;
@@ -30,11 +33,27 @@ namespace vg
          */
         Subpass(
             GraphicsPipeline&& graphicsPipeline,
-            std::vector<AttachmentReference> inputAttachments = {},
-            std::vector<AttachmentReference> colorAttachments = {},
-            std::vector<AttachmentReference> resolveAttachments = {},
-            std::optional<AttachmentReference> depthStencilAttachment = std::nullopt,
-            std::vector<uint32_t> preserveAttachments = {}
+            const std::vector<AttachmentReference>& inputAttachments = {},
+            const std::vector<AttachmentReference>& colorAttachments = {},
+            const std::vector<AttachmentReference>& resolveAttachments = {},
+            const std::optional<AttachmentReference>& depthStencilAttachment = std::nullopt,
+            const std::vector<uint32_t>& preserveAttachments = {}
         );
+
+        Subpass(
+            GraphicsPipeline&& graphicsPipeline,
+            std::vector<AttachmentReference>&& inputAttachments = {},
+            std::vector<AttachmentReference>&& colorAttachments = {},
+            std::vector<AttachmentReference>&& resolveAttachments = {},
+            const std::optional<AttachmentReference>& depthStencilAttachment = std::nullopt,
+            std::vector<uint32_t>&& preserveAttachments = {}
+        );
+
+        Subpass();
+        Subpass(Subpass&& other) noexcept;
+        Subpass(const Subpass& other) = delete;
+
+        Subpass& operator=(Subpass&& other) noexcept;
+        Subpass& operator=(const Subpass& other) = delete;
     };
 }

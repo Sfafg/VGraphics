@@ -12,7 +12,7 @@ namespace vg
 
     public:
         GraphicsPipeline(
-            const std::vector<DescriptorSetLayoutBinding>& setLayoutBindings,
+            const std::vector<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings,
             const std::vector<PushConstantRange>& pushConstantRanges,
             const std::vector<Shader*>& shaders,
             const VertexLayout& vertexInput,
@@ -29,7 +29,7 @@ namespace vg
 
         GraphicsPipeline(
             uint32_t parentIndex,
-            const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings = std::nullopt,
+            const std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>>& setLayoutBindings = std::nullopt,
             const std::optional<std::vector<PushConstantRange>>& pushConstantRanges = std::nullopt,
             const std::optional<std::vector<Shader*>>& shaders = std::nullopt,
             const std::optional<VertexLayout>& vertexInput = std::nullopt,
@@ -46,7 +46,7 @@ namespace vg
 
         GraphicsPipeline(
             GraphicsPipeline* parent,
-            const std::optional<std::vector<DescriptorSetLayoutBinding>>& setLayoutBindings = std::nullopt,
+            const std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>>& setLayoutBindings = std::nullopt,
             const std::optional<std::vector<PushConstantRange>>& pushConstantRanges = std::nullopt,
             const std::optional<std::vector<Shader*>>& shaders = std::nullopt,
             const std::optional<VertexLayout>& vertexInput = std::nullopt,
@@ -75,7 +75,7 @@ namespace vg
         struct CreateInfo
         {
             uint32_t inheritanceCount;
-            std::optional<std::vector<DescriptorSetLayoutBinding>> setLayoutBindings;
+            std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>> setLayoutBindings;
             std::optional<std::vector<PushConstantRange>> pushConstantRanges;
             std::optional<std::vector<Shader*>> shaders;
             std::optional<VertexLayout> vertexInput;
@@ -92,13 +92,13 @@ namespace vg
 
             CreateInfo(
                 uint32_t inheritanceCount,
-                std::optional<std::vector<DescriptorSetLayoutBinding>> setLayoutBindings,
-                std::optional<std::vector<PushConstantRange>> pushConstantRanges,
-                std::optional<std::vector<Shader*>> shaders, std::optional<VertexLayout> vertexInput,
-                std::optional<InputAssembly> inputAssembly, std::optional<Tesselation> tesselation,
-                std::optional<ViewportState> viewportState, std::optional<Rasterizer> rasterizer,
-                std::optional<Multisampling> multisampling, std::optional<DepthStencil> depthStencil,
-                std::optional<ColorBlending> colorBlending, std::optional<std::vector<DynamicState>> dynamicState,
+                const std::optional<std::vector<std::vector<DescriptorSetLayoutBinding>>>& setLayoutBindings,
+                const std::optional<std::vector<PushConstantRange>>& pushConstantRanges,
+                const std::optional<std::vector<Shader*>>& shaders, std::optional<VertexLayout> vertexInput,
+                const std::optional<InputAssembly>& inputAssembly, std::optional<Tesselation> tesselation,
+                const std::optional<ViewportState>& viewportState, std::optional<Rasterizer> rasterizer,
+                const std::optional<Multisampling>& multisampling, std::optional<DepthStencil> depthStencil,
+                const std::optional<ColorBlending>& colorBlending, std::optional<std::vector<DynamicState>> dynamicState,
                 int parentIndex, GraphicsPipeline* parent
             ) :
                 inheritanceCount(inheritanceCount), setLayoutBindings(setLayoutBindings),
@@ -110,19 +110,19 @@ namespace vg
                 parentIndex(parentIndex), parent(parent)
             {}
 
-            std::vector<PushConstantRange>* GetPushConstantRanges();
-            std::vector<DescriptorSetLayoutBinding>* GetSetLayoutBindings();
-            std::vector<Shader*>* GetShaders();
-            VertexLayout* GetVertexInput();
-            InputAssembly* GetInputAssembly();
-            Tesselation* GetTesselation();
-            ViewportState* GetViewportState();
-            Rasterizer* GetRasterizer();
-            Multisampling* GetMultisampling();
-            DepthStencil* GetDepthStencil();
-            ColorBlending* GetColorBlending();
-            std::vector<DynamicState>* GetDynamicState();
-            GraphicsPipelineHandle GetParentHandle();
+            const std::vector<PushConstantRange>* GetPushConstantRanges(const GraphicsPipeline* parent) const;
+            const std::vector<std::vector<DescriptorSetLayoutBinding>>* GetSetLayoutBindings(const GraphicsPipeline* parent) const;
+            const std::vector<Shader*>* GetShaders(const GraphicsPipeline* parent) const;
+            const VertexLayout* GetVertexInput(const GraphicsPipeline* parent) const;
+            const InputAssembly* GetInputAssembly(const GraphicsPipeline* parent) const;
+            const Tesselation* GetTesselation(const GraphicsPipeline* parent) const;
+            const ViewportState* GetViewportState(const GraphicsPipeline* parent) const;
+            const Rasterizer* GetRasterizer(const GraphicsPipeline* parent) const;
+            const Multisampling* GetMultisampling(const GraphicsPipeline* parent) const;
+            const DepthStencil* GetDepthStencil(const GraphicsPipeline* parent) const;
+            const ColorBlending* GetColorBlending(const GraphicsPipeline* parent) const;
+            const std::vector<DynamicState>* GetDynamicState(const GraphicsPipeline* parent) const;
+            GraphicsPipelineHandle GetParentHandle(const GraphicsPipeline* parent) const;
             void DecrementParentInheritance();
             void UpdateParentInheritance();
         };

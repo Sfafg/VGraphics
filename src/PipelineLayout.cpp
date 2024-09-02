@@ -7,9 +7,9 @@ namespace vg
     {}
 
     PipelineLayout::PipelineLayout(PipelineLayout&& other) noexcept
+        :PipelineLayout()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_descriptorSetLayouts, other.m_descriptorSetLayouts);
+        *this = std::move(other);
     }
 
     PipelineLayout& PipelineLayout::operator=(PipelineLayout&& other) noexcept
@@ -25,11 +25,11 @@ namespace vg
     {
         return m_handle;
     }
-    std::vector<DescriptorSetLayoutHandle>& PipelineLayout::GetDescriptorSets()
+    Span<DescriptorSetLayoutHandle> PipelineLayout::GetDescriptorSets()
     {
         return m_descriptorSetLayouts;
     }
-    const std::vector<DescriptorSetLayoutHandle>& PipelineLayout::GetDescriptorSets() const
+    Span<const DescriptorSetLayoutHandle> PipelineLayout::GetDescriptorSets() const
     {
         return m_descriptorSetLayouts;
     }

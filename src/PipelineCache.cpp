@@ -29,13 +29,13 @@ namespace vg
     PipelineCache::PipelineCache(const char* filePath, bool isExternallySynchronized) : PipelineCache(ReadCache(filePath), isExternallySynchronized)
     {}
 
-
     PipelineCache::PipelineCache() :m_handle(nullptr)
     {}
 
     PipelineCache::PipelineCache(PipelineCache&& other) noexcept
+        :PipelineCache()
     {
-        std::swap(m_handle, other.m_handle);
+        *this = std::move(other);
     }
 
     PipelineCache::~PipelineCache()
@@ -64,7 +64,6 @@ namespace vg
 
     void* PipelineCache::GetData(uint32_t* dataSize) const
     {
-
         auto result = ((DeviceHandle) *currentDevice).getPipelineCacheData(m_handle, (size_t*) dataSize, nullptr);
         void* data = new char[*dataSize];
         auto result2 = ((DeviceHandle) *currentDevice).getPipelineCacheData(m_handle, (size_t*) dataSize, data);
@@ -72,8 +71,8 @@ namespace vg
         return data;
     }
 
-    void PipelineCache::MergeCaches(const std::vector<PipelineCacheHandle>& caches)
+    void PipelineCache::MergeCaches(Span<const PipelineCacheHandle> caches)
     {
-        ((DeviceHandle) *currentDevice).mergePipelineCaches(m_handle, *(std::vector<vk::PipelineCache>*) & caches);
+        ((DeviceHandle) *currentDevice).mergePipelineCaches(m_handle, *(Span<const vk::PipelineCache>*) & caches);
     }
 }

@@ -139,13 +139,18 @@ namespace vg
             });
     }
 
+    Sampler::Sampler() : m_handle(nullptr) {}
+
     Sampler::Sampler(Sampler&& other) noexcept
+        :Sampler()
     {
-        std::swap(m_handle, other.m_handle);
+        *this = std::move(other);
     }
     Sampler::~Sampler()
     {
+        if (!m_handle)return;
         ((DeviceHandle) *currentDevice).destroySampler(m_handle);
+        m_handle = nullptr;
     }
 
     Sampler& Sampler::operator=(Sampler&& other) noexcept

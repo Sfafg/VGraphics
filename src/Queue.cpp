@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.hpp>
+#include <iostream>
 #include "Queue.h"
 #include "Structs.h"
 #include "Synchronization.h"
@@ -10,24 +11,9 @@ namespace vg
     Queue::Queue() :m_handle(nullptr), m_type(0), m_priority(0), m_index(0) {}
 
     Queue::Queue(Queue&& other) noexcept
+        :Queue()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_commandPool, other.m_commandPool);
-        std::swap(m_transientCommandPool, other.m_transientCommandPool);
-        std::swap(m_type, other.m_type);
-        std::swap(m_priority, other.m_priority);
-        std::swap(m_index, other.m_index);
-    }
-
-    Queue::~Queue()
-    {
-        if (m_handle == nullptr || !(bool) m_type)
-            return;
-
-        ((DeviceHandle) *currentDevice).destroyCommandPool(m_commandPool);
-        ((DeviceHandle) *currentDevice).destroyCommandPool(m_transientCommandPool);
-
-        m_handle = nullptr;
+        *this = std::move(other);
     }
 
     Queue& Queue::operator=(Queue&& other) noexcept
@@ -65,18 +51,18 @@ namespace vg
         return m_commandPool;
     }
 
-    Result Queue::Present(const std::vector<SemaphoreHandle>& waitSemaphores, const std::vector<SwapchainHandle>& swapchains, const std::vector<uint32_t>& imageIndices)
+    Result Queue::Present(Span<const SemaphoreHandle> waitSemaphores, Span<const SwapchainHandle> swapchains, Span<const uint32_t> imageIndices)
     {
-        vk::PresentInfoKHR info(*(std::vector<vk::Semaphore>*) & waitSemaphores, *(std::vector<vk::SwapchainKHR>*) & swapchains, imageIndices);
+        vk::PresentInfoKHR info(*(Span<const vk::Semaphore>*) & waitSemaphores, *(Span<const vk::SwapchainKHR>*) & swapchains, imageIndices);
         return (Result) vkQueuePresentKHR(m_handle, (VkPresentInfoKHR*) &info);
     }
 
-    void Queue::Submit(const std::vector<SubmitInfo>& submits, const Fence& fence)
+    void Queue::Submit(Span<const SubmitInfo> submits, const Fence& fence)
     {
-        m_handle.submit(*(std::vector<vk::SubmitInfo>*) & submits, fence);
+        m_handle.submit(*(Span<const vk::SubmitInfo>*) & submits, fence);
     }
 
-    Fence Queue::Submit(const std::vector<class SubmitInfo>& submits)
+    Fence Queue::Submit(Span<const class SubmitInfo> submits)
     {
         Fence fence;
         Submit(submits, fence);

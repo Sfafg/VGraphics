@@ -4,16 +4,6 @@
 #include <vector>
 #include <iostream>
 
-#ifdef VG_DEBUG
-const bool enableValidationLayers = true;
-#elif VG_NDEBUG
-const bool enableValidationLayers = false;
-#elif NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
 const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
 };
@@ -47,8 +37,8 @@ namespace vg
     {
         if (pUserData != nullptr)
         {
-            Debug::Callback debugCallback = (Debug::Callback) pUserData;
-            debugCallback((Debug::Severity) messageSeverity, pCallbackData->pMessage);
+            Instance::DebugCallback debugCallback = (Instance::DebugCallback) pUserData;
+            debugCallback((MessageSeverity) messageSeverity, pCallbackData->pMessage);
         }
         else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
@@ -59,12 +49,12 @@ namespace vg
     }
 
 
-    Instance::Instance(const std::vector<const char*>& requiredExtensions, Debug::Callback debugCallback)
+    Instance::Instance(Span<const char* const> requiredExtensions, DebugCallback debugCallback, bool enableValidationLayers)
     {
         if (enableValidationLayers && !checkValidationLayerSupport(validationLayers))
             throw std::runtime_error("validation layers requested, but not available!");
 
-        std::vector<const char*> extensions = requiredExtensions;
+        std::vector<const char*> extensions(requiredExtensions.begin(), requiredExtensions.end());
         if (enableValidationLayers)
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -102,20 +92,17 @@ namespace vg
     Instance::Instance() :m_handle(nullptr), m_debugMessenger(nullptr), m_debugCallback(nullptr) {}
 
     Instance::Instance(Instance&& other) noexcept
+        :Instance()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_debugMessenger, other.m_debugMessenger);
-        std::swap(m_debugCallback, other.m_debugCallback);
-        other.m_handle = nullptr;
-        other.m_debugMessenger = nullptr;
-        other.m_debugCallback = nullptr;
+        *this = std::move(other);
     }
 
     Instance::~Instance()
     {
         if (m_handle == nullptr) return;
-        if (enableValidationLayers)m_handle.destroyDebugUtilsMessengerEXT(m_debugMessenger);
+        if (m_debugMessenger)m_handle.destroyDebugUtilsMessengerEXT(m_debugMessenger);
         m_handle.destroy();
+        m_handle = nullptr;
     }
 
     Instance& Instance::operator=(Instance&& other) noexcept

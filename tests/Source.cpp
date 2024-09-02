@@ -104,6 +104,14 @@ struct UniformBufferObject
 
 bool recreateFramebuffer = false;
 
+struct Material
+{
+    Subpass subpass;
+    Material(Subpass&& subpass)
+        :subpass(std::move(subpass))
+    {}
+};
+
 int main()
 {
     glfwInit();
@@ -113,8 +121,8 @@ int main()
     int w, h; glfwGetFramebufferSize(window, &w, &h);
 
     vg::instance = Instance({ "VK_KHR_surface", "VK_KHR_win32_surface" },
-        [](Debug::Severity severity, const char* message) {
-            if (severity < Debug::Severity::Warning) return;
+        [](MessageSeverity severity, const char* message) {
+            if (severity < MessageSeverity::Warning) return;
             std::cout << message << '\n' << '\n';
         });
 
@@ -135,7 +143,7 @@ int main()
 
     Image colorImage({ swapchain.GetWidth(), swapchain.GetHeight() }, surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, msaaSampleCount);
     Image depthImage({ swapchain.GetWidth(), swapchain.GetHeight() }, { Format::D32SFLOAT,Format::D32SFLOATS8UINT,Format::x8D24UNORMPACK }, { FormatFeature::DepthStencilAttachment }, { ImageUsage::DepthStencilAttachment }, 1, 1, msaaSampleCount);
-    Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
+    Allocate(Span<Image* const>{ &depthImage, & colorImage }, { MemoryProperty::DeviceLocal });
     ImageView colorImageView(colorImage, { ImageAspect::Color });
     ImageView depthImageView(depthImage, { ImageAspect::Depth });
 
@@ -144,17 +152,39 @@ int main()
     Shader fragmentShader(ShaderStage::Fragment, "resources/shaders/shader.frag.spv");
     Shader vertexParticle(ShaderStage::Vertex, "resources/shaders/particle.vert.spv");
     Shader fragmentParticle(ShaderStage::Fragment, "resources/shaders/particle.frag.spv");
+
+    Subpass asada(
+        GraphicsPipeline(
+            { {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
+             {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}} },
+            { PushConstantRange({ShaderStage::Vertex},0,sizeof(glm::vec3)) },
+            { &vertexShader, &fragmentShader },
+            VertexLayout({ vg::VertexBinding(0, sizeof(glm::vec3)),vg::VertexBinding(1, sizeof(glm::vec3)) }, { vg::VertexAttribute(0, 0, vg::Format::RGB32SFLOAT),vg::VertexAttribute(1, 1, vg::Format::RGB32SFLOAT) }),
+            InputAssembly(Primitive::Triangles),
+            Tesselation(),
+            ViewportState(Viewport(w, h), Scissor(w, h)),
+            Rasterizer(false, PolygonMode::Fill, CullMode::None),
+            Multisampling(1, true),
+            DepthStencil(true, true, CompareOp::Less),
+            ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, { ColorBlend(BlendFactor::SrcAlpha,BlendFactor::OneMinusSrcAlpha,BlendOp::Add,BlendFactor::One,BlendFactor::Zero,BlendOp::Add,ColorComponent::RGBA) }),
+            { DynamicState::Viewport, DynamicState::Scissor }
+        ),
+        {}, { AttachmentReference(0, ImageLayout::ColorAttachmentOptimal) },
+        { AttachmentReference(2,ImageLayout::ColorAttachmentOptimal) },
+        AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
+    );
+
     RenderPass renderPass(
         {
-            Attachment(surface.GetFormat(), msaaSampleCount,ImageLayout::ColorAttachmentOptimal),
-            Attachment(depthImage.GetFormat(), msaaSampleCount,ImageLayout::DepthStencilAttachmentOptimal),
-            Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
+           Attachment(surface.GetFormat(), msaaSampleCount,ImageLayout::ColorAttachmentOptimal),
+           Attachment(depthImage.GetFormat(), msaaSampleCount,ImageLayout::DepthStencilAttachmentOptimal),
+           Attachment(surface.GetFormat(), ImageLayout::PresentSrc)
         },
         {
             Subpass(
                 GraphicsPipeline(
-                    {{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
-                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}},
+                    {{{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
+                     {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}},
                     {PushConstantRange({ShaderStage::Vertex},0,sizeof(glm::vec3))},
                     {&vertexShader, &fragmentShader},
                     VertexLayout({Vertex::GetBindingDescription()},Vertex::GetAttributeDescriptions()),
@@ -164,7 +194,7 @@ int main()
                     Rasterizer(false, PolygonMode::Fill, CullMode::None),
                     Multisampling(msaaSampleCount,true),
                     DepthStencil(true,true,CompareOp::Less),
-                    ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend()}),
+                    ColorBlending(true, LogicOp::Copy, { 0,0,0,0 }, {ColorBlend(BlendFactor::SrcAlpha,BlendFactor::OneMinusSrcAlpha,BlendOp::Add,BlendFactor::One,BlendFactor::Zero,BlendOp::Add,ColorComponent::RGBA)}),
                     { DynamicState::Viewport, DynamicState::Scissor},
                     1
                 ),
@@ -192,7 +222,8 @@ int main()
         },
         pipelineCache
     );
-    std::ofstream("pipelineCache.txt", std::ios_base::binary).write(pipelineCache.GetData().data(), pipelineCache.GetData().size());
+    std::vector<char> data = pipelineCache.GetData();
+    std::ofstream("pipelineCache.txt", std::ios_base::binary | std::ios_base::out).write(data.data(), data.size());
 
     std::vector<Framebuffer> swapChainFramebuffers;
     swapChainFramebuffers.resize(swapchain.GetImageCount());
@@ -252,7 +283,7 @@ int main()
 
     // Create and allocate descriptor set layouts.
     std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageCount(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]);
-    auto descriptorSets = descriptorPool.Allocate(layouts);
+    std::vector<vg::DescriptorSet> descriptorSets = descriptorPool.Allocate(layouts);
 
     uint64_t offsetAlignment = currentDevice->GetLimits().minUniformBufferOffsetAlignment;
     for (size_t i = 0; i < descriptorSets.size(); i++)
@@ -299,14 +330,17 @@ int main()
     Shader computeShader(ShaderStage::Compute, "resources/shaders/shader.comp.spv");
     ComputePipeline computePipeline(computeShader,
         {
-            DescriptorSetLayoutBinding(0,DescriptorType::StorageBuffer,1,ShaderStage::Compute),
-            DescriptorSetLayoutBinding(1,DescriptorType::StorageBuffer,1,ShaderStage::Compute)
+            {
+                DescriptorSetLayoutBinding(0,DescriptorType::StorageBuffer,1,ShaderStage::Compute),
+                DescriptorSetLayoutBinding(1,DescriptorType::StorageBuffer,1,ShaderStage::Compute)
+            }
         }, {});
 
     DescriptorPool descriptorPool1(swapchain.GetImageCount(), {
         {DescriptorType::StorageBuffer, swapchain.GetImageCount() * 2}
         });
-    auto descriptorSets1 = descriptorPool1.Allocate(std::vector<vg::DescriptorSetLayoutHandle>(swapchain.GetImageCount(), computePipeline.GetPipelineLayout().GetDescriptorSets()[0]));
+    std::vector<vg::DescriptorSet> descriptorSets1;
+    descriptorPool1.Allocate(std::vector<vg::DescriptorSetLayoutHandle>(swapchain.GetImageCount(), computePipeline.GetPipelineLayout().GetDescriptorSets()[0]), &descriptorSets1);
 
     for (size_t i = 0; i < descriptorSets1.size(); i++)
     {
@@ -349,7 +383,7 @@ int main()
             swapchain = Swapchain(surface, 2, w, h, oldSwapchain);
             colorImage = Image({ swapchain.GetWidth(), swapchain.GetHeight() }, surface.GetFormat(), { ImageUsage::ColorAttachment , ImageUsage::TransientAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
             depthImage = Image({ swapchain.GetWidth(), swapchain.GetHeight() }, depthImage.GetFormat(), { ImageUsage::DepthStencilAttachment }, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined, msaaSampleCount);
-            Allocate({ &depthImage, &colorImage }, { MemoryProperty::DeviceLocal });
+            Allocate(Span<Image* const>{&depthImage, & colorImage }, { MemoryProperty::DeviceLocal });
             colorImageView = ImageView(colorImage, { ImageAspect::Color });
             depthImageView = ImageView(depthImage, { ImageAspect::Depth });
             for (int i = 0; i < swapchain.GetImageCount(); i++)
@@ -373,10 +407,10 @@ int main()
         memcpy(uniformBuffers.MapMemory() + imageIndex * sizeof(ubo), &ubo, sizeof(ubo));
 
         commandBuffer[currentFrame].Clear().Begin().Append(
-            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { ClearColor{ 0,0,0,255 },ClearDepthStencil{1.0f,0U},ClearColor{ 0,0,0,255 } }),
+            cmd::BeginRenderpass(renderPass, swapChainFramebuffers[imageIndex], { 0, 0 }, { swapchain.GetWidth(), swapchain.GetHeight() }, { ClearColor{ 0,0,0,255 },ClearDepthStencil{1.0f,0U},ClearColor{ 0,0,0,255 } }, SubpassContents::Inline),
             cmd::BindPipeline(renderPass.GetPipelines()[0]),
             cmd::BindDescriptorSets(renderPass.GetPipelineLayouts()[0], PipelineBindPoint::Graphics, 0, { descriptorSets[imageIndex] }),
-            cmd::BindVertexBuffer(vertexBuffer, 0),
+            cmd::BindVertexBuffers(vertexBuffer, 0),
             cmd::BindIndexBuffer(vertexBuffer, sizeof(vertices[0]) * vertices.size(), IndexType::Uint16),
             cmd::SetViewport(Viewport(swapchain.GetWidth(), swapchain.GetHeight())),
             cmd::SetScissor(Scissor(swapchain.GetWidth(), swapchain.GetHeight())),
@@ -384,9 +418,9 @@ int main()
             cmd::DrawIndexed(indices.size()),
             cmd::PushConstants(renderPass.GetPipelineLayouts()[0], { ShaderStage::Vertex }, 0, glm::vec3(0, 0, 0)),
             cmd::DrawIndexed(indices.size()),
-            cmd::NextSubpass(),
+            cmd::NextSubpass(SubpassContents::Inline),
             cmd::BindPipeline(renderPass.GetPipelines()[1]),
-            cmd::BindVertexBuffer(particleBuffer, 0),
+            cmd::BindVertexBuffers(particleBuffer, 0),
             cmd::Draw(particleCount),
             cmd::EndRenderpass()
         ).End().Submit({ {PipelineStage::ColorAttachmentOutput, imageAvailableSemaphore[currentFrame]} }, { renderFinishedSemaphore[currentFrame] }, inFlightFence[currentFrame]);

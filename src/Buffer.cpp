@@ -10,28 +10,28 @@ namespace vg
         m_handle = ((DeviceHandle) *currentDevice).createBuffer({ {}, byteSize, (vk::BufferUsageFlagBits) (int) usage, (vk::SharingMode) sharing });
     }
     Buffer::Buffer(Buffer&& other) noexcept
+        :Buffer()
     {
-        std::swap(m_handle, other.m_handle);
-
-        std::swap(m_size, other.m_size);
-        std::swap(m_offset, other.m_offset);
-        std::swap(m_memory, other.m_memory);
+        *this = std::move(other);
     }
+
     Buffer::~Buffer()
     {
         if (!m_handle) return;
         ((DeviceHandle) *currentDevice).destroyBuffer(m_handle);
         if (m_memory) m_memory->Dereferance();
+        m_handle = nullptr;
     }
 
     Buffer& Buffer::operator=(Buffer&& other) noexcept
     {
         if (this == &other) return *this;
-        std::swap(m_handle, other.m_handle);
 
+        std::swap(m_handle, other.m_handle);
         std::swap(m_size, other.m_size);
         std::swap(m_offset, other.m_offset);
         std::swap(m_memory, other.m_memory);
+
         return *this;
     }
     Buffer::operator const BufferHandle& () const

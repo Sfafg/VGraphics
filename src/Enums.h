@@ -1087,4 +1087,10 @@ namespace vg
         IncrementAndWrap = 6,
         DecrementAndWrap = 7,
     };
+
+    enum class SubpassContents
+    {
+        Inline = 0,
+        SecondaryCommandBuffers = 1,
+    };
 }

@@ -2,6 +2,7 @@
 #include "Instance.h"
 #include "Queue.h"
 #include "Structs.h"
+#include "Span.h"
 #include <functional>
 #include <string>
 #include <set>
@@ -25,11 +26,11 @@ namespace vg
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
-            const std::vector<Queue*>& queues,
+            Span<Queue* const> queues,
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
             SurfaceHandle surface = {},
-            std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
+            std::function<int(PhysicalDeviceHandle id, Span<Queue* const> supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr);
         /**
          *@brief Construct a new Device object
          *
@@ -39,10 +40,10 @@ namespace vg
          * @param scoreFunction Function for scroing each device, function should return score or -1 if device is not an option
          */
         Device(
-            const std::vector<Queue*>& queues,
+            Span<Queue* const> queues,
             const std::set<std::string>& extensions = {},
             const DeviceFeatures& hintedDeviceEnabledFeatures = {},
-            std::function<int(PhysicalDeviceHandle id, const std::vector<Queue*>& supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
+            std::function<int(PhysicalDeviceHandle id, Span<Queue* const> supportedQueues, const std::set<std::string>& supportedExtensions, DeviceType type, const DeviceLimits& limits, const DeviceFeatures& features)> scoreFunction = nullptr)
             :Device::Device(queues, extensions, hintedDeviceEnabledFeatures, {}, scoreFunction) {}
 
         Device();

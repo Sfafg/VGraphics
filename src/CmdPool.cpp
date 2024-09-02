@@ -22,9 +22,9 @@ namespace vg
     }
 
     CmdPool::CmdPool(CmdPool&& other) noexcept
+        :CmdPool()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_queue, other.m_queue);
+        *this = std::move(other);
     }
 
     CmdPool& CmdPool::operator=(CmdPool&& other) noexcept

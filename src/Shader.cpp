@@ -21,29 +21,29 @@ namespace vg
         file.read(code.data(), fileSize);
         file.close();
 
-        m_handle = ((DeviceHandle) *currentDevice).createShaderModule({ {}, code.size(), (const uint32_t*) code.data() });
+        m_handle = ((DeviceHandle) *currentDevice).createShaderModule({ {},code.size(), (const uint32_t*) code.data() });
     }
 
     Shader::Shader() : m_handle(nullptr), m_stage(ShaderStage::Vertex) {}
 
     Shader::Shader(Shader&& other) noexcept
+        :Shader()
     {
-        std::swap(m_handle, other.m_handle);
-
-        other.m_handle = nullptr;
+        *this = std::move(other);
     }
 
     Shader::~Shader()
     {
         if (m_handle == nullptr) return;
         ((DeviceHandle) *currentDevice).destroyShaderModule(m_handle);
+        m_handle = nullptr;
     }
 
     Shader& Shader::operator=(Shader&& other) noexcept
     {
         if (&other == this) return *this;
-        std::swap(m_handle, other.m_handle);
 
+        std::swap(m_handle, other.m_handle);
 
         return *this;
     }

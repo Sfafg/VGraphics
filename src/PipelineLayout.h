@@ -2,6 +2,7 @@
 #include <vector>
 #include "Handle.h"
 #include "Structs.h"
+#include "Span.h"
 
 namespace vg
 {
@@ -17,8 +18,8 @@ namespace vg
         PipelineLayout& operator=(const PipelineLayout& other) = delete;
         operator const PipelineLayoutHandle& () const;
 
-        std::vector<DescriptorSetLayoutHandle>& GetDescriptorSets();
-        const std::vector<DescriptorSetLayoutHandle>& GetDescriptorSets()const;
+        Span<DescriptorSetLayoutHandle> GetDescriptorSets();
+        Span<const DescriptorSetLayoutHandle> GetDescriptorSets()const;
 
     private:
         PipelineLayoutHandle m_handle;

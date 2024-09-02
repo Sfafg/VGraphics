@@ -7,7 +7,7 @@
 namespace vg
 {
     Image::Image(
-        std::vector<uint32_t> extend,
+        Span<const uint32_t> extend,
         Format format,
         Flags<ImageUsage> usage,
         uint32_t mipLevels,
@@ -30,8 +30,8 @@ namespace vg
     }
 
     Image::Image(
-        std::vector<uint32_t> extend,
-        std::vector<Format> formatCandidates,
+        Span<const uint32_t> extend,
+        Span<const Format> formatCandidates,
         Flags<FormatFeature> features,
         Flags<ImageUsage> usage,
         uint32_t mipLevels,
@@ -46,21 +46,16 @@ namespace vg
     Image::Image() :m_handle(nullptr), m_format(Format::Undefined), m_tiling(ImageTiling::Linear), m_dimensionCount(0), m_dimensions{ 0,0,0 }, m_offset(0), m_size(0), m_memory(nullptr) {}
 
     Image::Image(Image&& other) noexcept
+        :Image()
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_memory, other.m_memory);
-        std::swap(m_format, other.m_format);
-        std::swap(m_tiling, other.m_tiling);
-        std::swap(m_dimensionCount, other.m_dimensionCount);
-        std::swap(m_dimensions, other.m_dimensions);
-        std::swap(m_offset, other.m_offset);
-        std::swap(m_size, other.m_size);
+        *this = std::move(other);
     }
     Image::~Image()
     {
         if (!m_handle) return;
         ((DeviceHandle) *currentDevice).destroyImage(m_handle);
         if (m_memory) m_memory->Dereferance();
+        m_handle = nullptr;
     }
 
     Image& Image::operator=(Image&& other) noexcept
@@ -129,13 +124,9 @@ namespace vg
         *depth = m_dimensions[2];
     }
 
-    std::vector<uint32_t> Image::GetDimensions() const
+    Span<const uint32_t> Image::GetDimensions() const
     {
-        std::vector<uint32_t> dimensions(GetDimensionCount());
-        for (int i = 0; i < dimensions.size(); i++)
-            dimensions.push_back(m_dimensions[i]);
-
-        return dimensions;
+        return Span<const uint32_t>(m_dimensions, GetDimensionCount());
     }
 
     uint64_t Image::GetSize() const
@@ -158,7 +149,7 @@ namespace vg
         return m_memory;
     }
 
-    Format Image::FindSupportedFormat(const std::vector<Format>& candidates, ImageTiling tiling, Flags<FormatFeature> features)
+    Format Image::FindSupportedFormat(Span<const Format> candidates, ImageTiling tiling, Flags<FormatFeature> features)
     {
         for (Format format : candidates)
         {

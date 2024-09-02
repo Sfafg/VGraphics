@@ -1,10 +1,17 @@
 #pragma once
 #include <vector>
-#include "Debug.h"
+#include "Span.h"
 #include "Handle.h"
 
 namespace vg
 {
+    enum class MessageSeverity
+    {
+        Verbose = 1,
+        Info = 16,
+        Warning = 256,
+        Error = 4096
+    };
 
     /**
      *@brief Vulkan Instance and Error handling
@@ -17,13 +24,16 @@ namespace vg
     class Instance
     {
     public:
+        typedef void(*DebugCallback)(MessageSeverity, const char* message);
+
+    public:
         /**
          *@brief Construct a new Instance object
          *
          * @param requiredExtensions list of required extensions
          * @param debugCallback optional callback to custom logging function
          */
-        Instance(const std::vector<const char*>& requiredExtensions, Debug::Callback debugCallback = nullptr);
+        Instance(Span<const char* const> requiredExtensions, DebugCallback debugCallback = nullptr, bool enableValidationLayers = true);
 
         Instance();
         Instance(Instance&& other) noexcept;
@@ -38,7 +48,7 @@ namespace vg
     private:
         InstanceHandle m_handle;
         DebugMessengerHandle m_debugMessenger;
-        Debug::Callback m_debugCallback;
+        DebugCallback m_debugCallback;
     };
     extern Instance instance;
 }

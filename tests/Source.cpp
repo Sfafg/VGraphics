@@ -296,7 +296,7 @@ int main()
     Queue computeQueue({ QueueType::Compute }, 1);
     Device computeDevice({ &computeQueue }, {}, {},
         [](PhysicalDeviceHandle id, auto supportedQueues, auto supportedExtensions, auto type, DeviceLimits limits, DeviceFeatures features) {
-            return id != currentDevice;
+            return id != *currentDevice;
         });
     SCOPED_DEVICE_CHANGE(&computeDevice);
 

@@ -298,4 +298,9 @@ namespace vg
         auto properties = m_physicalDevice.getFormatProperties((vk::Format) format);
         return *(FormatProperties*) &properties;
     }
+
+    const Queue& Device::GetQueue(uint32_t queueIndex) const
+    {
+        return *m_queues[queueIndex];
+    }
 }

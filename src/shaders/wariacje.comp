@@ -1,0 +1,31 @@
+#version 450
+
+layout(push_constant)uniform PushConstants {
+    int iloscWariacji;
+    int n;
+    int k;
+};
+
+layout(std430, binding = 0) buffer WariacjeSSBO {
+   uint wariacje[];
+};
+
+layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+void main() 
+{
+    int numer = int(gl_GlobalInvocationID.x);
+    if(numer >= iloscWariacji)
+        return;
+
+    int offsetWariacji = numer * k;
+    int j = k - 1;
+    while (numer != 0)
+    {
+        wariacje[offsetWariacji + j--] = numer % n + 1;
+        numer /= n;
+    }
+
+    while (j >= 0)
+        wariacje[offsetWariacji + j--] = 1;
+}

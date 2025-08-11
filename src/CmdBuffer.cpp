@@ -170,6 +170,15 @@ namespace vg
             CmdBufferHandle(commandBuffer).nextSubpass((vk::SubpassContents) subpassContents);
         }
 
+        void ResetQueryPool::operator()(CmdBuffer& commandBuffer) const
+        {
+            CmdBufferHandle(commandBuffer).resetQueryPool(queryPool, firstQuery, queryCount);
+        }
+
+        void WriteTimestamp::operator()(CmdBuffer& commandBuffer) const
+        {
+            CmdBufferHandle(commandBuffer).writeTimestamp((vk::PipelineStageFlagBits) (int) pipelineStage, (vk::QueryPool) queryPool, query);
+        }
     }
 
     CmdBuffer::CmdBuffer(const Queue& queue, bool isShortLived, CmdBufferLevel cmdLevel) : m_commandPool(queue.GetCmdPool(isShortLived)), m_queue(queue)

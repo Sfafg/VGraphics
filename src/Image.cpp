@@ -19,7 +19,11 @@ namespace vg
     {
         assert(0 < extend.size() && extend.size() < 4);
 
-        m_mipLevels = std::min(mipLevels, (uint32_t) std::floor(std::log2(std::min({ m_dimensions[0], m_dimensions[1], m_dimensions[2] }))) + 1);
+        uint32_t minimum = m_dimensions[0];
+        for (int i = 1; i < m_dimensionCount; i++)
+            minimum = std::min(m_dimensions[i], minimum);
+
+        m_mipLevels = std::min(mipLevels, (uint32_t) std::floor(std::log2(minimum)) + 1);
 
         vk::ImageCreateInfo imageInfo({}, (vk::ImageType) (m_dimensionCount - 1),
             (vk::Format) format, { m_dimensions[0],m_dimensions[1],m_dimensions[2] },

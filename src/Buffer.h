@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "Handle.h"
 #include "Flags.h"
 #include "Enums.h"

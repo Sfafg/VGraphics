@@ -13,9 +13,15 @@ namespace vg
         float mipLodBias,
         float minLod,
         float maxLod,
+        SamplerReduction samplerReduction,
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
+        void* pNext = nullptr;
+        vk::SamplerReductionModeCreateInfo reductionModeCreateInfo((vk::SamplerReductionMode) samplerReduction);
+        if (samplerReduction != SamplerReduction::WeightedAverage)
+            pNext = &reductionModeCreateInfo;
+
         m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
@@ -32,7 +38,8 @@ namespace vg
             minLod,
             maxLod,
             (vk::BorderColor) borderColor,
-            unnormalizedCoordinates
+            unnormalizedCoordinates,
+            pNext
             });
     }
 
@@ -47,9 +54,15 @@ namespace vg
         float mipLodBias,
         float minLod,
         float maxLod,
+        SamplerReduction samplerReduction,
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
+        void* pNext = nullptr;
+        vk::SamplerReductionModeCreateInfo reductionModeCreateInfo((vk::SamplerReductionMode) samplerReduction);
+        if (samplerReduction != SamplerReduction::WeightedAverage)
+            pNext = &reductionModeCreateInfo;
+
         m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
@@ -66,7 +79,8 @@ namespace vg
             minLod,
             maxLod,
             (vk::BorderColor) borderColor,
-            unnormalizedCoordinates
+            unnormalizedCoordinates,
+            pNext
             });
     }
 
@@ -81,9 +95,15 @@ namespace vg
         float mipLodBias,
         float minLod,
         float maxLod,
+        SamplerReduction samplerReduction,
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
+        void* pNext = nullptr;
+        vk::SamplerReductionModeCreateInfo reductionModeCreateInfo((vk::SamplerReductionMode) samplerReduction);
+        if (samplerReduction != SamplerReduction::WeightedAverage)
+            pNext = &reductionModeCreateInfo;
+
         m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
@@ -100,7 +120,8 @@ namespace vg
             minLod,
             maxLod,
             (vk::BorderColor) borderColor,
-            unnormalizedCoordinates
+            unnormalizedCoordinates,
+            pNext
             });
     }
 
@@ -116,9 +137,15 @@ namespace vg
         float mipLodBias,
         float minLod,
         float maxLod,
+        SamplerReduction samplerReduction,
         BorderColor borderColor,
         bool unnormalizedCoordinates)
     {
+        void* pNext = nullptr;
+        vk::SamplerReductionModeCreateInfo reductionModeCreateInfo((vk::SamplerReductionMode) samplerReduction);
+        if (samplerReduction != SamplerReduction::WeightedAverage)
+            pNext = &reductionModeCreateInfo;
+
         m_handle = ((DeviceHandle) *currentDevice).createSampler({
             {},
             (vk::Filter) magFilter,
@@ -135,7 +162,8 @@ namespace vg
             minLod,
             maxLod,
             (vk::BorderColor) borderColor,
-            unnormalizedCoordinates
+            unnormalizedCoordinates,
+            pNext
             });
     }
 

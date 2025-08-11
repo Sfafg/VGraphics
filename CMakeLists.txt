@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.30.1)
 project(VGraphics)
 set(CMAKE_CXX_STANDARD 23)
 add_definitions(-DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
 set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
@@ -39,6 +38,8 @@ set(SRC
     ${SRC_ROOT}/Sampler.cpp
     ${SRC_ROOT}/FormatInfo.cpp
     ${SRC_ROOT}/CmdPool.cpp
+    ${SRC_ROOT}/QueryPool.cpp
+    ${SRC_ROOT}/spirv_reflect.c
 )
 
 set(SHADERS
@@ -47,6 +48,7 @@ set(SHADERS
     ${SHADER_ROOT}/shader.vert
     ${SHADER_ROOT}/particle.frag
     ${SHADER_ROOT}/particle.vert
+    ${SHADER_ROOT}/wariacje.comp
 )
 
 set(RESOURCES
@@ -113,3 +115,12 @@ target_link_directories(VGTest PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
 )
 add_dependencies(VGTest Shaders VGraphics Resources)
+
+# WARIACJE
+add_executable(Wariacje ${TESTS_ROOT}/Wariacje.cpp)
+target_link_libraries(Wariacje PRIVATE VGraphics glfw3 vulkan-1 STB_Image)
+target_link_directories(Wariacje PRIVATE
+    "C:/VulkanSDK/1.3.261.1/lib/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/"
+)
+add_dependencies(Wariacje Shaders VGraphics)

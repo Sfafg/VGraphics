@@ -21,8 +21,6 @@
 #include "Surface.h"
 #include "Swapchain.h"
 #include "Synchronization.h"
-#include "Window.h"
-#include <GLFW/glfw3.h>
 #include <chrono>
 #include <fstream>
 #include <glm/glm.hpp>
@@ -30,8 +28,17 @@
 #include <iostream>
 #include <math.h>
 #include <random>
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <thread>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+extern "C" {
+typedef struct VkInstance_T *VkInstance;
+typedef struct VkSurfaceKHR_T *VkSurfaceKHR;
+int glfwCreateWindowSurface(VkInstance instance, GLFWwindow *window, const void *allocator, VkSurfaceKHR *surface);
+}
 
 using namespace std::chrono_literals;
 using namespace vg;
@@ -71,7 +78,8 @@ struct Particle {
     static std::vector<VertexAttribute> &GetAttributeDescriptions() {
         static std::vector<VertexAttribute> attributeDescriptions = {
             VertexAttribute(0, 0, Format::RG32SFLOAT, offsetof(Particle, position)),
-            VertexAttribute(1, 0, Format::RGBA32SFLOAT, offsetof(Particle, color))};
+            VertexAttribute(1, 0, Format::RGBA32SFLOAT, offsetof(Particle, color))
+        };
 
         return attributeDescriptions;
     }
@@ -108,28 +116,32 @@ int main() {
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int w, int h) { recreateFramebuffer = true; });
     int w, h;
     glfwGetFramebufferSize(window, &w, &h);
+    uint32_t glfwExtensionCount = 0;
+    const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    vg::instance =
-        Instance({"VK_KHR_surface", "VK_KHR_win32_surface"}, [](MessageSeverity severity, const char *message) {
-            if (severity < MessageSeverity::Warning) return;
-            std::cout << message << '\n';
-            return;
-            std::string m(message);
-            m = m.substr(m.find('[') + 2, m.size());
-            std::string brackets = m.substr(0, m.find(']') - 1);
-            m = m.substr(brackets.size(), m.size());
-            m = m.substr(m.find(',') + 1, m.size());
-            std::string type = m.substr(0, m.find(';'));
-            m = m.substr(type.size() + 3, m.size());
-            m = m.substr(m.find('|') + 1, m.size());
-            m = m.substr(0, m.rfind('('));
-            std::string me = m.substr(0, m.rfind('.'));
-            m = m.substr(m.rfind(':') + 1, m.size());
+    vg::instance = Instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
+        if (severity < MessageSeverity::Warning) return;
+        std::cout << message << '\n';
+        return;
+        std::string m(message);
+        m = m.substr(m.find('[') + 2, m.size());
+        std::string brackets = m.substr(0, m.find(']') - 1);
+        m = m.substr(brackets.size(), m.size());
+        m = m.substr(m.find(',') + 1, m.size());
+        std::string type = m.substr(0, m.find(';'));
+        m = m.substr(type.size() + 3, m.size());
+        m = m.substr(m.find('|') + 1, m.size());
+        m = m.substr(0, m.rfind('('));
+        std::string me = m.substr(0, m.rfind('.'));
+        m = m.substr(m.rfind(':') + 1, m.size());
 
-            std::cout << type << me << '.' << m << '\n';
-        });
+        std::cout << type << me << '.' << m << '\n';
+    });
 
-    SurfaceHandle windowSurface = Window::CreateWindowSurface(vg::instance, window);
+    SurfaceHandle windowSurface;
+    glfwCreateWindowSurface(
+        *(VkInstance *)&vg::instance, (GLFWwindow *)window, nullptr, (VkSurfaceKHR *)&windowSurface
+    );
     DeviceFeatures deviceFeatures(
         {Feature::WideLines, Feature::LogicOp, Feature::SamplerAnisotropy, Feature::SampleRateShading}
     );
@@ -193,7 +205,8 @@ int main() {
         Vector<PipelineLayout>{PipelineLayout{
             {{{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
               {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}},
-            {PushConstantRange({ShaderStage::Vertex}, 0, sizeof(glm::vec3))}}},
+            {PushConstantRange({ShaderStage::Vertex}, 0, sizeof(glm::vec3))}
+        }},
         std::span{&sub, &sub + 1},
         {SubpassDependency(
             -1, 0, PipelineStage::ColorAttachmentOutput, PipelineStage::ColorAttachmentOutput, 0,
@@ -210,7 +223,8 @@ int main() {
             PipelineLayout{
                 {{{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex},
                   {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}},
-                {PushConstantRange({ShaderStage::Vertex}, 0, sizeof(glm::vec3))}},
+                {PushConstantRange({ShaderStage::Vertex}, 0, sizeof(glm::vec3))}
+            },
         },
         {Subpass(
              GraphicsPipeline(
@@ -237,7 +251,8 @@ int main() {
                  &sub.graphicsPipeline, std::nullopt,
                  Vector{
                      Shader(ShaderStage::Vertex, "resources/shaders/particle.vert.spv"),
-                     Shader(ShaderStage::Fragment, "resources/shaders/particle.frag.spv")},
+                     Shader(ShaderStage::Fragment, "resources/shaders/particle.frag.spv")
+                 },
                  VertexLayout({Particle::GetBindingDescription()}, Particle::GetAttributeDescriptions()),
                  InputAssembly(Primitive::Points)
              ),
@@ -329,15 +344,17 @@ int main() {
         );
         texImage.AppendMipmapGenerationCommands(&imageCommandBuffer, texImage.GetMipLevels());
         imageCommandBuffer
-            .Append(cmd::PipelineBarier(
-                PipelineStage::Transfer, PipelineStage::FragmentShader,
-                {{texImage,
-                  ImageLayout::TransferSrcOptimal,
-                  ImageLayout::ShaderReadOnlyOptimal,
-                  Access::TransferWrite,
-                  Access::ShaderRead,
-                  {ImageAspect::Color, 0, texImage.GetMipLevels()}}}
-            ))
+            .Append(
+                cmd::PipelineBarier(
+                    PipelineStage::Transfer, PipelineStage::FragmentShader,
+                    {{texImage,
+                      ImageLayout::TransferSrcOptimal,
+                      ImageLayout::ShaderReadOnlyOptimal,
+                      Access::TransferWrite,
+                      Access::ShaderRead,
+                      {ImageAspect::Color, 0, texImage.GetMipLevels()}}}
+                )
+            )
             .End()
             .Submit()
             .Await();

@@ -1,6 +1,5 @@
 #include <vulkan/vulkan.hpp>
 #include "Shader.h"
-#include "spirv_reflect.h"
 #include <fstream>
 #include <iostream>
 #include <math.h>

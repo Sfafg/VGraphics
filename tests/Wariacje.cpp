@@ -47,7 +47,7 @@ int main() {
     Allocate(&bufferWariacji, {MemoryProperty::HostVisible, MemoryProperty::HostCoherent});
 
     // Stwórz pipeline i descriptory.
-    Shader computeShader(ShaderStage::Compute, "resources/shaders/wariacje.spv");
+    Shader computeShader(ShaderStage::Compute, "resources/shaders/wariacje.comp.spv");
     ComputePipeline computePipeline(
         computeShader, PipelineLayout(
                            {{DescriptorSetLayoutBinding(0, DescriptorType::StorageBuffer, 1, ShaderStage::Compute)}},

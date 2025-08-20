@@ -122,20 +122,6 @@ int main() {
     vg::instance = Instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
         if (severity < MessageSeverity::Warning) return;
         std::cout << message << '\n';
-        return;
-        std::string m(message);
-        m = m.substr(m.find('[') + 2, m.size());
-        std::string brackets = m.substr(0, m.find(']') - 1);
-        m = m.substr(brackets.size(), m.size());
-        m = m.substr(m.find(',') + 1, m.size());
-        std::string type = m.substr(0, m.find(';'));
-        m = m.substr(type.size() + 3, m.size());
-        m = m.substr(m.find('|') + 1, m.size());
-        m = m.substr(0, m.rfind('('));
-        std::string me = m.substr(0, m.rfind('.'));
-        m = m.substr(m.rfind(':') + 1, m.size());
-
-        std::cout << type << me << '.' << m << '\n';
     });
 
     SurfaceHandle windowSurface;

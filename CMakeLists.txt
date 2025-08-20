@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 4.0.0)
+cmake_minimum_required(VERSION 3.10.0)
 project(VGraphics)
 
-option(BUILD_TESTS "Build tests" OFF)
+option(VGRAPHICS_BUILD_TESTS "Build tests" OFF)
 
 set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
 set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
@@ -35,7 +35,7 @@ target_include_directories(VGraphics PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-if(BUILD_TESTS)
+if(VGRAPHICS_BUILD_TESTS)
 # SHADERS
     find_program(GLSLC_EXECUTABLE glslc)
     if(NOT GLSLC_EXECUTABLE)
@@ -81,6 +81,7 @@ if(BUILD_TESTS)
       CMAKE_CACHE_ARGS
         -DGLFW_BUILD_WAYLAND:BOOL=ON
         -DGLFW_BUILD_X11:BOOL=OFF
+        -DGLFW_BUILD_DOCS:BOOL=OFF
     )
     FetchContent_MakeAvailable(glfw)
 

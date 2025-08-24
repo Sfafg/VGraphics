@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(VGraphics)
 
-option(VGRAPHICS_BUILD_TESTS "Build tests" ON)
+option(VGRAPHICS_BUILD_TESTS "Build tests" OFF)
 
 set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
 set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
@@ -35,7 +35,7 @@ target_include_directories(VGraphics PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-if(TRUE)
+if(VGRAPHICS_BUILD_TESTS)
 # SHADERS
     find_program(GLSLC_EXECUTABLE glslc)
     if(NOT GLSLC_EXECUTABLE)
@@ -54,7 +54,7 @@ if(TRUE)
         list(APPEND SHADER_DEPEND "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.spv")
     endforeach()
 
-    add_custom_target(Shaders ALL DEPENDS ${SHADER_DEPEND})
+    add_custom_target(VGRAPHICS_Shaders ALL DEPENDS ${SHADER_DEPEND})
 
 # RESOURCES
     file(GLOB_RECURSE RESOURCES "${RESOURCES_ROOT}/*.*")
@@ -70,7 +70,7 @@ if(TRUE)
         list(APPEND RESOURCE_DEPEND "${RESOURCES_OUTPUT_DIR}/${RESOURCE_NAME}")
     endforeach()
 
-    add_custom_target(Resources ALL DEPENDS ${RESOURCE_DEPEND})
+    add_custom_target(VGRAPHICS_Resources ALL DEPENDS ${RESOURCE_DEPEND})
 
 # GLFW
     include(FetchContent)
@@ -104,12 +104,12 @@ if(TRUE)
     FetchContent_MakeAvailable(glm)
 
 # TEST
-    add_executable(VGTest ${TESTS_ROOT}/Source.cpp)
-    target_link_libraries(VGTest PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
-    add_dependencies(VGTest Shaders VGraphics Resources)
+    add_executable(VGRAPHICS_VGTest ${TESTS_ROOT}/Source.cpp)
+    target_link_libraries(VGRAPHICS_VGTest PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
+    add_dependencies(VGRAPHICS_VGTest VGRAPHICS_Shaders VGraphics VGRAPHICS_Resources)
 
 # WARIACJE
-    add_executable(Wariacje ${TESTS_ROOT}/Wariacje.cpp)
-    target_link_libraries(Wariacje PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
-    add_dependencies(Wariacje Shaders VGraphics)
+    add_executable(VGRAPHICS_Wariacje ${TESTS_ROOT}/Wariacje.cpp)
+    target_link_libraries(VGRAPHICS_Wariacje PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
+    add_dependencies(VGRAPHICS_Wariacje VGRAPHICS_Shaders VGraphics)
 endif()

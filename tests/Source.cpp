@@ -121,7 +121,7 @@ int main() {
 
     vg::instance = Instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
         if (severity < MessageSeverity::Warning) return;
-        std::cout << message << '\n';
+        std::cout << message << '\n' << '\n';
     });
 
     SurfaceHandle windowSurface;
@@ -164,26 +164,6 @@ int main() {
     Shader vertexShader(ShaderStage::Vertex, "resources/shaders/shader.vert.spv");
     Shader fragmentShader(ShaderStage::Fragment, "resources/shaders/shader.frag.spv");
 
-    Subpass sub(
-        GraphicsPipeline(
-            0, std::vector<vg::Shader *>{&vertexShader, &fragmentShader},
-            VertexLayout({Vertex::GetBindingDescription()}, Vertex::GetAttributeDescriptions()),
-            InputAssembly(Primitive::Triangles), Tesselation(), ViewportState(Viewport(w, h), Scissor(w, h)),
-            Rasterizer(false, false, PolygonMode::Fill, CullMode::None), Multisampling(msaaSampleCount, true),
-            DepthStencil(true, true, CompareOp::Less),
-            ColorBlending(
-                true, LogicOp::Copy, {0, 0, 0, 0},
-                {ColorBlend(
-                    BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha, BlendOp::Add, BlendFactor::One,
-                    BlendFactor::Zero, BlendOp::Add, ColorComponent::RGBA
-                )}
-            ),
-            {DynamicState::Viewport, DynamicState::Scissor}, 1
-        ),
-        {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
-        {AttachmentReference(2, ImageLayout::ColorAttachmentOptimal)},
-        AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
-    );
     RenderPass testPass(
         {Attachment(surface.GetFormat(), msaaSampleCount, ImageLayout::ColorAttachmentOptimal),
          Attachment(depthImage.GetFormat(), msaaSampleCount, ImageLayout::DepthStencilAttachmentOptimal),
@@ -193,7 +173,26 @@ int main() {
               {1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}}},
             {PushConstantRange({ShaderStage::Vertex}, 0, sizeof(glm::vec3))}
         }},
-        std::span{&sub, &sub + 1},
+        {Subpass(
+            GraphicsPipeline(
+                0, std::vector<vg::Shader *>{&vertexShader, &fragmentShader},
+                VertexLayout({Vertex::GetBindingDescription()}, Vertex::GetAttributeDescriptions()),
+                InputAssembly(Primitive::Triangles), Tesselation(), ViewportState(Viewport(w, h), Scissor(w, h)),
+                Rasterizer(false, false, PolygonMode::Fill, CullMode::None), Multisampling(msaaSampleCount, true),
+                DepthStencil(true, true, CompareOp::Less),
+                ColorBlending(
+                    true, LogicOp::Copy, {0, 0, 0, 0},
+                    {ColorBlend(
+                        BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha, BlendOp::Add, BlendFactor::One,
+                        BlendFactor::Zero, BlendOp::Add, ColorComponent::RGBA
+                    )}
+                ),
+                {DynamicState::Viewport, DynamicState::Scissor}
+            ),
+            {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
+            {AttachmentReference(2, ImageLayout::ColorAttachmentOptimal)},
+            AttachmentReference(1, ImageLayout::DepthStencilAttachmentOptimal)
+        )},
         {SubpassDependency(
             -1, 0, PipelineStage::ColorAttachmentOutput, PipelineStage::ColorAttachmentOutput, 0,
             Access::ColorAttachmentWrite, {}
@@ -234,13 +233,23 @@ int main() {
          ),
          Subpass(
              GraphicsPipeline(
-                 &sub.graphicsPipeline, std::nullopt,
+                 0,
                  Vector{
                      Shader(ShaderStage::Vertex, "resources/shaders/particle.vert.spv"),
                      Shader(ShaderStage::Fragment, "resources/shaders/particle.frag.spv")
                  },
                  VertexLayout({Particle::GetBindingDescription()}, Particle::GetAttributeDescriptions()),
-                 InputAssembly(Primitive::Points)
+                 InputAssembly(Primitive::Points), Tesselation(), ViewportState(Viewport(w, h), Scissor(w, h)),
+                 Rasterizer(false, false, PolygonMode::Fill, CullMode::None), Multisampling(msaaSampleCount, true),
+                 DepthStencil(true, true, CompareOp::Less),
+                 ColorBlending(
+                     true, LogicOp::Copy, {0, 0, 0, 0},
+                     {ColorBlend(
+                         BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha, BlendOp::Add, BlendFactor::One,
+                         BlendFactor::Zero, BlendOp::Add, ColorComponent::RGBA
+                     )}
+                 ),
+                 {DynamicState::Viewport, DynamicState::Scissor}, 0
              ),
              {}, {AttachmentReference(0, ImageLayout::ColorAttachmentOptimal)},
              {AttachmentReference(2, ImageLayout::ColorAttachmentOptimal)},
@@ -553,5 +562,7 @@ int main() {
         currentFrame = (currentFrame + 1) % swapchain.GetImageCount();
     }
     Fence::AwaitAll(inFlightFence);
+    vg::currentDevice->WaitUntilIdle();
+
     glfwTerminate();
 }

@@ -50,42 +50,32 @@ RenderPass::RenderPass(
     for (unsigned int i = 0; i < subpasses.size(); i++) {
         const Subpass &subpass = subpasses.begin()[i];
         const GraphicsPipeline &pipeline = subpasses.begin()[i].graphicsPipeline;
-        GraphicsPipeline::CreateInfo &createInfo = *pipeline.m_createInfo;
 
-        const GraphicsPipeline *parentPipeline = createInfo.parent;
-        if (createInfo.parentIndex != -1) parentPipeline = &subpasses.begin()[createInfo.parentIndex].graphicsPipeline;
+        shaderStages[i].resize(pipeline.shaders.size());
+        for (int j = 0; j < pipeline.shaders.size(); j++) shaderStages[i][j] = *pipeline.shaders[j];
 
-        shaderStages[i].resize(createInfo.GetShaders(parentPipeline)->size());
-        for (int j = 0; j < createInfo.GetShaders(parentPipeline)->size(); j++)
-            shaderStages[i][j] = *(*createInfo.GetShaders(parentPipeline))[j];
+        auto *vertexInput = (vk::PipelineVertexInputStateCreateInfo *)&pipeline.vertexInput;
+        auto *inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo *)&pipeline.inputAssembly;
+        auto *tesselation = (vk::PipelineTessellationStateCreateInfo *)&pipeline.tesselation;
+        auto *viewportState = (vk::PipelineViewportStateCreateInfo *)&pipeline.viewportState;
+        auto *rasterizer = (vk::PipelineRasterizationStateCreateInfo *)&pipeline.rasterizer;
+        auto *multisampling = (vk::PipelineMultisampleStateCreateInfo *)&pipeline.multisampling;
+        auto *depthStencil = (vk::PipelineDepthStencilStateCreateInfo *)&pipeline.depthStencil;
+        auto *colorBlending = (vk::PipelineColorBlendStateCreateInfo *)&pipeline.colorBlending;
 
-        auto *vertexInput = (vk::PipelineVertexInputStateCreateInfo *)createInfo.GetVertexInput(parentPipeline);
-        auto *inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo *)createInfo.GetInputAssembly(parentPipeline);
-        auto *tesselation = (vk::PipelineTessellationStateCreateInfo *)createInfo.GetTesselation(parentPipeline);
-        auto *viewportState = (vk::PipelineViewportStateCreateInfo *)createInfo.GetViewportState(parentPipeline);
-        auto *rasterizer = (vk::PipelineRasterizationStateCreateInfo *)createInfo.GetRasterizer(parentPipeline);
-        auto *multisampling = (vk::PipelineMultisampleStateCreateInfo *)createInfo.GetMultisampling(parentPipeline);
-        auto *depthStencil = (vk::PipelineDepthStencilStateCreateInfo *)createInfo.GetDepthStencil(parentPipeline);
-        auto *colorBlending = (vk::PipelineColorBlendStateCreateInfo *)createInfo.GetColorBlending(parentPipeline);
-
-        dynamicStates[i] = vk::PipelineDynamicStateCreateInfo(
-            {}, *(std::vector<vk::DynamicState> *)createInfo.GetDynamicState(parentPipeline)
-        );
+        dynamicStates[i] =
+            vk::PipelineDynamicStateCreateInfo({}, *(std::vector<vk::DynamicState> *)&pipeline.dynamicState);
 
         vk::PipelineCreateFlags flags = {};
-        if (createInfo.inheritanceCount > 0) flags |= vk::PipelineCreateFlagBits::eAllowDerivatives;
+        flags |= vk::PipelineCreateFlagBits::eAllowDerivatives;
 
-        if (createInfo.parent) flags |= vk::PipelineCreateFlagBits::eDerivative;
+        if (pipeline.parent || pipeline.parentIndex) flags |= vk::PipelineCreateFlagBits::eDerivative;
 
         graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
             flags, shaderStages[i], vertexInput, inputAssembly, tesselation, viewportState, rasterizer, multisampling,
-            depthStencil, colorBlending, &dynamicStates[i],
-            m_pipelineLayouts[createInfo.GetPipelineLayout(parentPipeline)], (vk::RenderPass)m_handle, i,
-            (GraphicsPipelineHandle)(createInfo.parent ? *createInfo.parent : GraphicsPipelineHandle()),
-            createInfo.parentIndex
+            depthStencil, colorBlending, &dynamicStates[i], m_pipelineLayouts[pipeline.pipelineLayout],
+            (vk::RenderPass)m_handle, i, pipeline.parent, pipeline.parentIndex
         );
-
-        createInfo.DecrementParentInheritance();
     }
 
     vkCreateGraphicsPipelines(
@@ -94,13 +84,7 @@ RenderPass::RenderPass(
         (VkPipeline *)m_graphicsPipelines.data()
     );
     for (unsigned int i = 0; i < subpasses.size(); i++) {
-        GraphicsPipeline::CreateInfo &createInfo = *subpasses.begin()[i].graphicsPipeline.m_createInfo;
         subpasses.begin()[i].graphicsPipeline.m_handle = m_graphicsPipelines[i];
-        createInfo.UpdateParentInheritance();
-        if (createInfo.inheritanceCount == 0) {
-            delete subpasses.begin()[i].graphicsPipeline.m_createInfo;
-            subpasses.begin()[i].graphicsPipeline.m_createInfo = nullptr;
-        }
     }
 }
 
@@ -150,39 +134,31 @@ RenderPass::RenderPass(
     for (unsigned int i = 0; i < subpasses.size(); i++) {
         const Subpass &subpass = subpasses.begin()[i];
         const GraphicsPipeline &pipeline = subpasses.begin()[i].graphicsPipeline;
-        GraphicsPipeline::CreateInfo &createInfo = *pipeline.m_createInfo;
 
-        const GraphicsPipeline *parentPipeline = createInfo.parent;
-        if (createInfo.parentIndex != -1) parentPipeline = &subpasses.begin()[createInfo.parentIndex].graphicsPipeline;
+        shaderStages[i].resize(pipeline.shaders.size());
+        for (int j = 0; j < pipeline.shaders.size(); j++) shaderStages[i][j] = *pipeline.shaders[j];
 
-        shaderStages[i].resize(createInfo.GetShaders(parentPipeline)->size());
-        for (int j = 0; j < shaderStages[i].size(); j++)
-            shaderStages[i][j] = *(*createInfo.GetShaders(parentPipeline))[j];
+        auto *vertexInput = (vk::PipelineVertexInputStateCreateInfo *)&pipeline.vertexInput;
+        auto *inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo *)&pipeline.inputAssembly;
+        auto *tesselation = (vk::PipelineTessellationStateCreateInfo *)&pipeline.tesselation;
+        auto *viewportState = (vk::PipelineViewportStateCreateInfo *)&pipeline.viewportState;
+        auto *rasterizer = (vk::PipelineRasterizationStateCreateInfo *)&pipeline.rasterizer;
+        auto *multisampling = (vk::PipelineMultisampleStateCreateInfo *)&pipeline.multisampling;
+        auto *depthStencil = (vk::PipelineDepthStencilStateCreateInfo *)&pipeline.depthStencil;
+        auto *colorBlending = (vk::PipelineColorBlendStateCreateInfo *)&pipeline.colorBlending;
 
-        auto *vertexInput = (vk::PipelineVertexInputStateCreateInfo *)createInfo.GetVertexInput(parentPipeline);
-        auto *inputAssembly = (vk::PipelineInputAssemblyStateCreateInfo *)createInfo.GetInputAssembly(parentPipeline);
-        auto *tesselation = (vk::PipelineTessellationStateCreateInfo *)createInfo.GetTesselation(parentPipeline);
-        auto *viewportState = (vk::PipelineViewportStateCreateInfo *)createInfo.GetViewportState(parentPipeline);
-        auto *rasterizer = (vk::PipelineRasterizationStateCreateInfo *)createInfo.GetRasterizer(parentPipeline);
-        auto *multisampling = (vk::PipelineMultisampleStateCreateInfo *)createInfo.GetMultisampling(parentPipeline);
-        auto *depthStencil = (vk::PipelineDepthStencilStateCreateInfo *)createInfo.GetDepthStencil(parentPipeline);
-        auto *colorBlending = (vk::PipelineColorBlendStateCreateInfo *)createInfo.GetColorBlending(parentPipeline);
-
-        dynamicStates[i] = vk::PipelineDynamicStateCreateInfo(
-            {}, *(std::vector<vk::DynamicState> *)createInfo.GetDynamicState(parentPipeline)
-        );
+        dynamicStates[i] =
+            vk::PipelineDynamicStateCreateInfo({}, *(std::vector<vk::DynamicState> *)&pipeline.dynamicState);
 
         vk::PipelineCreateFlags flags = {};
-        if (createInfo.inheritanceCount > 0) flags |= vk::PipelineCreateFlagBits::eAllowDerivatives;
+        flags |= vk::PipelineCreateFlagBits::eAllowDerivatives;
 
-        if (createInfo.parent) flags |= vk::PipelineCreateFlagBits::eDerivative;
+        if (pipeline.parent || pipeline.parentIndex != -1) flags |= vk::PipelineCreateFlagBits::eDerivative;
 
         graphicPipelineCreateInfos[i] = vk::GraphicsPipelineCreateInfo(
             flags, shaderStages[i], vertexInput, inputAssembly, tesselation, viewportState, rasterizer, multisampling,
-            depthStencil, colorBlending, &dynamicStates[i],
-            m_pipelineLayouts[createInfo.GetPipelineLayout(parentPipeline)], (vk::RenderPass)m_handle, i,
-            (GraphicsPipelineHandle)(createInfo.parent ? *createInfo.parent : GraphicsPipelineHandle()),
-            createInfo.parentIndex
+            depthStencil, colorBlending, &dynamicStates[i], m_pipelineLayouts[pipeline.pipelineLayout],
+            (vk::RenderPass)m_handle, i, pipeline.parent, pipeline.parentIndex
         );
     }
     vkCreateGraphicsPipelines(

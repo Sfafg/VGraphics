@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(VGraphics)
 
-option(VGRAPHICS_BUILD_TESTS "Build tests" OFF)
+option(VGRAPHICS_BUILD_TESTS "Build tests" ON)
 
 set(TESTS_ROOT "${PROJECT_SOURCE_DIR}/tests")
 set(SRC_ROOT "${PROJECT_SOURCE_DIR}/src")
@@ -35,7 +35,7 @@ target_include_directories(VGraphics PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-if(VGRAPHICS_BUILD_TESTS)
+if(TRUE)
 # SHADERS
     find_program(GLSLC_EXECUTABLE glslc)
     if(NOT GLSLC_EXECUTABLE)

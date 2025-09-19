@@ -30,7 +30,7 @@ void vkDestroyDebugUtilsMessengerEXT(
 );
 
 namespace vg {
-Instance instance;
+Instance *instance;
 static VKAPI_ATTR VkBool32 VKAPI_CALL NativeDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData

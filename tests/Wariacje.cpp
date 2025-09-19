@@ -21,7 +21,7 @@ using namespace vg;
 
 int main() {
     // Stwórz instancje.
-    vg::instance = Instance(
+    Instance instance(
         {},
         [](MessageSeverity severity, const char *message) {
             if (severity < MessageSeverity::Warning) return;
@@ -29,7 +29,7 @@ int main() {
         },
         false
     );
-
+    vg::instance = &instance;
     // Stwórz kolejki, i wybierz urządzenie.
     Queue computeQueue({QueueType::Compute}, 1.0f);
     Device computeDevice(

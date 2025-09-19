@@ -649,7 +649,7 @@ struct ViewportState {
     ViewportState() : viewportCount(0), viewports(nullptr), scissorCount(0), scissors(nullptr) {}
 
     ViewportState(Viewport viewport, Scissor scissor)
-        : viewportCount(1), viewports(new Viewport(viewport)), scissorCount(1), scissors(new Scissor(scissor)) {}
+        : viewportCount(1), viewports(new Viewport[1]{viewport}), scissorCount(1), scissors(new Scissor[1]{scissor}) {}
 
     ViewportState(const std::vector<Viewport> &viewports, const std::vector<Scissor> &scissors)
         : viewportCount(viewports.size()), viewports(new Viewport[viewportCount]), scissorCount(scissors.size()),

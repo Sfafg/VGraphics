@@ -108,9 +108,13 @@ struct Material {
     Subpass subpass;
     Material(Subpass &&subpass) : subpass(std::move(subpass)) {}
 };
+struct RAIIGLFW {
+    RAIIGLFW() { glfwInit(); }
+    ~RAIIGLFW() { glfwTerminate(); }
+};
 
 int main() {
-    glfwInit();
+    RAIIGLFW raiiGLFW;
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow *window = glfwCreateWindow(1600, 900, "Vulkan", nullptr, nullptr);
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int w, int h) { recreateFramebuffer = true; });
@@ -119,15 +123,14 @@ int main() {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    vg::instance = Instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
+    Instance instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
         if (severity < MessageSeverity::Warning) return;
         std::cout << message << '\n' << '\n';
     });
+    vg::instance = &instance;
 
     SurfaceHandle windowSurface;
-    glfwCreateWindowSurface(
-        *(VkInstance *)&vg::instance, (GLFWwindow *)window, nullptr, (VkSurfaceKHR *)&windowSurface
-    );
+    glfwCreateWindowSurface(*(VkInstance *)vg::instance, (GLFWwindow *)window, nullptr, (VkSurfaceKHR *)&windowSurface);
     DeviceFeatures deviceFeatures(
         {Feature::WideLines, Feature::LogicOp, Feature::SamplerAnisotropy, Feature::SampleRateShading}
     );
@@ -563,6 +566,4 @@ int main() {
     }
     Fence::AwaitAll(inFlightFence);
     vg::currentDevice->WaitUntilIdle();
-
-    glfwTerminate();
 }

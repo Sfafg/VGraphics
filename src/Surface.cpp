@@ -26,7 +26,7 @@ Surface::Surface(Surface &&other) noexcept : Surface() { *this = std::move(other
 
 Surface::~Surface() {
     if (m_handle == nullptr) return;
-    InstanceHandle(vg::instance).destroySurfaceKHR(m_handle);
+    InstanceHandle(*vg::instance).destroySurfaceKHR(m_handle);
     m_handle = nullptr;
 }
 

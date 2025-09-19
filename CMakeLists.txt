@@ -22,14 +22,6 @@ file(MAKE_DIRECTORY ${TESTS_ROOT} ${SRC_ROOT} ${RESOURCES_ROOT} ${RESOURCES_OUTP
 find_package(Vulkan REQUIRED)
 file(GLOB_RECURSE SRC "${SRC_ROOT}/*.cpp")
 
-list(REMOVE_ITEM SRC
-    ${SRC_ROOT}/Instance.cpp
-    ${SRC_ROOT}/Device.cpp
-)
-list(PREPEND SRC
-    ${SRC_ROOT}/Instance.cpp
-    ${SRC_ROOT}/Device.cpp
-)
 add_library(VGraphics STATIC)
 target_link_libraries(VGraphics PUBLIC Vulkan::Vulkan)
 target_sources(VGraphics

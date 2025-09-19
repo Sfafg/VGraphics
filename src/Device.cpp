@@ -42,7 +42,7 @@ Device::Device(
 
     // Pick physical device.
     int highestScore = -1;
-    for (const auto &physicalDevice : ((InstanceHandle)vg::instance).enumeratePhysicalDevices()) {
+    for (const auto &physicalDevice : ((InstanceHandle)*vg::instance).enumeratePhysicalDevices()) {
         // Get Supported Extensions.
         std::set<std::string> supportedExtensions;
         for (const auto &extension : physicalDevice.enumerateDeviceExtensionProperties()) {

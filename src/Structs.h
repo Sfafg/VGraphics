@@ -996,7 +996,7 @@ union ClearValue {
 
 inline ClearColor::operator vg::ClearValue() { return *(ClearValue *)this; }
 
-inline ClearDepthStencil::operator vg::ClearValue() { return *(ClearValue *)this; }
+inline ClearDepthStencil::operator vg::ClearValue() { return ClearValue(*this); }
 
 struct ImageCopy {
     ImageSubresourceLayers srcSubresource;

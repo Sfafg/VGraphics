@@ -13,6 +13,8 @@ set(SHADER_OUTPUT_DIR "${RESOURCES_OUTPUT_DIR}/shaders")
 add_compile_options(-static-libstdc++)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
 set(CMAKE_CXX_STANDARD 23)
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -g")
+# set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 file(MAKE_DIRECTORY ${TESTS_ROOT} ${SRC_ROOT} ${RESOURCES_ROOT} ${RESOURCES_OUTPUT_DIR} ${SHADER_ROOT} ${SHADER_OUTPUT_DIR})
 
@@ -20,6 +22,14 @@ file(MAKE_DIRECTORY ${TESTS_ROOT} ${SRC_ROOT} ${RESOURCES_ROOT} ${RESOURCES_OUTP
 find_package(Vulkan REQUIRED)
 file(GLOB_RECURSE SRC "${SRC_ROOT}/*.cpp")
 
+list(REMOVE_ITEM SRC
+    ${SRC_ROOT}/Instance.cpp
+    ${SRC_ROOT}/Device.cpp
+)
+list(PREPEND SRC
+    ${SRC_ROOT}/Instance.cpp
+    ${SRC_ROOT}/Device.cpp
+)
 add_library(VGraphics STATIC)
 target_link_libraries(VGraphics PUBLIC Vulkan::Vulkan)
 target_sources(VGraphics
@@ -105,11 +115,11 @@ if(VGRAPHICS_BUILD_TESTS)
 
 # TEST
     add_executable(VGRAPHICS_VGTest ${TESTS_ROOT}/Source.cpp)
-    target_link_libraries(VGRAPHICS_VGTest PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
+    target_link_libraries(VGRAPHICS_VGTest PRIVATE VGraphics glfw glm stb_image)
     add_dependencies(VGRAPHICS_VGTest VGRAPHICS_Shaders VGraphics VGRAPHICS_Resources)
 
 # WARIACJE
     add_executable(VGRAPHICS_Wariacje ${TESTS_ROOT}/Wariacje.cpp)
-    target_link_libraries(VGRAPHICS_Wariacje PRIVATE VGraphics glfw glm Vulkan::Vulkan stb_image)
+    target_link_libraries(VGRAPHICS_Wariacje PRIVATE VGraphics glfw glm stb_image)
     add_dependencies(VGRAPHICS_Wariacje VGRAPHICS_Shaders VGraphics)
 endif()

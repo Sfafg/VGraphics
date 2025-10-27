@@ -1,22 +1,21 @@
 #pragma once
-// #include "vulkan/vulkan.hpp"
 #ifdef VULKAN_HPP
-#define HANDLE(name, nativeName)                                                                                     \
-    class name : public vk::nativeName {                                                                             \
-      public:                                                                                                        \
-        name() : vk::nativeName(nullptr) {}                                                                          \
-        name(const vk::nativeName &o) : vk::nativeName(o) {}                                                         \
-        name(vk::nativeName &&o) : vk::nativeName(o) {}                                                              \
-        name &operator=(void *&rhs) {                                                                                \
-            ((vk::nativeName *)this)->operator=((Vk##nativeName)rhs);                                                \
-            return *this;                                                                                            \
-        }                                                                                                            \
-        name &operator=(const vk::nativeName &rhs) {                                                                 \
-            ((vk::nativeName *)this)->operator=(rhs);                                                                \
-            return *this;                                                                                            \
-        }                                                                                                            \
-        bool operator==(const vk::nativeName &rhs) const { return ((vk::nativeName *)this)->operator==(rhs); }       \
-        bool operator==(const void *rhs) const { return ((vk::nativeName *)this)->operator==((Vk##nativeName)rhs); } \
+#define HANDLE(name, nativeName)                                                                            \
+    class name : public vk::nativeName {                                                                    \
+      public:                                                                                               \
+        name() : vk::nativeName(nullptr) {}                                                                 \
+        name(const vk::nativeName &o) : vk::nativeName(o) {}                                                \
+        name(vk::nativeName &&o) : vk::nativeName(o) {}                                                     \
+        name &operator=(void *&rhs) {                                                                       \
+            ((vk::nativeName *)this)->operator=((Vk##nativeName)rhs);                                       \
+            return *this;                                                                                   \
+        }                                                                                                   \
+        name &operator=(const vk::nativeName &rhs) {                                                        \
+            ((vk::nativeName *)this)->operator=(rhs);                                                       \
+            return *this;                                                                                   \
+        }                                                                                                   \
+        bool operator==(const vk::nativeName &rhs) const { return (*(vk::nativeName *)this) == rhs; }       \
+        bool operator==(const void *rhs) const { return (*(vk::nativeName *)this) == (Vk##nativeName)rhs; } \
     };
 #else
 #define HANDLE(name, nativeName)                                           \

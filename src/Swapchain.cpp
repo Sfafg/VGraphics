@@ -23,8 +23,9 @@ Swapchain::Swapchain(
 
     // Check if parameters for Swapchain creation are valid and change them if not.
     SwapChainSupportDetails supportDetails((PhysicalDeviceHandle)*currentDevice, surface);
-    imageCount =
-        std::clamp(imageCount, supportDetails.capabilities.minImageCount, supportDetails.capabilities.maxImageCount);
+    imageCount = std::max(imageCount, supportDetails.capabilities.minImageCount);
+    if (supportDetails.capabilities.maxImageCount != 0)
+        imageCount = std::min(imageCount, supportDetails.capabilities.maxImageCount);
 
     if (supportDetails.capabilities.currentExtent.width != UINT_MAX) {
         m_width = supportDetails.capabilities.currentExtent.width;

@@ -159,7 +159,8 @@ int main() {
         {Format::D32SFLOAT, Format::D32SFLOATS8UINT, Format::x8D24UNORMPACK}, {FormatFeature::DepthStencilAttachment},
         {ImageUsage::DepthStencilAttachment}, 1, 1, msaaSampleCount
     );
-    Allocate(Span<Image *const>{&depthImage, &colorImage}, {MemoryProperty::DeviceLocal});
+    Allocate(Span<Image *const>{&depthImage}, {MemoryProperty::DeviceLocal});
+    Allocate(Span<Image *const>{&colorImage}, {MemoryProperty::DeviceLocal});
     ImageView colorImageView(colorImage, {ImageAspect::Color});
     ImageView depthImageView(depthImage, {ImageAspect::Depth});
 

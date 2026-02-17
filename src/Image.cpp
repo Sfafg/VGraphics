@@ -58,6 +58,7 @@ Image &Image::operator=(Image &&other) noexcept {
     std::swap(m_memory, other.m_memory);
     std::swap(m_format, other.m_format);
     std::swap(m_tiling, other.m_tiling);
+    std::swap(m_mipLevels, other.m_mipLevels);
     std::swap(m_dimensionCount, other.m_dimensionCount);
     std::swap(m_dimensions, other.m_dimensions);
     std::swap(m_offset, other.m_offset);

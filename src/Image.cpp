@@ -15,7 +15,7 @@ Image::Image(
     assert(0 < extend.size() && extend.size() < 4);
 
     uint32_t maximum = m_dimensions[0];
-    for (int i = 1; i < m_dimensionCount; i++) maximum = std::min(m_dimensions[i], maximum);
+    for (int i = 1; i < m_dimensionCount; i++) maximum = std::max(m_dimensions[i], maximum);
 
     m_mipLevels = std::min(mipLevels, (uint32_t)std::floor(std::log2(maximum)) + 1);
 

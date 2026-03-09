@@ -693,14 +693,13 @@ concept Command = requires(T a, vg::CmdBuffer &buffer) {
     { a(buffer) } -> std::same_as<void>;
 };
 
-template <typename T, std::size_t... Is> constexpr bool AreCommands(const T &tuple, std::index_sequence<Is...>) {
+template <class T>
+concept CommandsTuple = requires {
+    requires std::tuple_size<T>::value > 0;
+    requires(Command<std::tuple_element_t<0, T>>);
+} && []<std::size_t... Is>(std::index_sequence<Is...>) {
     return (Command<std::tuple_element_t<Is, T>> && ...);
-}
-
-template <typename T>
-concept CommandsTuple = requires(T t) {
-    { AreCommands(t, std::make_index_sequence<std::tuple_size_v<T>>{}) } -> std::same_as<bool>;
-};
+}(std::make_index_sequence<std::tuple_size_v<T>>{});
 
 template <class... T>
 concept Commands = ((Command<T> || CommandsTuple<T>) && ...);

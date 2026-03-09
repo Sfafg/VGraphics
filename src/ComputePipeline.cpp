@@ -31,5 +31,9 @@ ComputePipeline &ComputePipeline::operator=(ComputePipeline &&other) noexcept {
 }
 ComputePipeline::operator const ComputePipelineHandle &() const { return m_handle; }
 
+Span<DescriptorSetLayoutHandle> ComputePipeline::GetDescriptorSets() { return m_pipelineLayout.GetDescriptorSets(); }
+Span<const DescriptorSetLayoutHandle> ComputePipeline::GetDescriptorSets() const {
+    return m_pipelineLayout.GetDescriptorSets();
+}
 const PipelineLayout &ComputePipeline::GetPipelineLayout() const { return m_pipelineLayout; }
 } // namespace vg

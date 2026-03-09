@@ -38,6 +38,8 @@ class RenderPass {
     RenderPass &operator=(const RenderPass &other) = delete;
     operator const RenderPassHandle &() const;
 
+    Span<DescriptorSetLayoutHandle> GetDescriptorSets(uint32_t pipelineLayoutIndex);
+    Span<const DescriptorSetLayoutHandle> GetDescriptorSets(uint32_t pipelineLayoutIndex) const;
     Span<const PipelineLayout> GetPipelineLayouts() const;
     Span<GraphicsPipelineHandle> GetPipelines();
     Span<const GraphicsPipelineHandle> GetPipelines() const;

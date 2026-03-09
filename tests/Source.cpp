@@ -370,9 +370,7 @@ int main() {
     );
 
     // Create and allocate descriptor set layouts.
-    std::vector<vg::DescriptorSetLayoutHandle> layouts(
-        swapchain.GetImageCount(), renderPass.GetPipelineLayouts()[0].GetDescriptorSets()[0]
-    );
+    std::vector<vg::DescriptorSetLayoutHandle> layouts(swapchain.GetImageCount(), renderPass.GetDescriptorSets(0)[0]);
     std::vector<vg::DescriptorSet> descriptorSets = descriptorPool.Allocate(layouts);
 
     uint64_t offsetAlignment = currentDevice->GetLimits().minUniformBufferOffsetAlignment;
@@ -438,9 +436,7 @@ int main() {
     );
     std::vector<vg::DescriptorSet> descriptorSets1;
     descriptorPool1.Allocate(
-        std::vector<vg::DescriptorSetLayoutHandle>(
-            swapchain.GetImageCount(), computePipeline.GetPipelineLayout().GetDescriptorSets()[0]
-        ),
+        std::vector<vg::DescriptorSetLayoutHandle>(swapchain.GetImageCount(), computePipeline.GetDescriptorSets()[0]),
         &descriptorSets1
     );
 

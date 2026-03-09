@@ -19,6 +19,8 @@ class ComputePipeline {
     ComputePipeline &operator=(const ComputePipeline &other) = delete;
     operator const ComputePipelineHandle &() const;
 
+    Span<DescriptorSetLayoutHandle> GetDescriptorSets();
+    Span<const DescriptorSetLayoutHandle> GetDescriptorSets() const;
     const PipelineLayout &GetPipelineLayout() const;
 
   private:

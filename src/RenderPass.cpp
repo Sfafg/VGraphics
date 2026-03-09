@@ -198,6 +198,12 @@ RenderPass &RenderPass::operator=(RenderPass &&other) noexcept {
 
 RenderPass::operator const RenderPassHandle &() const { return m_handle; }
 
+Span<DescriptorSetLayoutHandle> RenderPass::GetDescriptorSets(uint32_t pipelineLayoutIndex) {
+    return m_pipelineLayouts[pipelineLayoutIndex].GetDescriptorSets();
+}
+Span<const DescriptorSetLayoutHandle> RenderPass::GetDescriptorSets(uint32_t pipelineLayoutIndex) const {
+    return m_pipelineLayouts[pipelineLayoutIndex].GetDescriptorSets();
+}
 Span<const PipelineLayout> RenderPass::GetPipelineLayouts() const { return m_pipelineLayouts; }
 
 Span<GraphicsPipelineHandle> RenderPass::GetPipelines() { return m_graphicsPipelines; }

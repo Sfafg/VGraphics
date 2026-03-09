@@ -21,6 +21,7 @@
 #include "Surface.h"
 #include "Swapchain.h"
 #include "Synchronization.h"
+#include "NamedResources.h"
 #include <chrono>
 #include <fstream>
 #include <glm/glm.hpp>
@@ -305,6 +306,7 @@ int main() {
     }
 
     Buffer uniformBuffers(sizeof(UniformBufferObject) * swapchain.GetImageCount(), BufferUsage::UniformBuffer);
+    vg::Debug::SetName(uniformBuffers, "uniformBuffers");
     vg::Allocate(&uniformBuffers, {MemoryProperty::HostVisible, MemoryProperty::HostCoherent});
 
     /// Load Image.

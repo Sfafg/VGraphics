@@ -114,4 +114,4 @@ if(VGRAPHICS_BUILD_TESTS)
     add_executable(VGRAPHICS_Wariacje ${TESTS_ROOT}/Wariacje.cpp)
     target_link_libraries(VGRAPHICS_Wariacje PRIVATE VGraphics glfw glm stb_image)
     add_dependencies(VGRAPHICS_Wariacje VGRAPHICS_Shaders VGraphics)
-endif()
+endif(adfsadfasdf

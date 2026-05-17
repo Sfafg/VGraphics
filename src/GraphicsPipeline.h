@@ -34,7 +34,7 @@ class GraphicsPipeline {
 
     operator const GraphicsPipelineHandle &() const;
 
-  private:
+    // private:
     const std::vector<Shader *> *GetShaders(const GraphicsPipeline *parent) const;
     uint32_t pipelineLayout;
     std::vector<Shader *> shaders;

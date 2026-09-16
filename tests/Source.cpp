@@ -127,6 +127,7 @@ int main() {
     Instance instance({glfwExtensions, glfwExtensionCount}, [](MessageSeverity severity, const char *message) {
         if (severity < MessageSeverity::Warning) return;
         std::cout << message << '\n' << '\n';
+        throw message;
     });
     vg::instance = &instance;
 
@@ -492,7 +493,8 @@ int main() {
                 {ImageUsage::DepthStencilAttachment}, 1, 1, ImageTiling::Optimal, ImageLayout::Undefined,
                 msaaSampleCount
             );
-            Allocate(Span<Image *const>{&depthImage, &colorImage}, {MemoryProperty::DeviceLocal});
+            Allocate(Span<Image *const>{&colorImage}, {MemoryProperty::DeviceLocal});
+            Allocate(Span<Image *const>{&depthImage}, {MemoryProperty::DeviceLocal});
             colorImageView = ImageView(colorImage, {ImageAspect::Color});
             depthImageView = ImageView(depthImage, {ImageAspect::Depth});
             for (int i = 0; i < swapchain.GetImageCount(); i++)

@@ -38,7 +38,7 @@ Device::Device(
             break;
         }
     }
-    assert(hasPresentQueueType ^ (surface == nullptr));
+    assert(surface == nullptr || hasPresentQueueType);
 
     // Pick physical device.
     int highestScore = -1;

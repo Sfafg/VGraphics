@@ -20,12 +20,8 @@ class RenderPass {
      * @param dependencies Dependencies
      */
     RenderPass(
-        Span<const Attachment> attachments, std::vector<PipelineLayout> &&pipelineLayouts, std::span<Subpass> subpasses,
-        Span<const SubpassDependency> dependencies = {}, PipelineCacheHandle cache = PipelineCacheHandle()
-    );
-    RenderPass(
         Span<const Attachment> attachments, std::vector<PipelineLayout> &&pipelineLayouts,
-        std::initializer_list<Subpass> subpasses, Span<const SubpassDependency> dependencies = {},
+        Span<const Subpass> subpasses, Span<const SubpassDependency> dependencies = {},
         PipelineCacheHandle cache = PipelineCacheHandle()
     );
 

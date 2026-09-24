@@ -206,6 +206,8 @@ int main() {
         pipelineCache
     );
 
+    Shader particleVertex(ShaderStage::Vertex, "resources/shaders/particle.vert.spv");
+    Shader particleFragment(ShaderStage::Fragment, "resources/shaders/particle.frag.spv");
     RenderPass renderPass(
         {Attachment(surface.GetFormat(), msaaSampleCount, ImageLayout::ColorAttachmentOptimal),
          Attachment(depthImage.GetFormat(), msaaSampleCount, ImageLayout::DepthStencilAttachmentOptimal),
@@ -219,7 +221,7 @@ int main() {
         },
         {Subpass(
              GraphicsPipeline(
-                 0, std::vector<vg::Shader *>{&vertexShader, &fragmentShader},
+                 0, {&vertexShader, &fragmentShader},
                  VertexLayout({Vertex::GetBindingDescription()}, Vertex::GetAttributeDescriptions()),
                  InputAssembly(Primitive::Triangles), Tesselation(), ViewportState(Viewport(w, h), Scissor(w, h)),
                  Rasterizer(false, false, PolygonMode::Fill, CullMode::None), Multisampling(msaaSampleCount, true),
@@ -239,11 +241,7 @@ int main() {
          ),
          Subpass(
              GraphicsPipeline(
-                 0,
-                 Vector{
-                     Shader(ShaderStage::Vertex, "resources/shaders/particle.vert.spv"),
-                     Shader(ShaderStage::Fragment, "resources/shaders/particle.frag.spv")
-                 },
+                 0, {&particleVertex, &particleFragment},
                  VertexLayout({Particle::GetBindingDescription()}, Particle::GetAttributeDescriptions()),
                  InputAssembly(Primitive::Points), Tesselation(), ViewportState(Viewport(w, h), Scissor(w, h)),
                  Rasterizer(false, false, PolygonMode::Fill, CullMode::None), Multisampling(msaaSampleCount, true),

@@ -839,7 +839,7 @@ struct ColorBlending {
         memcpy((void *)this->attachments, &colorBlending[0], sizeof(ColorBlend) * attachmentCount);
     }
 
-    ColorBlending(ColorBlending &&rhs) : ColorBlending() {}
+    ColorBlending(ColorBlending &&rhs) : ColorBlending() { *this = std::move(rhs); }
 
     ColorBlending &operator=(ColorBlending &&rhs) {
         if (&rhs == this) return *this;

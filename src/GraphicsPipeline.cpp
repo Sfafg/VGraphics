@@ -17,5 +17,5 @@ GraphicsPipeline::GraphicsPipeline(
       depthStencil(depthStencil), colorBlending(colorBlending), dynamicState(dynamicState), parentIndex(parentIndex),
       parent(parent) {}
 
-GraphicsPipeline::GraphicsPipeline() {}
+GraphicsPipeline::GraphicsPipeline() : parentIndex(-1) {}
 } // namespace vg

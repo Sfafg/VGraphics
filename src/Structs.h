@@ -566,9 +566,11 @@ struct VertexLayout {
           vertexDescritpions(new VertexBinding[vertexDescriptionCount]), vertexAttributesCount(vertexAttributes.size()),
           vertexAttributes(new VertexAttribute[vertexAttributesCount]) {
         memcpy(
-            (void *)this->vertexDescritpions, &vertexDescriptions[0], sizeof(VertexBinding) * vertexDescriptionCount
+            (void *)this->vertexDescritpions, vertexDescriptions.data(), sizeof(VertexBinding) * vertexDescriptionCount
         );
-        memcpy((void *)this->vertexAttributes, &vertexAttributes[0], sizeof(VertexAttribute) * vertexAttributesCount);
+        memcpy(
+            (void *)this->vertexAttributes, vertexAttributes.data(), sizeof(VertexAttribute) * vertexAttributesCount
+        );
     }
 
     VertexLayout(VertexLayout &&rhs) noexcept : VertexLayout() { *this = std::move(rhs); }
@@ -654,8 +656,8 @@ struct ViewportState {
     ViewportState(const std::vector<Viewport> &viewports, const std::vector<Scissor> &scissors)
         : viewportCount(viewports.size()), viewports(new Viewport[viewportCount]), scissorCount(scissors.size()),
           scissors(new Scissor[scissorCount]) {
-        memcpy((void *)this->viewports, &viewports[0], sizeof(Viewport) * viewportCount);
-        memcpy((void *)this->scissors, &scissors[0], sizeof(Scissor) * scissorCount);
+        memcpy((void *)this->viewports, viewports.data(), sizeof(Viewport) * viewportCount);
+        memcpy((void *)this->scissors, scissors.data(), sizeof(Scissor) * scissorCount);
     }
 
     ViewportState(ViewportState &&rhs) : ViewportState() { *this = std::move(rhs); }
@@ -836,7 +838,7 @@ struct ColorBlending {
         : enableLogicOp(enableLogicOp), logicOp(logicOp),
           blendConsts{blendConstants[0], blendConstants[1], blendConstants[2], blendConstants[3]},
           attachmentCount(colorBlending.size()), attachments(new ColorBlend[attachmentCount]) {
-        memcpy((void *)this->attachments, &colorBlending[0], sizeof(ColorBlend) * attachmentCount);
+        memcpy((void *)this->attachments, colorBlending.data(), sizeof(ColorBlend) * attachmentCount);
     }
 
     ColorBlending(ColorBlending &&rhs) : ColorBlending() { *this = std::move(rhs); }
@@ -1298,8 +1300,8 @@ struct SubmitInfo {
             this->waitSemaphores[i] = std::get<1>(waitStages[i]);
             this->waitDstStageMask[i] = std::get<0>(waitStages[i]);
         }
-        memcpy((void *)this->cmdBuffers, &cmdBuffers[0], sizeof(CmdBufferHandle) * cmdBufferCount);
-        memcpy((void *)this->signalSemaphores, &signalSemaphores[0], sizeof(SemaphoreHandle) * signalSemaphoreCount);
+        memcpy((void *)this->cmdBuffers, cmdBuffers.data(), sizeof(CmdBufferHandle) * cmdBufferCount);
+        memcpy((void *)this->signalSemaphores, signalSemaphores.data(), sizeof(SemaphoreHandle) * signalSemaphoreCount);
     }
 
     SubmitInfo(SubmitInfo &&rhs) noexcept : SubmitInfo() { *this = std::move(rhs); }

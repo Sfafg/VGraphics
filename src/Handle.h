@@ -15,7 +15,7 @@
             return *this;                                                                                   \
         }                                                                                                   \
         bool operator==(const vk::nativeName &rhs) const { return (*(vk::nativeName *)this) == rhs; }       \
-        bool operator==(const void *rhs) const { return (*(vk::nativeName *)this) == (Vk##nativeName)rhs; } \
+        bool operator==(const void *rhs) const { return (*(Vk##nativeName *)this) == (Vk##nativeName)rhs; } \
     };
 #else
 #define HANDLE(name, nativeName)                                           \
